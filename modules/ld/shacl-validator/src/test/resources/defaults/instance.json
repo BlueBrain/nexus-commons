@@ -1,0 +1,7 @@
+{
+  "@context": {
+    "schema": "http://schema.org/",
+    "nexusvoc": "{{SERVICE_BASE}}/voc/nexus/core/",
+    "rev": "nexusvoc:rev"
+  }
+}

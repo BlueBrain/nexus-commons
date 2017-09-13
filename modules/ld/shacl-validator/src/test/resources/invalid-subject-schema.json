@@ -1,0 +1,35 @@
+{
+  "@id": "https://bbp-nexus.epfl.ch/schemas/bbp/experiment/subject/v1.0.0/",
+  "@type": "owl:Ontology",
+  "shapes": [
+    {
+      "@id": "bbpexpshape:AgeShape",
+      "@type": "sh:InexistentShape",
+      "property": [
+        {
+          "@id": "_:b6",
+          "sh:in": {
+            "@list": [
+              "Pre-natal",
+              "Post-natal"
+            ]
+          },
+          "maxCount": "1",
+          "minCount": "1",
+          "name": "Period",
+          "node": [],
+          "path": "bbpexp:period"
+        },
+        {
+          "@id": "_:b5",
+          "class": "schema:QuantitativeValue",
+          "maxCount": "1",
+          "minCount": "1",
+          "name": "Age",
+          "node": "bbpexpshape:AgeValueShape",
+          "path": "schema:value"
+        }
+      ]
+    }
+  ]
+}

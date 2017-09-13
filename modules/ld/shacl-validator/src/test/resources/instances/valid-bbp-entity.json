@@ -1,0 +1,11 @@
+{
+  "@context": {
+    "bbpvoc": "{{SERVICE_BASE}}/voc/bbp/core/",
+    "name": "schema:name",
+    "description": "schema:description"
+  },
+  "@type": "bbpvoc:Entity",
+  "name": "My Entity",
+  "description": "My description.",
+  "rev": 1
+}

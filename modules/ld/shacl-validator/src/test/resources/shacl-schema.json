@@ -1,0 +1,592 @@
+{
+  "@id": "https://bbp-nexus.epfl.ch/schemas/nexus/core/shacl/v1.0.0/",
+  "shapes": [
+    {
+      "@id": "shsh:EntailmentShape",
+      "@type": "sh:NodeShape",
+      "nodeKind": "sh:IRI",
+      "property": [],
+      "targetObjectsOf": "sh:entailment"
+    },
+    {
+      "@id": "shsh:ListNodeShape",
+      "@type": "sh:NodeShape",
+      "comment": {
+        "@language": "en",
+        "@value": "Defines constraints on what it means for a node to be a node within a well-formed RDF list. Note that this does not check whether the rdf:rest items are also well-formed lists as this would lead to unsupported recursion."
+      },
+      "label": {
+        "@language": "en",
+        "@value": "List node shape"
+      },
+      "or": {
+        "@list": [
+          "_:b86",
+          "_:b69"
+        ]
+      },
+      "property": []
+    },
+    {
+      "@id": "shsh:ListShape",
+      "@type": "sh:NodeShape",
+      "comment": {
+        "@language": "en",
+        "@value": "A shape describing well-formed RDF lists. Currently does not check for non-recursion. This could be expressed using SHACL-SPARQL."
+      },
+      "label": {
+        "@language": "en",
+        "@value": "List shape"
+      },
+      "seeAlso": "https://www.w3.org/TR/shacl/#syntax-rule-SHACL-list",
+      "property": [
+        {
+          "comment": {
+            "@language": "en",
+            "@value": "Each list member (including this node) must be have the shape shsh:ListNodeShape."
+          },
+          "sh:hasValue": {
+            "@list": []
+          },
+          "path": {
+            "@id": "_:b83",
+            "zeroOrMorePath": "rdf:rest"
+          }
+        }
+      ]
+    },
+    {
+      "@id": "shsh:NodeShapeShape",
+      "@type": "sh:NodeShape",
+      "property": [
+        {
+          "maxCount": "0",
+          "path": "sh:uniqueLang"
+        },
+        {
+          "maxCount": "0",
+          "path": "sh:lessThanOrEquals"
+        },
+        {
+          "maxCount": "0",
+          "path": "sh:lessThan"
+        },
+        {
+          "maxCount": "0",
+          "path": "sh:qualifiedValueShape"
+        },
+        {
+          "maxCount": "0",
+          "path": "sh:maxCount"
+        },
+        {
+          "maxCount": "0",
+          "path": "sh:minCount"
+        },
+        {
+          "maxCount": "0",
+          "path": "sh:path"
+        }
+      ],
+      "targetObjectsOf": "sh:node"
+    },
+    {
+      "@id": "shsh:PathListWithAtLeast2Members",
+      "@type": "sh:NodeShape",
+      "node": "shsh:ListShape",
+      "property": [
+        {
+          "minCount": "2",
+          "path": {
+            "@id": "_:b6",
+            "oneOrMorePath": "rdf:rest"
+          }
+        }
+      ]
+    },
+    {
+      "@id": "shsh:PathShape",
+      "@type": "sh:NodeShape",
+      "comment": {
+        "@language": "en",
+        "@value": "A shape that can be used to validate the syntax rules of well-formed SHACL paths."
+      },
+      "label": {
+        "@language": "en",
+        "@value": "Path shape"
+      },
+      "seeAlso": "https://www.w3.org/TR/shacl/#property-paths",
+      "property": [
+        {
+          "path": {
+            "@id": "_:b77",
+            "zeroOrMorePath": {
+              "@id": "_:b78",
+              "alternativePath": {
+                "@list": [
+                  "_:b14",
+                  "_:b85",
+                  "in:versePath",
+                  "sh:zeroOrMorePath",
+                  "sh:oneOrMorePath",
+                  "sh:zeroOrOnePath"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "@id": "shsh:PropertyShapeShape",
+      "@type": "sh:NodeShape",
+      "property": [
+        {
+          "maxCount": "1",
+          "minCount": "1",
+          "node": "shsh:PathShape",
+          "path": "sh:path"
+        }
+      ],
+      "targetObjectsOf": "sh:property"
+    },
+    {
+      "@id": "shsh:ShapeShape",
+      "@type": "sh:NodeShape",
+      "comment": {
+        "@language": "en",
+        "@value": "A shape that can be used to validate syntax rules for other shapes."
+      },
+      "label": {
+        "@language": "en",
+        "@value": "Shape shape"
+      },
+      "or": {
+        "@list": [
+          "_:b9",
+          "_:b58"
+        ]
+      },
+      "property": [
+        {
+          "in": {
+            "@list": [
+              "sh:BlankNode",
+              "sh:IRI",
+              "sh:Literal",
+              "sh:BlankNodeOrIRI",
+              "sh:BlankNodeOrLiteral",
+              "sh:IRIOrLiteral"
+            ]
+          },
+          "maxCount": "1",
+          "path": "node:Kind"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:lessThan"
+        },
+        {
+          "or": {
+            "@list": [
+              "_:b18",
+              "_:b19"
+            ]
+          },
+          "path": "sh:message"
+        },
+        {
+          "maxCount": "1",
+          "nodeKind": "sh:Literal",
+          "path": "sh:maxInclusive"
+        },
+        {
+          "maxCount": "1",
+          "nodeKind": "sh:Literal",
+          "path": "sh:minExclusive"
+        },
+        {
+          "datatype": "xsd:boolean",
+          "maxCount": "1",
+          "path": "sh:uniqueLang"
+        },
+        {
+          "maxCount": "1",
+          "node": "shsh:ListShape",
+          "path": "sh:languageIn"
+        },
+        {
+          "node": "shsh:ListShape",
+          "path": "sh:xone"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:targetClass"
+        },
+        {
+          "datatype": "xsd:integer",
+          "maxCount": "1",
+          "path": "sh:maxLength"
+        },
+        {
+          "maxCount": "1",
+          "nodeKind": "sh:IRI",
+          "path": "sh:datatype"
+        },
+        {
+          "maxCount": "1",
+          "nodeKind": "sh:Literal",
+          "path": "sh:minInclusive"
+        },
+        {
+          "datatype": "xsd:integer",
+          "maxCount": "1",
+          "path": "sh:maxCount"
+        },
+        {
+          "maxCount": "1",
+          "nodeKind": "sh:IRI",
+          "path": "sh:severity"
+        },
+        {
+          "datatype": "xsd:string",
+          "path": {
+            "@list": [
+              "sh:languageIn",
+              "_:b33",
+              "rdf:first"
+            ]
+          }
+        },
+        {
+          "datatype": "xsd:boolean",
+          "maxCount": "1",
+          "path": "sh:closed"
+        },
+        {
+          "maxCount": "1",
+          "node": "shsh:ListShape",
+          "path": "sh:in"
+        },
+        {
+          "datatype": "xsd:string",
+          "maxCount": "1",
+          "path": "sh:flags"
+        },
+        {
+          "datatype": "xsd:integer",
+          "maxCount": "1",
+          "path": "sh:qualifiedMaxCount"
+        },
+        {
+          "node": "shsh:ListShape",
+          "path": "sh:or"
+        },
+        {
+          "node": "shsh:ListShape",
+          "path": "sh:and"
+        },
+        {
+          "maxCount": "1",
+          "path": "sh:qualifiedValueShape"
+        },
+        {
+          "datatype": "xsd:integer",
+          "maxCount": "1",
+          "path": "sh:minCount"
+        },
+        {
+          "datatype": "xsd:boolean",
+          "maxCount": "1",
+          "path": "sh:qualifiedValueShapesDisjoint"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:equals"
+        },
+        {
+          "datatype": "xsd:integer",
+          "maxCount": "1",
+          "path": "sh:qualifiedMinCount"
+        },
+        {
+          "nodeKind": "sh:IRIOrLiteral",
+          "path": "sh:targetNode"
+        },
+        {
+          "maxCount": "1",
+          "node": "shsh:ListShape",
+          "path": "sh:ignoredProperties"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:disjoint"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:targetObjectsOf"
+        },
+        {
+          "datatype": "xsd:string",
+          "maxCount": "1",
+          "path": "sh:pattern"
+        },
+        {
+          "datatype": "xsd:integer",
+          "maxCount": "1",
+          "path": "sh:minLength"
+        },
+        {
+          "maxCount": "1",
+          "nodeKind": "sh:Literal",
+          "path": "sh:maxExclusive"
+        },
+        {
+          "sh:in": {
+            "@list": [
+              {
+                "@type": "xsd:boolean",
+                "@value": "true"
+              },
+              {
+                "@type": "xsd:boolean",
+                "@value": "false"
+              }
+            ]
+          },
+          "maxCount": "1",
+          "path": "sh:deactivated"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": {
+            "@list": [
+              "sh:ignoredProperties",
+              "_:b53",
+              "rdf:first"
+            ]
+          }
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:class"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:targetSubjectsOf"
+        },
+        {
+          "nodeKind": "sh:IRI",
+          "path": "sh:lessThanOrEquals"
+        }
+      ],
+      "targetClass": [
+        "sh:PropertyShape",
+        "sh:NodeShape"
+      ],
+      "targetObjectsOf": [
+        "sh:property",
+        "sh:node",
+        "sh:qualifiedValueShape",
+        "sh:not"
+      ],
+      "targetSubjectsOf": [
+        "sh:lessThan",
+        "sh:maxInclusive",
+        "sh:minExclusive",
+        "sh:minCount",
+        "sh:and",
+        "sh:maxCount",
+        "sh:closed",
+        "sh:sparql",
+        "sh:datatype",
+        "sh:targetNode",
+        "sh:node",
+        "sh:property",
+        "sh:targetObjectsOf",
+        "sh:qualifiedMinCount",
+        "sh:maxExclusive",
+        "sh:lessThanOrEquals",
+        "sh:flags",
+        "sh:in",
+        "sh:not",
+        "sh:disjoint",
+        "node:Kind",
+        "sh:qualifiedMaxCount",
+        "sh:uniqueLang",
+        "sh:class",
+        "sh:hasValue",
+        "sh:xone",
+        "sh:qualifiedValueShapesDisjoint",
+        "sh:equals",
+        "sh:targetSubjectsOf",
+        "sh:minInclusive",
+        "sh:ignoredProperties",
+        "sh:or",
+        "sh:maxLength",
+        "sh:minLength",
+        "sh:targetClass",
+        "sh:qualifiedValueShape",
+        "sh:pattern",
+        "sh:languageIn"
+      ],
+      "xone": {
+        "@list": [
+          "shsh:NodeShapeShape",
+          "shsh:PropertyShapeShape"
+        ]
+      }
+    },
+    {
+      "@id": "shsh:ShapesGraphShape",
+      "@type": "sh:NodeShape",
+      "nodeKind": "sh:IRI",
+      "property": [],
+      "targetObjectsOf": "sh:shapesGraph"
+    },
+    {
+      "@id": "shsh:ShapesListShape",
+      "@type": "sh:NodeShape",
+      "property": [
+        {
+          "node": "shsh:ShapeShape",
+          "path": {
+            "@list": [
+              "_:b21",
+              "rdf:first"
+            ]
+          }
+        }
+      ],
+      "targetObjectsOf": [
+        "sh:xone",
+        "sh:or",
+        "sh:and"
+      ]
+    }
+  ],
+  "@type": "owl:Ontology",
+  "@context": {
+    "isDefinedBy": {
+      "@id": "rdfs:isDefinedBy",
+      "@type": "@id"
+    },
+    "nodeKind": {
+      "@id": "node:Kind",
+      "@type": "@id"
+    },
+    "targetObjectsOf": {
+      "@id": "sh:targetObjectsOf",
+      "@type": "@id"
+    },
+    "maxCount": {
+      "@id": "sh:maxCount",
+      "@type": "xsd:integer"
+    },
+    "path": {
+      "@id": "sh:path",
+      "@type": "@id"
+    },
+    "rest": {
+      "@id": "rdf:rest",
+      "@type": "@id"
+    },
+    "first": {
+      "@id": "rdf:first",
+      "@type": "@id"
+    },
+    "xone": {
+      "@id": "sh:xone",
+      "@type": "@id"
+    },
+    "minCount": {
+      "@id": "sh:minCount",
+      "@type": "xsd:integer"
+    },
+    "oneOrMorePath": {
+      "@id": "sh:oneOrMorePath",
+      "@type": "@id"
+    },
+    "targetSubjectsOf": {
+      "@id": "sh:targetSubjectsOf",
+      "@type": "@id"
+    },
+    "sh": "http://www.w3.org/ns/shacl#",
+    "property": {
+      "@id": "sh:property",
+      "@type": "@id",
+      "@container": "@set"
+    },
+    "targetClass": {
+      "@id": "sh:targetClass",
+      "@type": "@id"
+    },
+    "label": "rdfs:label",
+    "or": {
+      "@id": "sh:or",
+      "@type": "@id"
+    },
+    "comment": "rdfs:comment",
+    "node": {
+      "@id": "sh:node",
+      "@type": "@id"
+    },
+    "not": {
+      "@id": "sh:not",
+      "@type": "@id"
+    },
+    "datatype": {
+      "@id": "sh:datatype",
+      "@type": "@id"
+    },
+    "closed": {
+      "@id": "sh:closed",
+      "@type": "xsd:boolean"
+    },
+    "seeAlso": {
+      "@id": "rdfs:seeAlso",
+      "@type": "@id"
+    },
+    "alternativePath": {
+      "@id": "sh:alternativePath",
+      "@type": "@id"
+    },
+    "zeroOrMorePath": {
+      "@id": "sh:zeroOrMorePath",
+      "@type": "@id"
+    },
+    "hasValue": {
+      "@id": "sh:hasValue",
+      "@type": "@id"
+    },
+    "in": {
+      "@id": "sh:in",
+      "@type": "@id"
+    },
+    "declare": {
+      "@id": "sh:declare",
+      "@type": "@id"
+    },
+    "class": {
+      "@id": "sh:class",
+      "@type": "@id"
+    },
+    "namespace": "sh:namespace",
+    "prefix": "sh:prefix",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "shsh": "http://www.w3.org/ns/shacl-shacl#",
+    "shapes": {
+      "@reverse": "rdfs:isDefinedBy",
+      "@type": "@id",
+      "@container": "@set"
+    },
+    "import": {
+      "@id": "owl:imports",
+      "@type": "@id",
+      "@container": "@set"
+    }
+  }
+}

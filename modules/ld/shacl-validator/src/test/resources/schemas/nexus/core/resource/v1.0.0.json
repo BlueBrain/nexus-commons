@@ -1,0 +1,17 @@
+{
+  "@id": "{{SERVICE_BASE}}/schemas/nexus/core/resource/v1.0.0",
+  "@context": {
+    "this": "{{SERVICE_BASE}}/schemas/nexus/core/resource/v1.0.0/shapes/",
+    "nexusvoc": "{{SERVICE_BASE}}/voc/nexus/core/"
+  },
+  "shapes": [
+    {
+      "@id": "this:RevisionShape",
+      "@type": "sh:NodeShape",
+      "targetObjectsOf": "nexusvoc:rev",
+      "description": "A resource revision number.",
+      "datatype": "xsd:integer",
+      "sh:minInclusive": 1
+    }
+  ]
+}
