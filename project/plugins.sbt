@@ -1,1 +1,1 @@
-addSbtPlugin("ch.epfl.bluebrain.nexus" % "sbt-nexus" % "0.3.11")
+addSbtPlugin("ch.epfl.bluebrain.nexus" % "sbt-nexus" % "0.4.0")
