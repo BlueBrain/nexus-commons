@@ -85,8 +85,16 @@ class SparqlClientSpec
     val client = SparqlClient[Future](baseUri)
     val index = genString(length = 8)
 
-    "create a named graph" in new SparqlClientFixture {
+    "verify if index exists"  in new SparqlClientFixture {
+      client.exists(index).futureValue shouldEqual false
+    }
+
+    "create an index" in new SparqlClientFixture {
       client.createIndex(index, properties).futureValue
+      client.exists(index).futureValue shouldEqual true
+    }
+
+    "create a named graph" in new SparqlClientFixture {
       client.createGraph(index, ctx, load(id, label, value)).futureValue
       triples(index, ctx, client).futureValue should have size 2
       allTriples(index, client).futureValue should have size 2

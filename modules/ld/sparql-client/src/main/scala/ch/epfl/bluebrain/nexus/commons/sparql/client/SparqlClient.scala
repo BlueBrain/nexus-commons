@@ -116,6 +116,30 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
   }
 
   /**
+    * Checks if a index exists as a namespace
+    *
+    * @param index the name of the index
+    * @return ''false'' when the index does not exist, ''true'' when it does exist
+    *         and it signals an error otherwise.
+    */
+  def exists(index: String): F[Boolean] = {
+    val req = Get(s"$sparqlBase/namespace/$index")
+    cl(req).flatMap { resp =>
+      resp.status match {
+        case StatusCodes.OK       =>
+          cl.discardBytes(resp.entity).map(_ => true)
+        case StatusCodes.NotFound =>
+          cl.discardBytes(resp.entity).map(_ => false)
+        case other                =>
+          cl.toString(resp.entity).flatMap { body =>
+            log.error(s"Unexpected Sparql response for intent 'namespace exists':\nRequest: '${req.method} ${req.uri}'\nStatus: '$other'\nResponse: '$body'")
+            F.raiseError(UnexpectedSparqlResponse(resp.status, body))
+          }
+      }
+    }
+  }
+
+  /**
     * Creates a new index with the specified name and collection of properties.
     *
     * @param name       the name of the index
