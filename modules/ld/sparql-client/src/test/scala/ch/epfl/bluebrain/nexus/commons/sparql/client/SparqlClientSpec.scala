@@ -86,12 +86,12 @@ class SparqlClientSpec
     val index = genString(length = 8)
 
     "verify if index exists"  in new SparqlClientFixture {
-      client.indexExists(index).futureValue shouldEqual Left(())
+      client.exists(index).futureValue shouldEqual false
     }
 
     "create an index" in new SparqlClientFixture {
       client.createIndex(index, properties).futureValue
-      client.indexExists(index).futureValue shouldEqual Right(())
+      client.exists(index).futureValue shouldEqual true
     }
 
     "create a named graph" in new SparqlClientFixture {
