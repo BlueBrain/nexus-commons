@@ -62,6 +62,7 @@ lazy val serviceCommons = project.in(file("modules/service-commons"))
       "io.dropwizard.metrics"  % "metrics-core"                        % metricsCoreVersion                    % Test,
       "com.typesafe.akka"     %% "akka-persistence-cassandra-launcher" % akkaPersistenceCassandraVersion.value % Test,
       "com.typesafe.akka"     %% "akka-testkit"                        % akkaVersion.value                     % Test,
+      "com.typesafe.akka"     %% "akka-http-testkit"                   % akkaHttpVersion.value                 % Test,
       "io.circe"              %% "circe-generic-extras"                % circeVersion.value                    % Test,
       "org.scalatest"         %% "scalatest"                           % scalaTestVersion.value                % Test
     ))
