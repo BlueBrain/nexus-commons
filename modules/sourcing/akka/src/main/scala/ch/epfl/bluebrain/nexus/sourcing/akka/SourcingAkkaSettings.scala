@@ -14,12 +14,11 @@ import scala.concurrent.duration._
   * @param passivationTimeout the inactivity timeout after which an actor will request to be stopped
   * @param askTimeout         the future completion timeout while interacting with a persistent actor
   */
-final case class SourcingAkkaSettings(
-  journalPluginId: String,
-  shardingSettings: Option[ClusterShardingSettings] = None,
-  shards: Int = 100,
-  passivationTimeout: FiniteDuration = 30 seconds,
-  askTimeout: FiniteDuration = 15 seconds) {
+final case class SourcingAkkaSettings(journalPluginId: String,
+                                      shardingSettings: Option[ClusterShardingSettings] = None,
+                                      shards: Int = 100,
+                                      passivationTimeout: FiniteDuration = 30 seconds,
+                                      askTimeout: FiniteDuration = 15 seconds) {
 
   /**
     * Computes a ClusterShardingSettings value.

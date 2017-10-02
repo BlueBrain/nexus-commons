@@ -18,22 +18,28 @@ import ch.epfl.bluebrain.nexus.sourcing.mem.MemoryAggregate.Value
   * @tparam Cmd the type of commands considered by this aggregate
   * @tparam Rej the type of rejections returned by this aggregate
   */
-final class MemoryAggregate[Evt, St, Cmd, Rej]
-(override val name: String, initial: St, next: (St, Evt) => St, eval: (St, Cmd) => Either[Rej, Evt]) extends Aggregate[Id] {
+final class MemoryAggregate[Evt, St, Cmd, Rej](override val name: String,
+                                               initial: St,
+                                               next: (St, Evt) => St,
+                                               eval: (St, Cmd) => Either[Rej, Evt])
+    extends Aggregate[Id] {
 
   override type Identifier = String
-  override type Event = Evt
-  override type State = St
-  override type Command = Cmd
-  override type Rejection = Rej
+  override type Event      = Evt
+  override type State      = St
+  override type Command    = Cmd
+  override type Rejection  = Rej
 
   private val newStore = new ConcurrentHashMap[String, Value[State, Event, Rejection]]()
 
   override def append(id: Identifier, event: Event): Long = {
-    newStore.merge(id,
-      Value(next(initial, event), Vector(event)),
-      (current, _) => Value(next(current.state, event), current.events :+ event)
-    ).events.size.toLong
+    newStore
+      .merge(id,
+             Value(next(initial, event), Vector(event)),
+             (current, _) => Value(next(current.state, event), current.events :+ event))
+      .events
+      .size
+      .toLong
   }
 
   override def lastSequenceNr(id: Identifier): Long = {
@@ -48,19 +54,20 @@ final class MemoryAggregate[Evt, St, Cmd, Rej]
     valueOrEmpty(id).state
 
   override def eval(id: Identifier, cmd: Command): Either[Rejection, State] = {
-    val value = newStore.merge(id,
-      {
+    val value = newStore.merge(
+      id, {
         eval(initial, cmd) match {
-          case Left(rejection)   => empty.copy(rejection = Some(rejection))
-          case Right(ev)         => Value(next(initial, ev), Vector(ev))
+          case Left(rejection) => empty.copy(rejection = Some(rejection))
+          case Right(ev)       => Value(next(initial, ev), Vector(ev))
         }
       },
       (current, _) => {
         eval(current.state, cmd) match {
-          case Left(rejection)   => current.copy(rejection = Some(rejection))
-          case Right(ev)         => Value(next(current.state, ev), current.events :+ ev)
+          case Left(rejection) => current.copy(rejection = Some(rejection))
+          case Right(ev)       => Value(next(current.state, ev), current.events :+ ev)
         }
-      })
+      }
+    )
     value.rejection.map(rej => Left(rej)).getOrElse(Right(value.state))
   }
 
@@ -71,6 +78,7 @@ final class MemoryAggregate[Evt, St, Cmd, Rej]
 }
 
 object MemoryAggregate {
+
   /**
     * Constructs a new in-memory aggregate while keeping track of the event, state and command types defined.
     *
@@ -84,24 +92,25 @@ object MemoryAggregate {
     * @tparam Rejection the type of rejections returned by this aggregate
     * @return a new aggregate instance
     */
-  final def apply[Event, State, Command, Rejection]
-  (name: String)
-  (
-    initial: State,
-    next: (State, Event) => State,
-    eval: (State, Command) => Either[Rejection, Event]
+  final def apply[Event, State, Command, Rejection](name: String)(
+      initial: State,
+      next: (State, Event) => State,
+      eval: (State, Command) => Either[Rejection, Event]
   ): Aggregate.Aux[Id, String, Event, State, Command, Rejection] =
     new MemoryAggregate(name, initial, next, eval)
 
-  private[mem] final case class Value[State, Event, Rejection](state: State, events: Vector[Event], rejection: Option[Rejection] = None)
+  private[mem] final case class Value[State, Event, Rejection](state: State,
+                                                               events: Vector[Event],
+                                                               rejection: Option[Rejection] = None)
 
-  private def convertToF[F[_]: Applicative, Ident, Evt, St, Cmd, Rej](agg: Aggregate.Aux[Id, Ident, Evt, St, Cmd, Rej]) =
+  private def convertToF[F[_]: Applicative, Ident, Evt, St, Cmd, Rej](
+      agg: Aggregate.Aux[Id, Ident, Evt, St, Cmd, Rej]) =
     new Aggregate[F] {
       override type Identifier = Ident
-      override type Event = Evt
-      override type State = St
-      override type Command = Cmd
-      override type Rejection = Rej
+      override type Event      = Evt
+      override type State      = St
+      override type Command    = Cmd
+      override type Rejection  = Rej
 
       import cats.syntax.applicative._
 
@@ -112,7 +121,6 @@ object MemoryAggregate {
 
       override def currentState(id: Identifier): F[State] =
         agg.currentState(id).pure
-
 
       override def append(id: Identifier, event: Event): F[Long] =
         agg.append(id, event).pure

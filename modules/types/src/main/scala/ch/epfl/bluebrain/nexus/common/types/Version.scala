@@ -135,13 +135,13 @@ final case class PartialVersion(major: Int, rest: List[Int]) {
     * @return true if the versions are compatible, false otherwise
     */
   def isCompatible(ver: Version): Boolean = (this, ver) match {
-    case (PartialVersion(pMajor, Nil), Version(vMajor, _, _))                               =>
+    case (PartialVersion(pMajor, Nil), Version(vMajor, _, _)) =>
       pMajor == vMajor
-    case (PartialVersion(pMajor, pMinor :: Nil), Version(vMajor, vMinor, _))                =>
+    case (PartialVersion(pMajor, pMinor :: Nil), Version(vMajor, vMinor, _)) =>
       pMajor == vMajor && pMinor == vMinor
     case (PartialVersion(pMajor, pMinor :: pPatch :: Nil), Version(vMajor, vMinor, vPatch)) =>
       pMajor == vMajor && pMinor == vMinor && pPatch == vPatch
-    case _                                                                                  =>
+    case _ =>
       false
   }
 

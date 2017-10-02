@@ -24,14 +24,16 @@ import scala.concurrent.duration.FiniteDuration
   * @tparam Rejection the type of rejections issued for commands that cannot be applied
   */
 class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
-  initial: State,
-  next: (State, Event) => State,
-  eval: (State, Command) => Either[Rejection, Event],
-  passivationTimeout: FiniteDuration) extends PersistentActor with ActorLogging {
+    initial: State,
+    next: (State, Event) => State,
+    eval: (State, Command) => Either[Rejection, Event],
+    passivationTimeout: FiniteDuration)
+    extends PersistentActor
+    with ActorLogging {
 
   override val persistenceId: String = URLDecoder.decode(self.path.name, "UTF-8")
 
-  private val Event = the[Typeable[Event]]
+  private val Event   = the[Typeable[Event]]
   private val Command = the[Typeable[Command]]
 
   private var state: State = initial
@@ -42,7 +44,7 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
   }
 
   override def receiveCommand: Receive = {
-    case Append(id, value)   =>
+    case Append(id, value) =>
       Event.cast(value) match {
         case Some(event) =>
           persist(event) { _ =>
@@ -56,7 +58,7 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
           sender() ! TypeError(id, Event.describe, value)
         // $COVERAGE-ON$
       }
-    case Eval(id, value)     =>
+    case Eval(id, value) =>
       Command.cast(value) match {
         case Some(cmd) =>
           val result = eval(state, cmd)
@@ -64,7 +66,7 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
             case Left(rejection) =>
               log.debug("Rejected command '{}' on actor '{}' because '{}'", cmd, persistenceId, rejection)
               sender() ! Evaluated(id, result)
-            case Right(event)            =>
+            case Right(event) =>
               persist(event) { _ =>
                 log.debug("Applied event '{}' to actor '{}'", event, persistenceId)
                 state = next(state, event)
@@ -77,7 +79,7 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
           sender() ! TypeError(id, Command.describe, value)
         // $COVERAGE-ON$
       }
-    case GetLastSeqNr(id)    =>
+    case GetLastSeqNr(id) =>
       sender() ! LastSeqNr(id, lastSequenceNr)
     case GetCurrentState(id) =>
       sender() ! CurrentState(id, state)
@@ -86,7 +88,7 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
   override def receiveRecover: Receive = {
     case RecoveryCompleted =>
       log.debug("Recovery completed on actor '{}'", persistenceId)
-    case value             =>
+    case value =>
       Event.cast(value) match {
         case Some(e) =>
           state = next(state, e)

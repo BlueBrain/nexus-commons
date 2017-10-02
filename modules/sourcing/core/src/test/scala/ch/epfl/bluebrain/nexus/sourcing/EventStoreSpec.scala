@@ -51,28 +51,28 @@ object EventStoreSpec {
 
   sealed trait Evt extends Product with Serializable
   object Evt {
-    final case object FirstEvent extends Evt
+    final case object FirstEvent  extends Evt
     final case object SecondEvent extends Evt
   }
 
   sealed trait Cmd extends Product with Serializable
   object Cmd {
-    final case object FirstCmd extends Cmd
+    final case object FirstCmd  extends Cmd
     final case object SecondCmd extends Cmd
   }
 
   sealed trait St extends Product with Serializable
   object St {
-    final case object First extends St
+    final case object First  extends St
     final case object Second extends St
   }
 
   implicit val aggregate: Aggregate.Aux[Id, String, Evt, St, Cmd, String] = new Aggregate[Id] {
     override type Identifier = String
-    override type Event = Evt
-    override type State = St
-    override type Command = Cmd
-    override type Rejection = String
+    override type Event      = Evt
+    override type State      = St
+    override type Command    = Cmd
+    override type Rejection  = String
 
     override def eval(id: String, cmd: Cmd): Either[String, St] = cmd match {
       case FirstCmd  => Right(First)

@@ -4,6 +4,7 @@ package ch.epfl.bluebrain.nexus.sourcing.akka
   * Enumeration that defines the message types exchanged with the underlying persistent actor.
   */
 sealed trait Msg extends Product with Serializable {
+
   /**
     * @return the persistent id
     */

@@ -7,6 +7,7 @@ package ch.epfl.bluebrain.nexus.sourcing
   * @tparam F the monadic effect type
   */
 trait Aggregate[F[_]] extends StatefulEventLog[F] {
+
   /**
     * The command type that this aggregate accepts.
     */
@@ -29,6 +30,7 @@ trait Aggregate[F[_]] extends StatefulEventLog[F] {
 }
 
 object Aggregate {
+
   /**
     * Lifts abstract type members of an Aggregate as type parameters.
     *
@@ -41,9 +43,9 @@ object Aggregate {
     */
   type Aux[F[_], Id, Ev, St, Cmd, Rej] = Aggregate[F] {
     type Identifier = Id
-    type Event = Ev
-    type State = St
-    type Command = Cmd
-    type Rejection = Rej
+    type Event      = Ev
+    type State      = St
+    type Command    = Cmd
+    type Rejection  = Rej
   }
 }

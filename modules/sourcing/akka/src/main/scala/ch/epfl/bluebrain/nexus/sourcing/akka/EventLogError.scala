@@ -21,7 +21,7 @@ object EventLogError {
     * @param received the received message
     */
   final case class TypeError(id: String, expected: String, received: Any)
-    extends EventLogError(s"Received an unexpected '$received', expected '$expected' type for action on '$id'")
+      extends EventLogError(s"Received an unexpected '$received', expected '$expected' type for action on '$id'")
 
   /**
     * Signals a timeout while waiting for the argument action to be evaluated on the argument id.
@@ -31,7 +31,7 @@ object EventLogError {
     * @tparam A the type of the action performed
     */
   final case class TimeoutError[A](id: String, action: A)
-    extends EventLogError(s"Timed out while expecting reply for action on '$id'")
+      extends EventLogError(s"Timed out while expecting reply for action on '$id'")
 
   /**
     * Error definition to signal that the underlying persistent actor has sent an unexpected message for an intended
@@ -44,7 +44,7 @@ object EventLogError {
     * @tparam B the type of the reply received
     */
   final case class UnexpectedReply[A, B](id: String, action: A, reply: B)
-    extends EventLogError(s"Received an unexpected reply for action on '$id")
+      extends EventLogError(s"Received an unexpected reply for action on '$id")
 
   /**
     * Error definition to signal an unknown error that occurred materialized as an exception during the processing of
@@ -56,6 +56,6 @@ object EventLogError {
     * @tparam A the type of the action performed
     */
   final case class UnknownError[A](id: String, action: A, th: Throwable)
-    extends EventLogError(s"Unknown error occurred while executing action on '$id'")
+      extends EventLogError(s"Unknown error occurred while executing action on '$id'")
 
 }

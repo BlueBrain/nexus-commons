@@ -8,9 +8,9 @@ import scala.util.Random
 
 class SparqlClientFixture {
 
-  val rand: String = genString(length = 8)
-  val ctx: Uri = Uri(s"http://$localhost:8080/graphs/$rand")
-  val id: String = genString()
+  val rand: String  = genString(length = 8)
+  val ctx: Uri      = Uri(s"http://$localhost:8080/graphs/$rand")
+  val id: String    = genString()
   val label: String = genString()
   val value: String = genString()
 }

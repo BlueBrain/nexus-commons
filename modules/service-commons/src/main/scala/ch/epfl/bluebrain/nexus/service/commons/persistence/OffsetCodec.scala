@@ -26,7 +26,6 @@ trait OffsetCodec {
     cursor.get[Long]("value").map(value => Sequence(value))
   }
 
-
   final implicit val timeBasedUUIDEncoder: Encoder[TimeBasedUUID] = Encoder.instance { uuid =>
     Json.obj("value" -> Encoder.encodeUUID(uuid.value))
   }
@@ -48,20 +47,20 @@ trait OffsetCodec {
   }
 
   final implicit val offsetDecoder: Decoder[Offset] = Decoder.instance { cursor =>
-    val sequence = Typeable[Sequence].describe
+    val sequence      = Typeable[Sequence].describe
     val timeBasedUUID = Typeable[TimeBasedUUID].describe
-    val noOffset = Typeable[NoOffset.type].describe
+    val noOffset      = Typeable[NoOffset.type].describe
     cursor.get[String]("type").flatMap {
       case `sequence`      => cursor.as[Sequence]
       case `timeBasedUUID` => cursor.as[TimeBasedUUID]
       case `noOffset`      => cursor.as[NoOffset.type]
       // $COVERAGE-OFF$
-      case other           => Left(DecodingFailure(s"Unknown discriminator value '$other'", cursor.history))
+      case other => Left(DecodingFailure(s"Unknown discriminator value '$other'", cursor.history))
       // $COVERAGE-ON$
     }
   }
 
-  private def encodeDiscriminated[A: Encoder : Typeable](a: A) =
+  private def encodeDiscriminated[A: Encoder: Typeable](a: A) =
     Encoder[A].apply(a).deepMerge(Json.obj("type" -> Json.fromString(Typeable[A].describe)))
 }
 

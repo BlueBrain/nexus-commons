@@ -15,17 +15,20 @@ class OffsetCodecSpec extends WordSpecLike with Matchers with Inspectors {
     val mapping = Map(
       Sequence(14L)       -> """{"type":"Sequence","value":14}""",
       TimeBasedUUID(uuid) -> s"""{"type":"TimeBasedUUID","value":"$uuid"}""",
-      NoOffset            -> """{"type":"NoOffset"}""")
+      NoOffset            -> """{"type":"NoOffset"}"""
+    )
 
     "properly encode offset values" in {
-      forAll(mapping.toList) { case (off, repr) =>
-        Encoder[Offset].apply(off).noSpaces shouldEqual repr
+      forAll(mapping.toList) {
+        case (off, repr) =>
+          Encoder[Offset].apply(off).noSpaces shouldEqual repr
       }
     }
 
     "properly decode offset values" in {
-      forAll(mapping.toList) { case (off, repr) =>
-        decode[Offset](repr) shouldEqual Right(off)
+      forAll(mapping.toList) {
+        case (off, repr) =>
+          decode[Offset](repr) shouldEqual Right(off)
       }
     }
   }

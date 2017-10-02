@@ -45,9 +45,11 @@ trait ProjectionStorage {
   * @param table    the table where projection offsets are stored
   * @param ec       an implicitly available execution context
   */
-final class CassandraProjectionStorage
-  (session: CassandraSession, keyspace: String, table: String)(implicit ec: ExecutionContext)
-  extends ProjectionStorage with Extension with OffsetCodec {
+final class CassandraProjectionStorage(session: CassandraSession, keyspace: String, table: String)(
+    implicit ec: ExecutionContext)
+    extends ProjectionStorage
+    with Extension
+    with OffsetCodec {
   import io.circe.parser._
 
   override def storeOffset(identifier: String, offset: Offset): Future[Unit] = {
@@ -68,11 +70,11 @@ object ProjectionStorage extends ExtensionId[CassandraProjectionStorage] with Ex
   override def lookup(): ExtensionId[_ <: Extension] = ProjectionStorage
 
   override def createExtension(system: ExtendedActorSystem): CassandraProjectionStorage = {
-    implicit val ec = system.dispatcher
-    val journalConfig = lookupConfig(system)
+    implicit val ec     = system.dispatcher
+    val journalConfig   = lookupConfig(system)
     val projectionTable = journalConfig.getString("projection-table")
-    val config = new CassandraPluginConfig(system, journalConfig)
-    val log = Logging(system, "ProjectionStorage")
+    val config          = new CassandraPluginConfig(system, journalConfig)
+    val log             = Logging(system, "ProjectionStorage")
 
     val session = new CassandraSession(
       system,
@@ -81,8 +83,7 @@ object ProjectionStorage extends ExtensionId[CassandraProjectionStorage] with Ex
       ec,
       log,
       metricsCategory = "projection-storage",
-      init = session =>
-        executeCreateKeyspaceAndTable(session, config, projectionTable)
+      init = session => executeCreateKeyspaceAndTable(session, config, projectionTable)
     )
     new CassandraProjectionStorage(session, config.keyspace, projectionTable)
   }
@@ -97,8 +98,8 @@ object ProjectionStorage extends ExtensionId[CassandraProjectionStorage] with Ex
         identifier varchar primary key, offset text)
      """
 
-  private def executeCreateKeyspaceAndTable(session: Session, config: CassandraPluginConfig, tableName: String)
-                                           (implicit ec: ExecutionContext): Future[Done] = {
+  private def executeCreateKeyspaceAndTable(session: Session, config: CassandraPluginConfig, tableName: String)(
+      implicit ec: ExecutionContext): Future[Done] = {
     import akka.persistence.cassandra.listenableFutureToFuture
     val keyspace: Future[Done] =
       if (config.keyspaceAutoCreate) session.executeAsync(createKeyspace(config)).map(_ => Done)

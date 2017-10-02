@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 //noinspection TypeAnnotation
 @DoNotDiscover
 class ResumableProjectionSpec
-  extends TestKitBase
+    extends TestKitBase
     with WordSpecLike
     with Matchers
     with ScalaFutures

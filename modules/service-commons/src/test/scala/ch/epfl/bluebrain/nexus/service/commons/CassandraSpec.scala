@@ -7,10 +7,11 @@ import ch.epfl.bluebrain.nexus.service.commons.persistence.{ResumableProjectionS
 import org.scalatest.{BeforeAndAfterAll, Suites}
 
 class CassandraSpec
-  extends Suites(
-    new SequentialTagIndexerSpec,
-    new ResumableProjectionSpec,
-  ) with BeforeAndAfterAll {
+    extends Suites(
+      new SequentialTagIndexerSpec,
+      new ResumableProjectionSpec,
+    )
+    with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -20,7 +21,8 @@ class CassandraSpec
       configResource = CassandraLauncher.DefaultTestConfigResource,
       clean = true,
       port = 0,
-      CassandraLauncher.classpathForResources("logback-test.xml"))
+      CassandraLauncher.classpathForResources("logback-test.xml")
+    )
   }
 
   override protected def afterAll(): Unit = {

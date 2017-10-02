@@ -25,10 +25,10 @@ import scala.concurrent.ExecutionContext
   * @tparam F         the monadic effect type
   */
 class SparqlClient[F[_]](sparqlBase: Uri)(implicit
-  cl: UntypedHttpClient[F],
-  rs: HttpClient[F, ResultSet],
-  ec: ExecutionContext,
-  F: MonadError[F, Throwable]) {
+                                          cl: UntypedHttpClient[F],
+                                          rs: HttpClient[F, ResultSet],
+                                          ec: ExecutionContext,
+                                          F: MonadError[F, Throwable]) {
 
   private val log = Logger[this.type]
 
@@ -53,7 +53,7 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
   def clearGraph(index: String, ctx: Uri): F[Unit] = {
     val clear = new UpdateClear(Target.create(ctx.toString()))
     val query = UpdateFactory.create().add(clear).toString
-    val uri = endpointFor(index).withQuery(Query("update" -> query, "using-named-graph-uri" -> ctx.toString()))
+    val uri   = endpointFor(index).withQuery(Query("update" -> query, "using-named-graph-uri" -> ctx.toString()))
     execute(Post(uri), Set(StatusCodes.OK), "clear graph")
   }
 
@@ -109,9 +109,9 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
     * @return the query result set
     */
   def query(index: String, query: String): F[ResultSet] = {
-    val accept = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
+    val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
     val formData = FormData("query" -> query)
-    val request = Post(endpointFor(index), formData).withHeaders(accept)
+    val request  = Post(endpointFor(index), formData).withHeaders(accept)
     rs(request)
   }
 
@@ -126,13 +126,14 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
     val req = Get(s"$sparqlBase/namespace/$index")
     cl(req).flatMap { resp =>
       resp.status match {
-        case StatusCodes.OK       =>
+        case StatusCodes.OK =>
           cl.discardBytes(resp.entity).map(_ => true)
         case StatusCodes.NotFound =>
           cl.discardBytes(resp.entity).map(_ => false)
-        case other                =>
+        case other =>
           cl.toString(resp.entity).flatMap { body =>
-            log.error(s"Unexpected Sparql response for intent 'namespace exists':\nRequest: '${req.method} ${req.uri}'\nStatus: '$other'\nResponse: '$body'")
+            log.error(
+              s"Unexpected Sparql response for intent 'namespace exists':\nRequest: '${req.method} ${req.uri}'\nStatus: '$other'\nResponse: '$body'")
             F.raiseError(UnexpectedSparqlResponse(resp.status, body))
           }
       }
@@ -148,7 +149,7 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
   def createIndex(name: String, properties: Map[String, String]): F[Unit] = {
     val updated = properties + ("com.bigdata.rdf.sail.namespace" -> name)
     val payload = updated.map { case (key, value) => s"$key=$value" }.mkString("\n")
-    val req = Post(s"$sparqlBase/namespace", HttpEntity(payload))
+    val req     = Post(s"$sparqlBase/namespace", HttpEntity(payload))
     execute(req, Set(StatusCodes.Created), "create index")
   }
 
@@ -161,7 +162,8 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
         cl.discardBytes(resp.entity).map(_ => ())
       else
         cl.toString(resp.entity).flatMap { body =>
-          log.error(s"Unexpected Sparql response for intent '$intent':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '$body'")
+          log.error(
+            s"Unexpected Sparql response for intent '$intent':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '$body'")
           F.raiseError(UnexpectedSparqlResponse(resp.status, body))
         }
     }
@@ -177,9 +179,9 @@ object SparqlClient {
     * @tparam F         the monadic effect type
     */
   final def apply[F[_]](sparqlBase: Uri)(implicit
-    cl: UntypedHttpClient[F],
-    rs: HttpClient[F, ResultSet],
-    ec: ExecutionContext,
-    F: MonadError[F, Throwable]): SparqlClient[F] =
+                                         cl: UntypedHttpClient[F],
+                                         rs: HttpClient[F, ResultSet],
+                                         ec: ExecutionContext,
+                                         F: MonadError[F, Throwable]): SparqlClient[F] =
     new SparqlClient[F](sparqlBase)
 }

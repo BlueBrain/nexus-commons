@@ -33,15 +33,18 @@ class MemoryAggregateSpec extends WordSpecLike with Matchers with TryValues {
       val id = genId
       aggregate.append(id, PermissionsAppended(own))
       aggregate.append(id, PermissionsAppended(read))
-      aggregate.foldLeft(id, List.empty[Event]) {
-        case (acc, ev) => ev :: acc
-      }.success.value shouldEqual List(PermissionsAppended(read), PermissionsAppended(own))
+      aggregate
+        .foldLeft(id, List.empty[Event]) {
+          case (acc, ev) => ev :: acc
+        }
+        .success
+        .value shouldEqual List(PermissionsAppended(read), PermissionsAppended(own))
     }
     "reject out of order commands" in {
       val id = genId
       aggregate.eval(id, DeletePermissions).success.value match {
         case Left(_: Rejection) => ()
-        case Right(_) => fail("should have rejected deletion on initial state")
+        case Right(_)           => fail("should have rejected deletion on initial state")
       }
     }
     "return the current computed state" in {

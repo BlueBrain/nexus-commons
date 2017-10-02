@@ -12,9 +12,9 @@ import shapeless.ops.coproduct.Unifier
   * @param U          a unifier instance for the coproduct ''C''
   * @tparam C the type of the underlying coproduct
   */
-class AkkaCoproductSerializer[C <: Coproduct]
-  (override val identifier: Int)
-  (implicit C: CoproductSerializer[C], U: Unifier[C]) extends SerializerWithStringManifest {
+class AkkaCoproductSerializer[C <: Coproduct](override val identifier: Int)(implicit C: CoproductSerializer[C],
+                                                                            U: Unifier[C])
+    extends SerializerWithStringManifest {
 
   override final def manifest(o: AnyRef): String =
     C.manifest(o)
@@ -25,6 +25,7 @@ class AkkaCoproductSerializer[C <: Coproduct]
       .getOrElse(throw new IllegalArgumentException(s"Unable to encode to binary; unknown type '$o'"))
 
   override final def fromBinary(bytes: Array[Byte], manifest: String): AnyRef =
-    C.fromBinary(bytes, manifest).map(c => c.unify.asInstanceOf[AnyRef])
+    C.fromBinary(bytes, manifest)
+      .map(c => c.unify.asInstanceOf[AnyRef])
       .getOrElse(throw new IllegalArgumentException(s"Unable to decode from binary; unknown manifest '$manifest'"))
 }

@@ -8,6 +8,7 @@ package ch.epfl.bluebrain.nexus.sourcing
   * @tparam F the monadic effect type
   */
 trait StatefulEventLog[F[_]] extends EventLog[F] {
+
   /**
     * The event log state type.
     */
@@ -23,6 +24,7 @@ trait StatefulEventLog[F[_]] extends EventLog[F] {
 }
 
 object StatefulEventLog {
+
   /**
     * Lifts abstract type members of an StatefulEventLog as type parameters.
     *
@@ -33,7 +35,7 @@ object StatefulEventLog {
     */
   type Aux[F[_], Id, Ev, St] = StatefulEventLog[F] {
     type Identifier = Id
-    type Event = Ev
-    type State = St
+    type Event      = Ev
+    type State      = St
   }
 }

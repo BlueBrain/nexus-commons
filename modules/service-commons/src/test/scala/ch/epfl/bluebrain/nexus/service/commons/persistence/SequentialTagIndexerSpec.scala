@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 //noinspection TypeAnnotation
 @DoNotDiscover
 class SequentialTagIndexerSpec
-  extends TestKitBase
+    extends TestKitBase
     with WordSpecLike
     with Matchers
     with ScalaFutures
@@ -27,8 +27,8 @@ class SequentialTagIndexerSpec
     with Eventually {
 
   implicit lazy val system = SystemBuilder.cluster("SequentialTagIndexerSpec")
-  implicit val ec = system.dispatcher
-  implicit val mt = ActorMaterializer()
+  implicit val ec          = system.dispatcher
+  implicit val mt          = ActorMaterializer()
 
   private val cluster = Cluster(system)
 
@@ -46,7 +46,7 @@ class SequentialTagIndexerSpec
     PatienceConfig(30 seconds, 1 second)
 
   "A SequentialIndexer" should {
-    val pluginId = "cassandra-query-journal"
+    val pluginId         = "cassandra-query-journal"
     val sourcingSettings = SourcingAkkaSettings(journalPluginId = pluginId)
 
     "index existing events" in {
@@ -54,8 +54,9 @@ class SequentialTagIndexerSpec
       agg.append("first", Fixture.Executed).futureValue
 
       val count = new AtomicLong(0L)
-      val index = (_: Event) => Future.successful[Unit] {
-        val _ = count.incrementAndGet()
+      val index = (_: Event) =>
+        Future.successful[Unit] {
+          val _ = count.incrementAndGet()
       }
       val projId = UUID.randomUUID().toString
 
@@ -79,8 +80,9 @@ class SequentialTagIndexerSpec
       agg.append("selected", Fixture.OtherExecuted).futureValue
 
       val count = new AtomicLong(0L)
-      val index = (_: OtherExecuted.type) => Future.successful[Unit] {
-        val _ = count.incrementAndGet()
+      val index = (_: OtherExecuted.type) =>
+        Future.successful[Unit] {
+          val _ = count.incrementAndGet()
       }
       val projId = UUID.randomUUID().toString
 
@@ -100,8 +102,9 @@ class SequentialTagIndexerSpec
       agg.append("first", Fixture.AnotherExecuted).futureValue
 
       val count = new AtomicLong(0L)
-      val index = (_: Event) => Future.successful[Unit] {
-        val _ = count.incrementAndGet()
+      val index = (_: Event) =>
+        Future.successful[Unit] {
+          val _ = count.incrementAndGet()
       }
       val projId = UUID.randomUUID().toString
 

@@ -31,8 +31,8 @@ object SystemBuilder {
     */
   final def persistence(name: String): ActorSystem = {
     val free = CassandraLauncher.randomPort
-    val config = ConfigFactory.parseString(
-      s"""
+    val config = ConfigFactory
+      .parseString(s"""
          |test.cassandra-port = $free
        """.stripMargin)
       .withFallback(ConfigFactory.parseResources("cassandra.conf"))
@@ -49,16 +49,16 @@ object SystemBuilder {
     */
   final def cluster(name: String): ActorSystem = {
     val cassandra = CassandraLauncher.randomPort
-    val remote = freePort()
-    val config = ConfigFactory.parseString(
-      s"""
+    val remote    = freePort()
+    val config = ConfigFactory
+      .parseString(s"""
          |test.cassandra-port = $cassandra
          |test.remote-port = $remote
        """.stripMargin)
-        .withFallback(ConfigFactory.parseResources("cluster.conf"))
-        .withFallback(ConfigFactory.parseResources("cassandra.conf"))
-        .withFallback(ConfigFactory.load())
-        .resolve()
+      .withFallback(ConfigFactory.parseResources("cluster.conf"))
+      .withFallback(ConfigFactory.parseResources("cassandra.conf"))
+      .withFallback(ConfigFactory.load())
+      .resolve()
     ActorSystem(name, config)
   }
 }

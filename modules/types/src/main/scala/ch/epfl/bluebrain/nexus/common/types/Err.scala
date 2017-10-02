@@ -8,5 +8,5 @@ package ch.epfl.bluebrain.nexus.common.types
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
 abstract class Err(val message: String) extends Exception {
   override def fillInStackTrace(): Err = this
-  override val getMessage: String = message
+  override val getMessage: String      = message
 }

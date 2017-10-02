@@ -20,24 +20,24 @@ import scala.util.control.NonFatal
 /**
   * An aggregate implementation backed by akka persistent actors sharded across a cluster.
   */
-final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
-  override val name: String,
-  ref: ActorRef,
-  pq: CurrentEventsByPersistenceIdQuery,
-  logger: LoggingAdapter)
-(implicit
-  ec: ExecutionContext,
-  mt: Materializer,
-  tm: Timeout) extends Aggregate[Future] {
+final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](override val name: String,
+                                                                               ref: ActorRef,
+                                                                               pq: CurrentEventsByPersistenceIdQuery,
+                                                                               logger: LoggingAdapter)(
+    implicit
+    ec: ExecutionContext,
+    mt: Materializer,
+    tm: Timeout)
+    extends Aggregate[Future] {
 
   override type Identifier = String
-  override type Event = Evt
-  override type State = St
-  override type Command = Cmd
-  override type Rejection = Rej
+  override type Event      = Evt
+  override type State      = St
+  override type Command    = Cmd
+  override type Rejection  = Rej
 
-  private val Event = the[Typeable[Event]]
-  private val State = the[Typeable[State]]
+  private val Event     = the[Typeable[Event]]
+  private val State     = the[Typeable[State]]
   private val Rejection = the[Typeable[Rejection]]
 
   override def append(id: Identifier, event: Event): Future[Long] = {
@@ -48,7 +48,7 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
       case _: AskTimeoutException =>
         logger.error("Timed out while appending a new event to '{}-{}'", name, id)
         Future.failed(TimeoutError(id, action))
-      case NonFatal(th)           =>
+      case NonFatal(th) =>
         logger.error(th, "Unexpected exception while a new event to '{}-{}'", name, id)
         Future.failed(UnknownError(id, action, th))
       // $COVERAGE-ON$
@@ -60,7 +60,7 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
       case t: TypeError =>
         logger.error("Attempted to append an event of unexpected type '{}' to '{}-{}'", t.received, name, id)
         Future.failed(t)
-      case unexpected   =>
+      case unexpected =>
         logger.error("Received an unexpected reply '{}' while appending to '{}-{}'", unexpected, name, id)
         Future.failed(UnexpectedReply(id, action, unexpected))
       // $COVERAGE-ON$
@@ -75,7 +75,7 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
       case _: AskTimeoutException =>
         logger.error("Timed out while fetching the last sequence nr of '{}-{}'", name, id)
         Future.failed(TimeoutError(id, action))
-      case NonFatal(th)           =>
+      case NonFatal(th) =>
         logger.error(th, "Unexpected exception while fetching the last sequence nr of '{}-{}'", name, id)
         Future.failed(UnknownError(id, action, th))
       // $COVERAGE-ON$
@@ -85,7 +85,10 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
         Future.successful(lsn)
       // $COVERAGE-OFF$
       case unexpected =>
-        logger.error("Received an unexpected reply '{}' while fetching the last sequence nr of '{}-{}'", unexpected, name, id)
+        logger.error("Received an unexpected reply '{}' while fetching the last sequence nr of '{}-{}'",
+                     unexpected,
+                     name,
+                     id)
         Future.failed(UnexpectedReply(id, action, unexpected))
       // $COVERAGE-ON$
     }
@@ -103,7 +106,10 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
           case None =>
             logger.error(
               "Received unexpected event while replaying for '{}-{}', was '{}', but expected type '{}'; skipping",
-              name, id, envelope.event, Event.describe)
+              name,
+              id,
+              envelope.event,
+              Event.describe)
             acc
           // $COVERAGE-ON$
         }
@@ -118,7 +124,7 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
       case _: AskTimeoutException =>
         logger.error("Timed out while fetching the current state of '{}-{}'", name, id)
         Future.failed(TimeoutError(id, action))
-      case NonFatal(th)           =>
+      case NonFatal(th) =>
         logger.error(th, "Unexpected exception while fetching the current state of '{}-{}'", name, id)
         Future.failed(UnknownError(id, action, th))
       // $COVERAGE-ON$
@@ -130,15 +136,16 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
             Future.successful(st)
           // $COVERAGE-OFF$
           case None =>
-            logger.error("Received an unknown current state '{}' from '{}-{}'",
-              state, name, id)
+            logger.error("Received an unknown current state '{}' from '{}-{}'", state, name, id)
             Future.failed(TypeError(id, State.describe, state))
           // $COVERAGE-ON$
         }
       // $COVERAGE-OFF$
       case unexpected =>
         logger.error("Received an unexpected reply '{}' while fetching the current state of '{}-{}'",
-          unexpected, name, id)
+                     unexpected,
+                     name,
+                     id)
         Future.failed(UnexpectedReply(id, action, unexpected))
       // $COVERAGE-ON$
     }
@@ -152,7 +159,7 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
       case _: AskTimeoutException =>
         logger.error("Timed out while evaluating command '{}' on '{}-{}'", cmd, name, id)
         Future.failed(TimeoutError(id, action))
-      case NonFatal(th)           =>
+      case NonFatal(th) =>
         logger.error(th, "Unexpected exception while evaluating command '{}' on '{}-{}'", cmd, name, id)
         Future.failed(UnknownError(id, action, th))
       // $COVERAGE-ON$
@@ -164,27 +171,28 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](
             Future.successful(Left(rej))
           // $COVERAGE-OFF$
           case None =>
-            logger.error("Received an unknown rejection '{}' from '{}-{}'",
-              rejection, name, id)
+            logger.error("Received an unknown rejection '{}' from '{}-{}'", rejection, name, id)
             Future.failed(TypeError(id, Rejection.describe, rejection))
           // $COVERAGE-ON$
         }
-      case Evaluated(`id`, Right(state))    =>
+      case Evaluated(`id`, Right(state)) =>
         State.cast(state) match {
           case Some(st) =>
             logger.debug("Accepted command '{}' resulting in '{}' on '{}-{}'", cmd, st, name, id)
             Future.successful(Right(st))
           // $COVERAGE-OFF$
           case None =>
-            logger.error("Received an unknown current state '{}' from '{}-{}'",
-              state, name, id)
+            logger.error("Received an unknown current state '{}' from '{}-{}'", state, name, id)
             Future.failed(TypeError(id, State.describe, state))
           // $COVERAGE-ON$
         }
       // $COVERAGE-OFF$
       case unexpected =>
         logger.error("Received an unexpected reply '{}' while evaluating command '{}' '{}-{}'",
-          unexpected, cmd, name, id)
+                     unexpected,
+                     cmd,
+                     name,
+                     id)
         Future.failed(UnexpectedReply(id, action, unexpected))
       // $COVERAGE-ON$
     }
@@ -217,18 +225,22 @@ object ShardingAggregate {
     * @tparam Rejection the type of rejection returned by this aggregate
     * @return a new aggregate instance
     */
-  final def apply[Event: Typeable, State: Typeable, Command: Typeable, Rejection: Typeable]
-    (name: String, settings: SourcingAkkaSettings)
-    (initial: State, next: (State, Event) => State, eval: (State, Command) => Either[Rejection, Event])
-    (implicit as: ActorSystem, mt: Materializer): ShardingAggregate[Event, State, Command, Rejection] = {
+  final def apply[Event: Typeable, State: Typeable, Command: Typeable, Rejection: Typeable](
+      name: String,
+      settings: SourcingAkkaSettings)(initial: State,
+                                      next: (State, Event) => State,
+                                      eval: (State, Command) => Either[Rejection, Event])(
+      implicit as: ActorSystem,
+      mt: Materializer): ShardingAggregate[Event, State, Command, Rejection] = {
 
     implicit val ec = as.dispatcher
     implicit val tm = Timeout(settings.askTimeout)
 
     val logger = Logging(as, s"ShardingAggregate($name)")
-    val props = Props[AggregateActor[Event, State, Command, Rejection]](new AggregateActor(initial, next, eval, settings.passivationTimeout))
+    val props = Props[AggregateActor[Event, State, Command, Rejection]](
+      new AggregateActor(initial, next, eval, settings.passivationTimeout))
     val clusterShardingSettings = settings.shardingSettingsOrDefault(as)
-    val pq = PersistenceQuery(as).readJournalFor[CurrentEventsByPersistenceIdQuery](settings.journalPluginId)
+    val pq                      = PersistenceQuery(as).readJournalFor[CurrentEventsByPersistenceIdQuery](settings.journalPluginId)
 
     val ref = ClusterSharding(as)
       .start(name, props, clusterShardingSettings, entityExtractor, shardExtractor(settings.shards))
