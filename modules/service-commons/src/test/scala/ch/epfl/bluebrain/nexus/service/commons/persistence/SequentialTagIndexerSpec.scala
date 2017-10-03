@@ -49,21 +49,30 @@ class SequentialTagIndexerSpec
     val pluginId         = "cassandra-query-journal"
     val sourcingSettings = SourcingAkkaSettings(journalPluginId = pluginId)
 
+    def initFunction(init: AtomicLong): () => Future[Unit] =
+      () => {
+        init.incrementAndGet()
+        Future.successful(())
+      }
+
     "index existing events" in {
       val agg = ShardingAggregate("agg", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
       agg.append("first", Fixture.Executed).futureValue
 
       val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
       val index = (_: Event) =>
         Future.successful[Unit] {
           val _ = count.incrementAndGet()
       }
       val projId = UUID.randomUUID().toString
 
-      val indexer = TestActorRef(new SequentialTagIndexer[Event](index, projId, pluginId, "executed"))
+      val indexer =
+        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "executed"))
 
       eventually {
         count.get() shouldEqual 1L
+        init.get shouldEqual 11L
       }
 
       watch(indexer)
@@ -80,16 +89,20 @@ class SequentialTagIndexerSpec
       agg.append("selected", Fixture.OtherExecuted).futureValue
 
       val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
+
       val index = (_: OtherExecuted.type) =>
         Future.successful[Unit] {
           val _ = count.incrementAndGet()
       }
       val projId = UUID.randomUUID().toString
 
-      val indexer = TestActorRef(new SequentialTagIndexer[OtherExecuted.type](index, projId, pluginId, "other"))
+      val indexer =
+        TestActorRef(new SequentialTagIndexer[OtherExecuted.type](initFunction(init), index, projId, pluginId, "other"))
 
       eventually {
         count.get() shouldEqual 2L
+        init.get shouldEqual 11L
       }
 
       watch(indexer)
@@ -102,16 +115,19 @@ class SequentialTagIndexerSpec
       agg.append("first", Fixture.AnotherExecuted).futureValue
 
       val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
       val index = (_: Event) =>
         Future.successful[Unit] {
           val _ = count.incrementAndGet()
       }
       val projId = UUID.randomUUID().toString
 
-      val indexer = TestActorRef(new SequentialTagIndexer[Event](index, projId, pluginId, "another"))
+      val indexer =
+        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "another"))
 
       eventually {
         count.get() shouldEqual 1L
+        init.get shouldEqual 11L
       }
 
       indexer ! Done
@@ -120,6 +136,7 @@ class SequentialTagIndexerSpec
 
       eventually {
         count.get() shouldEqual 2L
+        init.get shouldEqual 12L
       }
 
       watch(indexer)
