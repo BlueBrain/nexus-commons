@@ -11,7 +11,7 @@ import akka.stream.{ActorMaterializer, KillSwitches, UniqueKillSwitch}
 import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.Stop
 import shapeless.Typeable
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Generic tag indexer that uses the specified resumable projection to iterate over the collection of events selected
@@ -19,32 +19,36 @@ import scala.concurrent.Future
   * clustered deployment.  If the event type is not compatible with the events deserialized from the persistence store
   * the events are skipped.
   *
+  * @param init         an initialization function that is run before the indexer is (re)started
   * @param index        the indexing function
   * @param projectionId the id of the resumable projection to use
   * @param pluginId     the persistence query plugin id
   * @param tag          the tag to use while selecting the events from the store
   * @param T            a Typeable instance for the event type T
-  * @tparam T           the event type
+  * @tparam T the event type
   */
-class SequentialTagIndexer[T](index: T => Future[Unit], projectionId: String, pluginId: String, tag: String)(
-    implicit T: Typeable[T])
+class SequentialTagIndexer[T](init: () => Future[Unit],
+                              index: T => Future[Unit],
+                              projectionId: String,
+                              pluginId: String,
+                              tag: String)(implicit T: Typeable[T])
     extends Actor
     with ActorLogging {
 
-  private implicit val as = context.system
-  private implicit val ec = context.dispatcher
-  private implicit val mt = ActorMaterializer()
+  private implicit val as: ActorSystem       = context.system
+  private implicit val ec: ExecutionContext  = context.dispatcher
+  private implicit val mt: ActorMaterializer = ActorMaterializer()
 
   private val projection = ResumableProjection(projectionId)
   private val query      = PersistenceQuery(context.system).readJournalFor[EventsByTagQuery](pluginId)
 
-  private def fetchOffset(): Unit = {
-    val _ = projection.fetchLatestOffset pipeTo self
+  private def initialize(): Unit = {
+    val _ = init().flatMap(_ => projection.fetchLatestOffset) pipeTo self
   }
 
   override def preStart(): Unit = {
     super.preStart()
-    fetchOffset()
+    initialize()
   }
 
   private def buildStream(offset: Offset): RunnableGraph[(UniqueKillSwitch, Future[Done])] =
@@ -82,7 +86,7 @@ class SequentialTagIndexer[T](index: T => Future[Unit], projectionId: String, pl
     case Done =>
       log.error("Stream finished unexpectedly, restarting")
       killSwitch.shutdown()
-      fetchOffset()
+      initialize()
       context.become(receive)
     case Stop =>
       log.info("Received stop signal, stopping stream")
@@ -98,20 +102,33 @@ class SequentialTagIndexer[T](index: T => Future[Unit], projectionId: String, pl
 }
 
 object SequentialIndexer {
+
   final case object Stop
 
   // $COVERAGE-OFF$
-  final def props[T: Typeable](index: T => Future[Unit], projectionId: String, pluginId: String, tag: String)(
-      implicit as: ActorSystem): Props =
-    ClusterSingletonManager.props(Props(new SequentialTagIndexer[T](index, projectionId, pluginId, tag)),
+  final def props[T: Typeable](init: () => Future[Unit],
+                               index: T => Future[Unit],
+                               projectionId: String,
+                               pluginId: String,
+                               tag: String)(implicit as: ActorSystem): Props =
+    ClusterSingletonManager.props(Props(new SequentialTagIndexer[T](init, index, projectionId, pluginId, tag)),
                                   terminationMessage = Stop,
                                   settings = ClusterSingletonManagerSettings(as))
+
+  final def start[T: Typeable](init: () => Future[Unit],
+                               index: T => Future[Unit],
+                               projectionId: String,
+                               pluginId: String,
+                               tag: String,
+                               name: String)(implicit as: ActorSystem): ActorRef =
+    as.actorOf(props[T](init, index, projectionId, pluginId, tag), name)
 
   final def start[T: Typeable](index: T => Future[Unit],
                                projectionId: String,
                                pluginId: String,
                                tag: String,
                                name: String)(implicit as: ActorSystem): ActorRef =
-    as.actorOf(props[T](index, projectionId, pluginId, tag), name)
+    start(() => Future.successful(()), index, projectionId, pluginId, tag, name)
+
   // $COVERAGE-ON$
 }
