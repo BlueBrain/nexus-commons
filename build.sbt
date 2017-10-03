@@ -74,6 +74,19 @@ lazy val serviceCommons = project
     )
   )
 
+lazy val test = project
+  .in(file("modules/test"))
+  .dependsOn(types)
+  .settings(
+    name := "commons-test",
+    moduleName := "commons-test",
+    coverageEnabled := false,
+    libraryDependencies ++= Seq(
+      "io.circe"    %% "circe-core"   % circeVersion.value,
+      "io.circe"    %% "circe-parser" % circeVersion.value,
+    )
+  )
+
 lazy val http = project
   .in(file("modules/http"))
   .dependsOn(types)
@@ -131,7 +144,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, serviceCommons, shaclValidator, sparqlClient)
+  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, serviceCommons, shaclValidator, sparqlClient)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 

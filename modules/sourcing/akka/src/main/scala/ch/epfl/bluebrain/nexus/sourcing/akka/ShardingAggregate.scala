@@ -225,6 +225,7 @@ object ShardingAggregate {
     * @tparam Rejection the type of rejection returned by this aggregate
     * @return a new aggregate instance
     */
+  @SuppressWarnings(Array("MaxParameters"))
   final def apply[Event: Typeable, State: Typeable, Command: Typeable, Rejection: Typeable](
       name: String,
       settings: SourcingAkkaSettings)(initial: State,
