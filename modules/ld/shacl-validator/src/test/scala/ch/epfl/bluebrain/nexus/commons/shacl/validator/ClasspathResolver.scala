@@ -30,7 +30,7 @@ class ClasspathResolver[F[_]](base: String)(implicit F: MonadError[F, Throwable]
         else {
           for {
             seq <- diff.toList.map(i => load(i).map(sch => (i, sch))).sequence[F, (String, ShaclSchema)]
-            sch  = seq.map(_._2)
+            sch = seq.map(_._2)
             imp <- importsOfAll(sch)
             res <- loadImports(loaded ++ seq, imp)
           } yield res
@@ -52,7 +52,7 @@ class ClasspathResolver[F[_]](base: String)(implicit F: MonadError[F, Throwable]
   private def importsOf(schema: ShaclSchema): F[Set[String]] = {
     val model = ModelFactory.createDefaultModel()
     RDFDataMgr.read(model, new ByteArrayInputStream(schema.value.noSpaces.getBytes), Lang.JSONLD)
-    val nodes = model.listObjectsOfProperty(imports).asScala.toSet
+    val nodes          = model.listObjectsOfProperty(imports).asScala.toSet
     val illegalImports = nodes.filter(!_.isURIResource)
     if (illegalImports.nonEmpty) F.raiseError(IllegalImportDefinition(illegalImports.map(n => n.toString)))
     else F.pure(nodes.map(_.asResource().getURI))
@@ -61,7 +61,7 @@ class ClasspathResolver[F[_]](base: String)(implicit F: MonadError[F, Throwable]
   private def load(uri: String): F[ShaclSchema] = {
     if (uri.startsWith(base)) {
       val address = uri.substring(base.length) + ".json"
-      val stream = getClass.getResourceAsStream(address)
+      val stream  = getClass.getResourceAsStream(address)
       if (stream == null) F.raiseError(CouldNotFindImports(Set(uri)))
       else {
         parse(Source.fromInputStream(stream).mkString.replaceAll(ClasspathResolver.token, base))

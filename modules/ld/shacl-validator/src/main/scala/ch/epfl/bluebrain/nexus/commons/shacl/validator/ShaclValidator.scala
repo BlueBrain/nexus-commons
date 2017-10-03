@@ -31,8 +31,8 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
   private val logger = Logger[this.type]
 
   private val jsonLdFormatName = RDFFormat.JSONLD.getLang.getName
-  private val schemaEngine = ShaclexSchema.empty.name
-  private val triggerMode = TargetDeclarations.name
+  private val schemaEngine     = ShaclexSchema.empty.name
+  private val triggerMode      = TargetDeclarations.name
 
   /**
     * Validates ''data'' in its json representation against the specified ''schema''.  It produces a
@@ -92,12 +92,15 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
           }
           RDFDataMgr.read(model, new ByteArrayInputStream(schema.noSpaces.getBytes), Lang.JSONLD)
           model
-        } flatMap { model => Schemas.fromRDF(RDFAsJenaModel(model), schemaEngine) } match {
+        } flatMap { model =>
+          Schemas.fromRDF(RDFAsJenaModel(model), schemaEngine)
+        } match {
           case Success(value) =>
             logger.debug("Schema loaded successfully")
             F.pure(value)
-          case Failure(missing: CouldNotFindImports)    =>
-            logger.debug(s"Failed to load schema '${schema.spaces4}' for validation, missing imports '${missing.missing}'")
+          case Failure(missing: CouldNotFindImports) =>
+            logger.debug(
+              s"Failed to load schema '${schema.spaces4}' for validation, missing imports '${missing.missing}'")
             F.raiseError(missing)
           case Failure(ve: ShaclValidatorErr) =>
             F.raiseError(ve)
@@ -117,7 +120,7 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
         logger.debug("Data loaded successfully")
         F.pure(value)
       // $COVERAGE-OFF$
-      case Failure(th)    =>
+      case Failure(th) =>
         logger.debug(s"Failed to load schema '${data.spaces4}' for validation")
         F.raiseError(FailedToLoadData(th))
       // $COVERAGE-ON$
@@ -139,6 +142,7 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
 }
 
 object ShaclValidator {
+
   /**
     * Constructs a new ''ShaclValidator'' instance with an ''F[_]'' context using an implicitly available ''MonadError''
     * typeclass for ''F[_]''.

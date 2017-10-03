@@ -14,12 +14,11 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import scala.concurrent.duration._
 
 class ShardingAggregateSpec
-  extends TestKit(ActorSystem("ShardingAggregateSpec"))
+    extends TestKit(ActorSystem("ShardingAggregateSpec"))
     with WordSpecLike
     with Matchers
     with ScalaFutures
     with BeforeAndAfterAll {
-
 
   override implicit val patienceConfig = PatienceConfig(3 seconds, 50 millis)
 
@@ -37,7 +36,9 @@ class ShardingAggregateSpec
   private implicit val ec = system.dispatcher
 
   private val aggregate =
-    ShardingAggregate("permission", SourcingAkkaSettings(journalPluginId = "inmemory-read-journal"))(initial, next, eval)
+    ShardingAggregate("permission", SourcingAkkaSettings(journalPluginId = "inmemory-read-journal"))(initial,
+                                                                                                     next,
+                                                                                                     eval)
 
   "A ShardingAggregate" should {
     "return a 0 sequence number for an empty event log" in {
@@ -58,15 +59,17 @@ class ShardingAggregateSpec
       val id = genId
       aggregate.append(id, PermissionsAppended(own)).futureValue
       aggregate.append(id, PermissionsAppended(read)).futureValue
-      aggregate.foldLeft(id, List.empty[Event]) {
-        case (acc, ev) => ev :: acc
-      }.futureValue shouldEqual List(PermissionsAppended(read), PermissionsAppended(own))
+      aggregate
+        .foldLeft(id, List.empty[Event]) {
+          case (acc, ev) => ev :: acc
+        }
+        .futureValue shouldEqual List(PermissionsAppended(read), PermissionsAppended(own))
     }
     "reject out of order commands" in {
       val id = genId
       aggregate.eval(id, DeletePermissions).futureValue match {
         case Left(_: Rejection) => ()
-        case Right(_) => fail("should have rejected deletion on initial state")
+        case Right(_)           => fail("should have rejected deletion on initial state")
       }
     }
     "return the current computed state" in {
@@ -80,7 +83,7 @@ class ShardingAggregateSpec
     }
 
     "query over ids that are not url segment safe" in {
-      val id = s"/$genId/sub"
+      val id       = s"/$genId/sub"
       val appended = PermissionsAppended(own)
       aggregate.append(id, appended).futureValue
       val returned = aggregate.foldLeft(id, Option.empty[Event]) {

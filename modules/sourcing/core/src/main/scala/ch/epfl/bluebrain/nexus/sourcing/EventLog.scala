@@ -7,6 +7,7 @@ package ch.epfl.bluebrain.nexus.sourcing
   * @tparam F the monadic effect type
   */
 trait EventLog[F[_]] extends Serializable {
+
   /**
     * The event log identifier type.
     */
@@ -67,6 +68,6 @@ object EventLog {
     */
   type Aux[F[_], Id, Ev] = EventLog[F] {
     type Identifier = Id
-    type Event = Ev
+    type Event      = Ev
   }
 }

@@ -68,12 +68,11 @@ trait EventStore[F[_], Id] {
     * @tparam Ev  the event type of the aggregate
     * @return the outcome of the command evaluation
     */
-  def eval[Cmd, Ev](id: Id, cmd: Cmd)
-                   (implicit E: Aggregate[F] {
-                     type Identifier = Id
-                     type Event = Ev
-                     type Command >: Cmd
-                   }): F[Either[E.Rejection, E.State]] = E.eval(id, cmd)
+  def eval[Cmd, Ev](id: Id, cmd: Cmd)(implicit E: Aggregate[F] {
+    type Identifier = Id
+    type Event      = Ev
+    type Command >: Cmd
+  }): F[Either[E.Rejection, E.State]] = E.eval(id, cmd)
 
   /**
     * Applies the fold function ''f'' over the sequence of events, oldest to latest, aggregating into a value of type
@@ -92,6 +91,7 @@ trait EventStore[F[_], Id] {
 }
 
 object EventStore {
+
   /**
     * Constructs a new [[EventStore]] instance.
     *

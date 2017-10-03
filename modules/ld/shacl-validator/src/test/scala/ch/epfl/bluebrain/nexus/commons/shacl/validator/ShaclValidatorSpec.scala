@@ -20,7 +20,7 @@ class ShaclValidatorSpec extends WordSpecLike with Matchers with TryValues {
     val validator = ShaclValidator[Try](ImportResolver.noop)
 
     "validate data against a schema both in json-ld format" in {
-      val data = jsonContentOf("/subject-data.json")
+      val data   = jsonContentOf("/subject-data.json")
       val schema = ShaclSchema(jsonContentOf("/subject-schema.json"))
 
       validator(schema, data).success.value.conforms shouldEqual true
@@ -31,13 +31,13 @@ class ShaclValidatorSpec extends WordSpecLike with Matchers with TryValues {
     }
 
     "fail to validate empty json object against subject schema" in {
-      val data = jsonContentOf("/empty.json")
+      val data   = jsonContentOf("/empty.json")
       val schema = ShaclSchema(jsonContentOf("/subject-schema.json"))
       validator(schema, data).success.value.conforms shouldEqual false
     }
 
     "fail to validate invalid data against subject schema" in {
-      val data = jsonContentOf("/invalid-subject-data.json")
+      val data   = jsonContentOf("/invalid-subject-data.json")
       val schema = ShaclSchema(jsonContentOf("/subject-schema.json"))
       validator(schema, data).success.value.conforms shouldEqual false
     }

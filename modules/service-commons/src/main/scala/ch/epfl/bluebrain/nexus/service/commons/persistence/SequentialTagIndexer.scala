@@ -26,18 +26,17 @@ import scala.concurrent.Future
   * @param T            a Typeable instance for the event type T
   * @tparam T           the event type
   */
-class SequentialTagIndexer[T](
-  index: T => Future[Unit],
-  projectionId: String,
-  pluginId: String,
-  tag: String)(implicit T: Typeable[T]) extends Actor with ActorLogging {
+class SequentialTagIndexer[T](index: T => Future[Unit], projectionId: String, pluginId: String, tag: String)(
+    implicit T: Typeable[T])
+    extends Actor
+    with ActorLogging {
 
   private implicit val as = context.system
   private implicit val ec = context.dispatcher
   private implicit val mt = ActorMaterializer()
 
   private val projection = ResumableProjection(projectionId)
-  private val query = PersistenceQuery(context.system).readJournalFor[EventsByTagQuery](pluginId)
+  private val query      = PersistenceQuery(context.system).readJournalFor[EventsByTagQuery](pluginId)
 
   private def fetchOffset(): Unit = {
     val _ = projection.fetchLatestOffset pipeTo self
@@ -49,7 +48,8 @@ class SequentialTagIndexer[T](
   }
 
   private def buildStream(offset: Offset): RunnableGraph[(UniqueKillSwitch, Future[Done])] =
-    query.eventsByTag(tag, offset)
+    query
+      .eventsByTag(tag, offset)
       .viaMat(KillSwitches.single)(Keep.right)
       .mapAsync(1) {
         case EventEnvelope(off, persistenceId, sequenceNr, event) =>
@@ -57,7 +57,7 @@ class SequentialTagIndexer[T](
           T.cast(event) match {
             case Some(value) =>
               index(value).map(_ => off)
-            case None        =>
+            case None =>
               log.debug(s"Event not compatible with type '${T.describe}, skipping...'")
               Future.successful(off)
           }
@@ -101,22 +101,17 @@ object SequentialIndexer {
   final case object Stop
 
   // $COVERAGE-OFF$
-  final def props[T: Typeable](
-    index: T => Future[Unit],
-    projectionId: String,
-    pluginId: String,
-    tag: String)(implicit as: ActorSystem): Props =
-      ClusterSingletonManager.props(
-        Props(new SequentialTagIndexer[T](index, projectionId, pluginId, tag)),
-        terminationMessage = Stop,
-        settings = ClusterSingletonManagerSettings(as))
+  final def props[T: Typeable](index: T => Future[Unit], projectionId: String, pluginId: String, tag: String)(
+      implicit as: ActorSystem): Props =
+    ClusterSingletonManager.props(Props(new SequentialTagIndexer[T](index, projectionId, pluginId, tag)),
+                                  terminationMessage = Stop,
+                                  settings = ClusterSingletonManagerSettings(as))
 
-  final def start[T: Typeable](
-    index: T => Future[Unit],
-    projectionId: String,
-    pluginId: String,
-    tag: String,
-    name: String)(implicit as: ActorSystem): ActorRef =
-      as.actorOf(props[T](index, projectionId, pluginId, tag), name)
+  final def start[T: Typeable](index: T => Future[Unit],
+                               projectionId: String,
+                               pluginId: String,
+                               tag: String,
+                               name: String)(implicit as: ActorSystem): ActorRef =
+    as.actorOf(props[T](index, projectionId, pluginId, tag), name)
   // $COVERAGE-ON$
 }

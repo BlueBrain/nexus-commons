@@ -48,6 +48,7 @@ trait HttpClient[F[_], A] {
 }
 
 object HttpClient {
+
   /**
     * Type alias for [[ch.epfl.bluebrain.nexus.commons.http.HttpClient]] that has the unmarshalled return type
     * the [[akka.http.scaladsl.model.HttpResponse]] itself.
@@ -94,30 +95,31 @@ object HttpClient {
     * @tparam A the specific type to which the response entity should be unmarshalled into
     */
   final implicit def withAkkaUnmarshaller[A: Typeable](implicit
-    ec: ExecutionContext,
-    mt: Materializer,
-    cl: UntypedHttpClient[Future],
-    um: FromEntityUnmarshaller[A]): HttpClient[Future, A] = new HttpClient[Future, A] {
+                                                       ec: ExecutionContext,
+                                                       mt: Materializer,
+                                                       cl: UntypedHttpClient[Future],
+                                                       um: FromEntityUnmarshaller[A]): HttpClient[Future, A] =
+    new HttpClient[Future, A] {
 
-    private val log = Logger(s"TypedHttpClient[${implicitly[Typeable[A]].describe}]")
+      private val log = Logger(s"TypedHttpClient[${implicitly[Typeable[A]].describe}]")
 
-    override def apply(req: HttpRequest): Future[A] =
-      cl(req).flatMap { resp =>
-        if (resp.status.isSuccess()) um(resp.entity)
-        else {
-          log.error(s"Unsuccessful HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
-          discardBytes(resp.entity).flatMap { _ =>
-            log.debug(s"Discarded response bytes for request '${req.uri}'")
-            Future.failed(UnexpectedUnsuccessfulHttpResponse(resp))
+      override def apply(req: HttpRequest): Future[A] =
+        cl(req).flatMap { resp =>
+          if (resp.status.isSuccess()) um(resp.entity)
+          else {
+            log.error(s"Unsuccessful HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+            discardBytes(resp.entity).flatMap { _ =>
+              log.debug(s"Discarded response bytes for request '${req.uri}'")
+              Future.failed(UnexpectedUnsuccessfulHttpResponse(resp))
+            }
           }
         }
-      }
 
-    override def discardBytes(entity: HttpEntity): Future[DiscardedEntity] =
-      cl.discardBytes(entity)
+      override def discardBytes(entity: HttpEntity): Future[DiscardedEntity] =
+        cl.discardBytes(entity)
 
-    override def toString(entity: HttpEntity): Future[String] =
-      cl.toString(entity)
-  }
+      override def toString(entity: HttpEntity): Future[String] =
+        cl.toString(entity)
+    }
   // $COVERAGE-ON$
 }

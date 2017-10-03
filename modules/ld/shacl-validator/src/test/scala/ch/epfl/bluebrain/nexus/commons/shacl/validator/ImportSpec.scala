@@ -10,7 +10,7 @@ import scala.util.Try
 
 class ImportSpec extends WordSpecLike with Matchers with TryValues {
 
-  private val base = "http://localhost/v0"
+  private val base     = "http://localhost/v0"
   private val resolver = ClasspathResolver[Try](base)
 
   private def jsonContentOf(resourcePath: String): Json =

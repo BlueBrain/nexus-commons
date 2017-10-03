@@ -15,8 +15,9 @@ class VersionSpec extends WordSpecLike with Matchers with Inspectors {
         "v1234.0.0" -> Version(1234, 0, 0),
         "v1.1.1"    -> Version(1, 1, 1)
       )
-      forAll(mapping.toList) { case (left, right) =>
-        Version(left) shouldEqual Some(right)
+      forAll(mapping.toList) {
+        case (left, right) =>
+          Version(left) shouldEqual Some(right)
       }
     }
     "fail to be parsed from illegal strings" in {
@@ -101,8 +102,9 @@ class VersionSpec extends WordSpecLike with Matchers with Inspectors {
         Version(1234, 0, 0) -> "v1234.0.0",
         Version(1, 1, 1)    -> "v1.1.1"
       )
-      forAll(mapping.toList) { case (ver, str) =>
-        ver.show shouldEqual str
+      forAll(mapping.toList) {
+        case (ver, str) =>
+          ver.show shouldEqual str
       }
     }
   }
@@ -183,8 +185,9 @@ class VersionSpec extends WordSpecLike with Matchers with Inspectors {
         "v1.0"      -> PartialVersion(1, 0),
         "v1234.0.0" -> PartialVersion(1234, 0, 0)
       )
-      forAll(mapping.toList) { case (left, right) =>
-        PartialVersion(left) shouldEqual Some(right)
+      forAll(mapping.toList) {
+        case (left, right) =>
+          PartialVersion(left) shouldEqual Some(right)
       }
     }
     "fail construction for negative major value" in {
@@ -246,8 +249,9 @@ class VersionSpec extends WordSpecLike with Matchers with Inspectors {
         PartialVersion(1, 2)    -> "v1.2",
         PartialVersion(1)       -> "v1"
       )
-      forAll(mapping.toList) { case (pv, str) =>
-        Encoder[PartialVersion].apply(pv) shouldEqual Json.fromString(str)
+      forAll(mapping.toList) {
+        case (pv, str) =>
+          Encoder[PartialVersion].apply(pv) shouldEqual Json.fromString(str)
       }
     }
   }
@@ -259,8 +263,9 @@ class VersionSpec extends WordSpecLike with Matchers with Inspectors {
         "v1.2"   -> PartialVersion(1, 2),
         "v1"     -> PartialVersion(1)
       )
-      forAll(mapping.toList) { case (str, pv) =>
-        Decoder[PartialVersion].decodeJson(Json.fromString(str)) shouldEqual Right(pv)
+      forAll(mapping.toList) {
+        case (str, pv) =>
+          Decoder[PartialVersion].decodeJson(Json.fromString(str)) shouldEqual Right(pv)
       }
     }
     "fail to decode incorrectly formatted versions" in {

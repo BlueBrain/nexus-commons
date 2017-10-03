@@ -16,6 +16,7 @@ import shapeless._
   * @tparam C the coproduct type
   */
 trait CoproductSerializer[C <: Coproduct] {
+
   /**
     * Attempts to compute a string manifest for the provided value ''x''.
     *
@@ -44,6 +45,7 @@ trait CoproductSerializer[C <: Coproduct] {
 }
 
 object CoproductSerializer {
+
   /**
     * Summons a serializer instance from the implicit scope.
     *
@@ -57,8 +59,8 @@ object CoproductSerializer {
     * Base recursion case for deriving serializers.
     */
   final implicit val cnilSerializer: CoproductSerializer[CNil] = new CoproductSerializer[CNil] {
-    override def manifest(x: Any): Option[String] = None
-    override def toBinary(x: Any): Option[Array[Byte]] = None
+    override def manifest(x: Any): Option[String]                               = None
+    override def toBinary(x: Any): Option[Array[Byte]]                          = None
     override def fromBinary(bytes: Array[Byte], manifest: String): Option[CNil] = None
   }
 
@@ -74,19 +76,22 @@ object CoproductSerializer {
     * @tparam T the type of the coproduct tail
     * @return a new ''CoproductSerializer'' that prepends a new type ''H'' to the list of known serialization types
     */
-  final implicit def cconsSerializer[H, T <: Coproduct](implicit
-    headTypeable: Typeable[H],
-    headEncoder: Encoder[H],
-    headDecoder: Decoder[H],
-    tailSerializer: CoproductSerializer[T]): CoproductSerializer[H :+: T] = new CoproductSerializer[:+:[H, T]] {
+  final implicit def cconsSerializer[H, T <: Coproduct](
+      implicit
+      headTypeable: Typeable[H],
+      headEncoder: Encoder[H],
+      headDecoder: Decoder[H],
+      tailSerializer: CoproductSerializer[T]): CoproductSerializer[H :+: T] = new CoproductSerializer[:+:[H, T]] {
 
     override def manifest(x: Any): Option[String] =
-      headTypeable.cast(x)
+      headTypeable
+        .cast(x)
         .map(_ => headTypeable.describe)
         .orElse(tailSerializer.manifest(x))
 
     override def toBinary(x: Any): Option[Array[Byte]] =
-      headTypeable.cast(x)
+      headTypeable
+        .cast(x)
         .map(h => headEncoder(h).noSpaces.getBytes(UTF8))
         .orElse(tailSerializer.toBinary(x))
 

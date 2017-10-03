@@ -7,6 +7,7 @@ package ch.epfl.bluebrain.nexus.commons.shacl.validator
   * @param result a collection of validation results that describe constraint violations
   */
 final case class ValidationReport(result: List[ValidationResult]) {
+
   /**
     * Whether the data conforms to the schema.
     */

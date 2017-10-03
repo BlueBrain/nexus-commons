@@ -20,7 +20,6 @@ import scala.collection.immutable.Seq
   */
 trait SparqlCirceSupport extends FailFastCirceSupport {
 
-
   override def unmarshallerContentTypes: Seq[ContentTypeRange] =
     List(`application/json`, RdfMediaTypes.`application/ld+json`)
 

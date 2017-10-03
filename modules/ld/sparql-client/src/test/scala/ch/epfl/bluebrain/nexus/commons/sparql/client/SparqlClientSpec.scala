@@ -29,7 +29,7 @@ import scala.io.Source
 
 //noinspection TypeAnnotation
 class SparqlClientSpec
-  extends TestKit(ActorSystem("SparqlClientSpec"))
+    extends TestKit(ActorSystem("SparqlClientSpec"))
     with WordSpecLike
     with Matchers
     with ScalaFutures
@@ -37,7 +37,7 @@ class SparqlClientSpec
 
   private val port = freePort()
 
-  private val server =  {
+  private val server = {
     System.setProperty("jetty.home", getClass.getResource("/war").toExternalForm)
     NanoSparqlServer.newInstance(port, null, null)
   }
@@ -69,7 +69,9 @@ class SparqlClientSpec
   private def allTriples(index: String, client: SparqlClient[Future]): Future[List[(String, String, String)]] =
     query(index, s"SELECT * { ?s ?p ?o }", client)
 
-  private def query(index: String, query: String, client: SparqlClient[Future]): Future[List[(String, String, String)]] =
+  private def query(index: String,
+                    query: String,
+                    client: SparqlClient[Future]): Future[List[(String, String, String)]] =
     client.query(index, query).map { rs =>
       rs.asScala.toList.map { qs =>
         val obj = {
@@ -83,9 +85,9 @@ class SparqlClientSpec
 
   "A SparqlClient" should {
     val client = SparqlClient[Future](baseUri)
-    val index = genString(length = 8)
+    val index  = genString(length = 8)
 
-    "verify if index exists"  in new SparqlClientFixture {
+    "verify if index exists" in new SparqlClientFixture {
       client.exists(index).futureValue shouldEqual false
     }
 
@@ -100,7 +102,7 @@ class SparqlClientSpec
       allTriples(index, client).futureValue should have size 2
     }
 
-    "clear a named graph" in new SparqlClientFixture  {
+    "clear a named graph" in new SparqlClientFixture {
       client.createGraph(index, ctx, load(id, label, value)).futureValue
       client.clearGraph(index, ctx).futureValue
       triples(index, ctx, client).futureValue shouldBe empty
@@ -142,8 +144,7 @@ class SparqlClientSpec
            |  <http://localhost/$id> rdfs:label ?o .
            |}
          """.stripMargin
-      val json = parse(
-        s"""
+      val json = parse(s"""
            |{
            |  "@context": {
            |    "label": "http://www.w3.org/2000/01/rdf-schema#label"
@@ -172,7 +173,8 @@ object SparqlClientSpec {
 
   private def load(id: String, label: String, value: String): Json =
     parse(
-      Source.fromInputStream(getClass.getResourceAsStream("/ld.json"))
+      Source
+        .fromInputStream(getClass.getResourceAsStream("/ld.json"))
         .mkString
         .replaceAll(Pattern.quote("{{ID}}"), id)
         .replaceAll(Pattern.quote("{{LABEL}}"), label)

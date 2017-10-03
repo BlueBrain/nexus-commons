@@ -5,13 +5,13 @@ import akka.persistence.journal.{Tagged, WriteEventAdapter}
 object Fixture {
 
   sealed trait Event
-  final case object Executed extends Event
-  final case object OtherExecuted extends Event
+  final case object Executed        extends Event
+  final case object OtherExecuted   extends Event
   final case object AnotherExecuted extends Event
 
   sealed trait Cmd
-  final case object Execute extends Cmd
-  final case object ExecuteOther extends Cmd
+  final case object Execute        extends Cmd
+  final case object ExecuteOther   extends Cmd
   final case object ExecuteAnother extends Cmd
 
   sealed trait State
@@ -29,7 +29,7 @@ object Fixture {
     }
   }
 
-  val initial: State = Perpetual
+  val initial: State                          = Perpetual
   def next(state: State, event: Event): State = Perpetual
   def eval(state: State, cmd: Cmd): Either[Rejection, Event] = cmd match {
     case Execute        => Right(Executed)
