@@ -37,6 +37,7 @@ trait Resources {
     * @param resourcePath the path of a resource available on the classpath
     * @return the content of the referenced resource as a json value
     */
+  @SuppressWarnings(Array("TryGet"))
   final def jsonContentOf(resourcePath: String): Json =
     parse(contentOf(resourcePath)).toTry.get
 
@@ -47,6 +48,7 @@ trait Resources {
     * @param resourcePath the path of a resource available on the classpath
     * @return the content of the referenced resource as a json value
     */
+  @SuppressWarnings(Array("TryGet"))
   final def jsonContentOf(resourcePath: String, replacements: Map[String, String]): Json =
     parse(contentOf(resourcePath, replacements)).toTry.get
 }
