@@ -7,11 +7,14 @@ import akka.Done
 import akka.cluster.Cluster
 import akka.stream.ActorMaterializer
 import akka.testkit.{TestActorRef, TestKit, TestKitBase}
+import ch.epfl.bluebrain.nexus.common.types.Err
 import ch.epfl.bluebrain.nexus.service.commons.persistence.Fixture._
 import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.Stop
+import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialTagIndexerSpec.{SomeError, SomeOtherError}
 import ch.epfl.bluebrain.nexus.sourcing.akka.{ShardingAggregate, SourcingAkkaSettings}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, Matchers, WordSpecLike}
+import shapeless.{:+:, CNil}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -68,7 +71,7 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "executed"))
+        TestActorRef(new SequentialTagIndexer[Event, CNil](initFunction(init), index, 0, projId, pluginId, "executed"))
 
       eventually {
         count.get() shouldEqual 1L
@@ -98,7 +101,8 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[OtherExecuted.type](initFunction(init), index, projId, pluginId, "other"))
+        TestActorRef(
+          new SequentialTagIndexer[OtherExecuted.type, CNil](initFunction(init), index, 0, projId, pluginId, "other"))
 
       eventually {
         count.get() shouldEqual 2L
@@ -123,7 +127,7 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "another"))
+        TestActorRef(new SequentialTagIndexer[Event, CNil](initFunction(init), index, 0, projId, pluginId, "another"))
 
       eventually {
         count.get() shouldEqual 1L
@@ -143,6 +147,65 @@ class SequentialTagIndexerSpec
       indexer ! Stop
       expectTerminated(indexer)
     }
+
+    "retry when index function fails" in {
+      val agg = ShardingAggregate("selected", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
+      agg.append("selected", Fixture.OtherExecuted).futureValue
+
+      val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
+
+      val index  = (_: OtherExecuted.type) => Future.failed[Unit](SomeError(count.incrementAndGet()))
+      val projId = UUID.randomUUID().toString
+
+      val indexer =
+        TestActorRef(
+          new SequentialTagIndexer[OtherExecuted.type, SomeError :+: CNil](initFunction(init),
+                                                                           index,
+                                                                           3,
+                                                                           projId,
+                                                                           pluginId,
+                                                                           "other"))
+      eventually {
+        count.get() shouldEqual 4L
+        init.get shouldEqual 11L
+      }
+      watch(indexer)
+      indexer ! Done
+      expectTerminated(indexer)
+    }
+
+    "not retry when index function fails but exception is not part of the coproduct" in {
+      val agg = ShardingAggregate("selected", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
+      agg.append("selected", Fixture.OtherExecuted).futureValue
+
+      val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
+
+      val index  = (_: OtherExecuted.type) => Future.failed[Unit](SomeOtherError(count.incrementAndGet()))
+      val projId = UUID.randomUUID().toString
+
+      val indexer =
+        TestActorRef(
+          new SequentialTagIndexer[OtherExecuted.type, SomeError :+: CNil](initFunction(init),
+                                                                           index,
+                                                                           3,
+                                                                           projId,
+                                                                           pluginId,
+                                                                           "other"))
+      eventually {
+        count.get() shouldEqual 1L
+        init.get shouldEqual 11L
+      }
+      watch(indexer)
+      indexer ! Done
+      expectTerminated(indexer)
+    }
   }
+
+}
+object SequentialTagIndexerSpec {
+  case class SomeError(count: Long)      extends Err("some error")
+  case class SomeOtherError(count: Long) extends Err("some error")
 
 }
