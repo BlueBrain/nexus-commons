@@ -1,17 +1,19 @@
 package ch.epfl.bluebrain.nexus.service.commons.persistence
 
 import akka.Done
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Scheduler}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
 import akka.pattern.pipe
 import akka.persistence.query.scaladsl.EventsByTagQuery
 import akka.persistence.query.{EventEnvelope, Offset, PersistenceQuery}
-import akka.stream.scaladsl.{Keep, RunnableGraph, Sink}
+import akka.stream.scaladsl.{Flow, Keep, RestartFlow, RunnableGraph, Sink}
 import akka.stream.{ActorMaterializer, KillSwitches, UniqueKillSwitch}
-import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.Stop
-import ch.epfl.bluebrain.nexus.service.commons.retrying.{CoproductRetryer, Retryer}
-import shapeless._
+import ch.epfl.bluebrain.nexus.common.types.Err
+import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.{NonRetriableErr, Stop}
+import io.circe.Encoder
+import shapeless.Typeable
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -22,31 +24,26 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @param init         an initialization function that is run before the indexer is (re)started
   * @param index        the indexing function
-  * @param retries      the amount of times ''index'' will be retried when failed if the failure is one of the types in ''C''
-  * @param projectionId the id of the resumable projection to use
+  * @param id           the id of the resumable projection and the skipped log to use
   * @param pluginId     the persistence query plugin id
   * @param tag          the tag to use while selecting the events from the store
   * @param T            a Typeable instance for the event type T
-  * @param C            an implicitly available instance for retryer of type C
   * @tparam T the event type
-  * @tparam C the generic coproduct type of the retryer
   */
-class SequentialTagIndexer[T, C <: Coproduct](init: () => Future[Unit],
-                                              index: T => Future[Unit],
-                                              retries: Int,
-                                              projectionId: String,
-                                              pluginId: String,
-                                              tag: String)(implicit T: Typeable[T], C: CoproductRetryer[C])
+class SequentialTagIndexer[T](init: () => Future[Unit],
+                              index: T => Future[Unit],
+                              id: String,
+                              pluginId: String,
+                              tag: String)(implicit T: Typeable[T], E: Encoder[T])
     extends Actor
     with ActorLogging {
 
   private implicit val as: ActorSystem       = context.system
   private implicit val ec: ExecutionContext  = context.dispatcher
   private implicit val mt: ActorMaterializer = ActorMaterializer()
-  private implicit val s: Scheduler          = as.scheduler
 
-  private val retryer    = Retryer[C]
-  private val projection = ResumableProjection(projectionId)
+  private val projection = ResumableProjection(id)
+  private val skippedLog = SkippedEventLog(id)
   private val query      = PersistenceQuery(context.system).readJournalFor[EventsByTagQuery](pluginId)
 
   private def initialize(): Unit = {
@@ -58,29 +55,37 @@ class SequentialTagIndexer[T, C <: Coproduct](init: () => Future[Unit],
     initialize()
   }
 
+  private val indexFlow = RestartFlow.withBackoff(1 second, 30 seconds, 0.2) { () =>
+    Flow[EventEnvelope].mapAsync(1) {
+      case EventEnvelope(off, persistenceId, sequenceNr, event) =>
+        log.info("Processing event for persistence id '{}', seqNr '{}'", persistenceId, sequenceNr)
+        T.cast(event) match {
+          case Some(value) =>
+            index(value)
+              .recoverWith {
+                case _: NonRetriableErr =>
+                  skippedLog.storeEvent(value)
+                  Future.successful(off)
+              }
+              .map(_ => off)
+
+          case None =>
+            log.debug(s"Event not compatible with type '${T.describe}, skipping...'")
+            Future.successful(off)
+        }
+    }
+  }
+
+  private val storeOffsetFlow = RestartFlow.withBackoff(1 second, 30 seconds, 0.2) { () =>
+    Flow[Offset].mapAsync(1)(offset => projection.storeLatestOffset(offset))
+  }
+
   private def buildStream(offset: Offset): RunnableGraph[(UniqueKillSwitch, Future[Done])] =
     query
       .eventsByTag(tag, offset)
       .viaMat(KillSwitches.single)(Keep.right)
-      .mapAsync(1) {
-        case EventEnvelope(off, persistenceId, sequenceNr, event) =>
-          log.debug("Processing event for persistence id '{}', seqNr '{}'", persistenceId, sequenceNr)
-          T.cast(event) match {
-            case Some(value) =>
-              retryer
-                .apply[Unit](() => index(value), retries)
-                .map(_ => off)
-                .recoverWith {
-                  case err =>
-                    self ! Stop
-                    Future.failed(err)
-                }
-            case None =>
-              log.debug(s"Event not compatible with type '${T.describe}, skipping...'")
-              Future.successful(off)
-          }
-      }
-      .mapAsync(1)(offset => projection.storeLatestOffset(offset))
+      .via(indexFlow)
+      .via(storeOffsetFlow)
       .toMat(Sink.ignore)(Keep.both)
 
   override def receive: Receive = {
@@ -119,52 +124,35 @@ object SequentialIndexer {
 
   final case object Stop
 
-  // $COVERAGE-OFF$
-  final def props[T: Typeable, C <: Coproduct](init: () => Future[Unit],
-                                               index: T => Future[Unit],
-                                               retries: Int,
-                                               projectionId: String,
-                                               pluginId: String,
-                                               tag: String)(implicit as: ActorSystem, C: CoproductRetryer[C]): Props =
-    ClusterSingletonManager.props(
-      Props(new SequentialTagIndexer[T, C](init, index, retries, projectionId, pluginId, tag)),
-      terminationMessage = Stop,
-      settings = ClusterSingletonManagerSettings(as)
-    )
+  /**
+    * Signals an error which is not going to be stored but not retried.
+    *
+    * @param th the underlying error
+    */
+  final case class NonRetriableErr(th: Throwable) extends Err(s"Non retriable error '${th.getMessage}'")
 
-  final def start[T: Typeable, C <: Coproduct](
-      init: () => Future[Unit],
-      index: T => Future[Unit],
-      retries: Int,
-      projectionId: String,
-      pluginId: String,
-      tag: String,
-      name: String)(implicit as: ActorSystem, C: CoproductRetryer[C]): ActorRef =
-    as.actorOf(props[T, C](init, index, retries, projectionId, pluginId, tag), name)
+  // $COVERAGE-OFF$
+  final def props[T: Typeable](init: () => Future[Unit],
+                               index: T => Future[Unit],
+                               id: String,
+                               pluginId: String,
+                               tag: String)(implicit as: ActorSystem, E: Encoder[T]): Props =
+    ClusterSingletonManager.props(Props(new SequentialTagIndexer[T](init, index, id, pluginId, tag)),
+                                  terminationMessage = Stop,
+                                  settings = ClusterSingletonManagerSettings(as))
 
   final def start[T: Typeable](init: () => Future[Unit],
                                index: T => Future[Unit],
-                               projectionId: String,
+                               id: String,
                                pluginId: String,
                                tag: String,
-                               name: String)(implicit as: ActorSystem): ActorRef =
-    as.actorOf(props[T, CNil](init, index, 0, projectionId, pluginId, tag), name)
+                               name: String)(implicit as: ActorSystem, E: Encoder[T]): ActorRef =
+    as.actorOf(props[T](init, index, id, pluginId, tag), name)
 
-  final def start[T: Typeable, C <: Coproduct](
-      index: T => Future[Unit],
-      retries: Int,
-      projectionId: String,
-      pluginId: String,
-      tag: String,
-      name: String)(implicit as: ActorSystem, C: CoproductRetryer[C]): ActorRef =
-    start[T, C](() => Future.successful(()), index, retries, projectionId, pluginId, tag, name)
-
-  final def start[T: Typeable](index: T => Future[Unit],
-                               projectionId: String,
-                               pluginId: String,
-                               tag: String,
-                               name: String)(implicit as: ActorSystem): ActorRef =
-    start[T](() => Future.successful(()), index, projectionId, pluginId, tag, name)
+  final def start[T: Typeable](index: T => Future[Unit], id: String, pluginId: String, tag: String, name: String)(
+      implicit as: ActorSystem,
+      E: Encoder[T]): ActorRef =
+    start(() => Future.successful(()), index, id, pluginId, tag, name)
 
   // $COVERAGE-ON$
 }
