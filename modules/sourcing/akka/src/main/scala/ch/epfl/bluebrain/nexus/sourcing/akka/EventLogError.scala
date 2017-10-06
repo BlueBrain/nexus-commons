@@ -1,6 +1,6 @@
 package ch.epfl.bluebrain.nexus.sourcing.akka
 
-import ch.epfl.bluebrain.nexus.common.types.Err
+import ch.epfl.bluebrain.nexus.commons.types.Err
 
 /**
   * Top level error type definition for the akka persistence backed sourcing implementation.

@@ -82,8 +82,8 @@ lazy val test = project
     moduleName := "commons-test",
     coverageEnabled := false,
     libraryDependencies ++= Seq(
-      "io.circe"    %% "circe-core"   % circeVersion.value,
-      "io.circe"    %% "circe-parser" % circeVersion.value,
+      "io.circe" %% "circe-core"   % circeVersion.value,
+      "io.circe" %% "circe-parser" % circeVersion.value,
     )
   )
 

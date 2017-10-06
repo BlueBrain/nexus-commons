@@ -1,7 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import akka.http.scaladsl.model.StatusCode
-import ch.epfl.bluebrain.nexus.common.types.Err
+import ch.epfl.bluebrain.nexus.commons.types.Err
 
 /**
   * An unexpected failure when attempting to communicate with a sparql endpoint.
