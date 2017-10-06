@@ -169,8 +169,8 @@ class SequentialTagIndexerSpec
     }
 
     "not retry when index function fails with NonRetriableErr" in {
-      val agg = ShardingAggregate("in", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
-      agg.append("in", Fixture.IgnoreExecuted).futureValue
+      val agg = ShardingAggregate("ignore", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
+      agg.append("ignore", Fixture.IgnoreExecuted).futureValue
 
       val count = new AtomicLong(0L)
       val init  = new AtomicLong(10L)
@@ -182,7 +182,8 @@ class SequentialTagIndexerSpec
       SkippedEventLog(projId).fetchEvents[IgnoreExecuted.type].futureValue shouldEqual List()
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[IgnoreExecuted.type](initFunction(init), index, projId, pluginId, "in"))
+        TestActorRef(
+          new SequentialTagIndexer[IgnoreExecuted.type](initFunction(init), index, projId, pluginId, "ignore"))
       eventually {
         count.get() shouldEqual 1L
         init.get shouldEqual 11L
