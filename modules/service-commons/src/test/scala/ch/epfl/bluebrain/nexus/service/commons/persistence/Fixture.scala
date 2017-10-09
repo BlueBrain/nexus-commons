@@ -8,11 +8,15 @@ object Fixture {
   final case object Executed        extends Event
   final case object OtherExecuted   extends Event
   final case object AnotherExecuted extends Event
+  final case object RetryExecuted   extends Event
+  final case object IgnoreExecuted  extends Event
 
   sealed trait Cmd
   final case object Execute        extends Cmd
   final case object ExecuteOther   extends Cmd
   final case object ExecuteAnother extends Cmd
+  final case object ExecuteRetry   extends Cmd
+  final case object ExecuteIgnore  extends Cmd
 
   sealed trait State
   final case object Perpetual extends State
@@ -26,6 +30,9 @@ object Fixture {
       case Executed        => Tagged(event, Set("executed"))
       case OtherExecuted   => Tagged(event, Set("other"))
       case AnotherExecuted => Tagged(event, Set("another"))
+      case RetryExecuted   => Tagged(event, Set("retry"))
+      case IgnoreExecuted  => Tagged(event, Set("ignore"))
+
     }
   }
 
@@ -35,5 +42,8 @@ object Fixture {
     case Execute        => Right(Executed)
     case ExecuteOther   => Right(OtherExecuted)
     case ExecuteAnother => Right(AnotherExecuted)
+    case ExecuteRetry   => Right(RetryExecuted)
+    case ExecuteIgnore  => Right(IgnoreExecuted)
+
   }
 }

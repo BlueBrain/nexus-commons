@@ -1,13 +1,8 @@
 package ch.epfl.bluebrain.nexus.service.commons.persistence
 
-import akka.Done
 import akka.actor.{ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
-import akka.event.Logging
-import akka.persistence.cassandra.CassandraPluginConfig
 import akka.persistence.cassandra.session.scaladsl.CassandraSession
 import akka.persistence.query.{NoOffset, Offset}
-import com.datastax.driver.core.Session
-import com.typesafe.config.Config
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -70,49 +65,9 @@ object ProjectionStorage extends ExtensionId[CassandraProjectionStorage] with Ex
   override def lookup(): ExtensionId[_ <: Extension] = ProjectionStorage
 
   override def createExtension(system: ExtendedActorSystem): CassandraProjectionStorage = {
-    implicit val ec     = system.dispatcher
-    val journalConfig   = lookupConfig(system)
-    val projectionTable = journalConfig.getString("projection-table")
-    val config          = new CassandraPluginConfig(system, journalConfig)
-    val log             = Logging(system, "ProjectionStorage")
+    val (session, config, table) =
+      CassandraStorageHelper("projection", "identifier varchar primary key, offset text", system)
 
-    val session = new CassandraSession(
-      system,
-      config.sessionProvider,
-      config.sessionSettings,
-      ec,
-      log,
-      metricsCategory = "projection-storage",
-      init = session => executeCreateKeyspaceAndTable(session, config, projectionTable)
-    )
-    new CassandraProjectionStorage(session, config.keyspace, projectionTable)
+    new CassandraProjectionStorage(session, config.keyspace, table)(system.dispatcher)
   }
-
-  private def createKeyspace(config: CassandraPluginConfig) = s"""
-      CREATE KEYSPACE IF NOT EXISTS ${config.keyspace}
-      WITH REPLICATION = { 'class' : ${config.replicationStrategy} }
-    """
-
-  private def createTable(config: CassandraPluginConfig, name: String) = s"""
-      CREATE TABLE IF NOT EXISTS ${config.keyspace}.$name (
-        identifier varchar primary key, offset text)
-     """
-
-  private def executeCreateKeyspaceAndTable(session: Session, config: CassandraPluginConfig, tableName: String)(
-      implicit ec: ExecutionContext): Future[Done] = {
-    import akka.persistence.cassandra.listenableFutureToFuture
-    val keyspace: Future[Done] =
-      if (config.keyspaceAutoCreate) session.executeAsync(createKeyspace(config)).map(_ => Done)
-      else Future.successful(Done)
-
-    if (config.tablesAutoCreate) {
-      for {
-        _    <- keyspace
-        done <- session.executeAsync(createTable(config, tableName)).map(_ => Done)
-      } yield done
-    } else keyspace
-  }
-
-  private def lookupConfig(system: ExtendedActorSystem): Config =
-    system.settings.config.getConfig("cassandra-journal")
 }
