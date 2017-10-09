@@ -10,7 +10,6 @@ import shapeless.{:+:, CNil, Coproduct, Typeable}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
-import ch.epfl.bluebrain.nexus.service.commons.retrying.Retryer._
 
 class Retryer[C <: Coproduct](implicit C: CoproductRetryer[C], ec: ExecutionContext, s: Scheduler) {
 
@@ -26,14 +25,17 @@ class Retryer[C <: Coproduct](implicit C: CoproductRetryer[C], ec: ExecutionCont
   /**
     * Retries the [[Future]] ''f'' following an exponential backoff algorithm.
     *
-    * @param f         the [[Future]] to be retried
-    * @param retries   the number of times it will retry
-    * @param minJitter the minimum jitter value
-    * @param maxJitter the maximum jitter value
+    * @param f            the [[Future]] to be retried
+    * @param retries      the number of times it will retry
+    * @param randomFactor adds jitter to the delays.
+    * @param maxDelay     the maximum delay
     * @tparam T generic type of ''f''
     */
-  final def apply[T](f: () => Future[T], retries: Int, minJitter: Double = minJ, maxJitter: Double = maxJ): Future[T] =
-    C(f, backoff(retries, minJitter, maxJitter))
+  final def apply[T](f: () => Future[T],
+                     retries: Int,
+                     randomFactor: Double = 0.2,
+                     maxDelay: Duration = 30 seconds): Future[T] =
+    C(f, backoff(retries, randomFactor, maxDelay))
 }
 
 object Retryer {
@@ -49,8 +51,10 @@ object Retryer {
   final def apply[C <: Coproduct](implicit C: CoproductRetryer[C], ec: ExecutionContext, s: Scheduler): Retryer[C] =
     new Retryer[C]
 
-  val minJ = 0.8
-  val maxJ = 0.8
+  /**
+    * Constructs a [[Retryer]] that will retry for any type of exception.
+    */
+  final def any(implicit ec: ExecutionContext, s: Scheduler): Retryer[AnyRef :+: CNil] = apply[AnyRef :+: CNil]
 
   /**
     * Signals that the amount of retries has been exhausted without any successful recovery.
@@ -143,16 +147,21 @@ object RetryerDelays {
   /**
     * Backoff sequence implemented using Fibonacci as the exponential function with Jitter.
     *
-    * @param retries   the amount of elements in the sequence (or retries). It has to be a positive integer
-    * @param minJitter the minimum jitter value. The minimum delay will be: delay * ''minJitter''
-    * @param maxJitter the maximum jitter value. The maximum delay will be: delay * ''maxJitter''
+    * @param retries      the amount of elements in the sequence (or retries). It has to be a positive integer
+    * @param randomFactor adds jitter to the delays.
+    *                     The minimum delay will be: delay * ''1 - randomFactor''
+    *                     The maximum delay will be: delay * ''1 + randomFactor''
+    * @param maxDelay     the maximum delay
     * @return an exponential sequence of [[FiniteDuration]] with Jitter
     */
-  def backoff(retries: Int, minJitter: Double = minJ, maxJitter: Double = maxJ): Seq[FiniteDuration] =
+  def backoff(retries: Int, randomFactor: Double = 0.2, maxDelay: Duration = 30 seconds): Seq[FiniteDuration] = {
+    val minJitter = 1 - randomFactor
+    val maxJitter = 1 + randomFactor
     fibonacci
       .slice(1, retries + 1)
-      .map(d => (d * (minJitter + (maxJitter - minJitter) * Random.nextDouble)).toMillis millis)
+      .map(d => (d * (minJitter + (maxJitter - minJitter) * Random.nextDouble)).min(maxDelay).toMillis millis)
       .toList
+  }
 
   private val fibonacci: Stream[FiniteDuration] = 0.seconds #:: 1.seconds #:: (fibonacci zip fibonacci.tail).map { t =>
     t._1 + t._2

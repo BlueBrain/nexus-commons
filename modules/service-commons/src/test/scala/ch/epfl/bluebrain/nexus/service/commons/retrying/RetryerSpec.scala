@@ -25,17 +25,19 @@ class RetryerSpec extends TestKit(ActorSystem("RetryerSpec")) with WordSpecLike 
     trait Context {
       val countSuccess          = new AtomicLong(0L)
       val countFailed           = new AtomicLong(0L)
+      val countFailedAny        = new AtomicLong(0L)
       val countFailedNotAllowed = new AtomicLong(0L)
 
       val fSuccess          = () => Future(countSuccess.incrementAndGet())
       val fFailed           = () => Future.failed(Allowed1(countFailed.incrementAndGet()))
+      val fFailedAny        = () => Future.failed(NotAllowed(countFailedAny.incrementAndGet()))
       val fFailedNotAllowed = () => Future.failed(NotAllowed(countFailedNotAllowed.incrementAndGet()))
 
     }
 
     "return the right sequence of backoff without jitter" in {
       val expected = List(1 second, 1 second, 2 seconds, 3 seconds, 5 seconds, 8 seconds)
-      RetryerDelays.backoff(6, maxJitter = 1.0, minJitter = 1.0).toList shouldEqual expected
+      RetryerDelays.backoff(6, randomFactor = 0.0).toList shouldEqual expected
     }
 
     "return empty backoff" in {
@@ -44,10 +46,23 @@ class RetryerSpec extends TestKit(ActorSystem("RetryerSpec")) with WordSpecLike 
 
     "return the right sequence of backoff with jitter" in {
       RetryerDelays
-        .backoff(6, minJitter = 0.8, maxJitter = 1.2)
+        .backoff(6, randomFactor = 0.2)
         .toList
         .last
         .toNanos shouldEqual (8 seconds).toNanos +- (1600 millis).toNanos
+    }
+
+    "return the right sequence of backoff capped to 5 seconds" in {
+      RetryerDelays
+        .backoff(7, randomFactor = 0.0, maxDelay = 5 seconds)
+        .toList
+        .map(_.toSeconds seconds) shouldEqual List(1 seconds,
+                                                   1 seconds,
+                                                   2 seconds,
+                                                   3 seconds,
+                                                   5 seconds,
+                                                   5 seconds,
+                                                   5 seconds)
     }
 
     "return the right response when future does not fail" in new Context {
@@ -85,6 +100,14 @@ class RetryerSpec extends TestKit(ActorSystem("RetryerSpec")) with WordSpecLike 
       ScalaFutures.whenReady(f.failed, timeout(Span(3500, Millis))) { e =>
         e shouldBe a[MaxRetriesException]
         countFailed.get() shouldEqual 3L
+      }
+    }
+
+    "retry for any type" in new Context {
+      val f = Retryer.any.apply(fFailedAny, Seq(1 seconds, 1 seconds))
+      ScalaFutures.whenReady(f.failed, timeout(Span(2500, Millis))) { e =>
+        e shouldBe a[MaxRetriesException]
+        countFailedAny.get() shouldEqual 3L
       }
     }
 

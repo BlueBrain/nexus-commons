@@ -1,17 +1,18 @@
 package ch.epfl.bluebrain.nexus.service.commons.persistence
 
 import akka.Done
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props, Scheduler}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings}
 import akka.pattern.pipe
 import akka.persistence.query.scaladsl.EventsByTagQuery
 import akka.persistence.query.{EventEnvelope, Offset, PersistenceQuery}
 import akka.stream.scaladsl.{Flow, Keep, RestartFlow, RunnableGraph, Sink}
 import akka.stream.{ActorMaterializer, KillSwitches, UniqueKillSwitch}
-import ch.epfl.bluebrain.nexus.common.types.Err
-import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.{NonRetriableErr, Stop}
+import ch.epfl.bluebrain.nexus.common.types.RetriableErr
+import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.Stop
+import ch.epfl.bluebrain.nexus.service.commons.retrying.Retryer
 import io.circe.Encoder
-import shapeless.Typeable
+import shapeless.{:+:, CNil, Typeable}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,6 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * @param init         an initialization function that is run before the indexer is (re)started
   * @param index        the indexing function
+  * @param retries      the number of retries for the indexing function (using exponential backoff)
   * @param id           the id of the resumable projection and the skipped log to use
   * @param pluginId     the persistence query plugin id
   * @param tag          the tag to use while selecting the events from the store
@@ -32,6 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class SequentialTagIndexer[T](init: () => Future[Unit],
                               index: T => Future[Unit],
+                              retries: Int,
                               id: String,
                               pluginId: String,
                               tag: String)(implicit T: Typeable[T], E: Encoder[T])
@@ -41,6 +44,11 @@ class SequentialTagIndexer[T](init: () => Future[Unit],
   private implicit val as: ActorSystem       = context.system
   private implicit val ec: ExecutionContext  = context.dispatcher
   private implicit val mt: ActorMaterializer = ActorMaterializer()
+  private implicit val s: Scheduler          = as.scheduler
+
+  private val retryer = Retryer[RetriableErr :+: CNil]
+
+  private val cassandraRetryer = Retryer.any
 
   private val projection = ResumableProjection(id)
   private val skippedLog = SkippedEventLog(id)
@@ -58,13 +66,13 @@ class SequentialTagIndexer[T](init: () => Future[Unit],
   private val indexFlow = RestartFlow.withBackoff(1 second, 30 seconds, 0.2) { () =>
     Flow[EventEnvelope].mapAsync(1) {
       case EventEnvelope(off, persistenceId, sequenceNr, event) =>
-        log.info("Processing event for persistence id '{}', seqNr '{}'", persistenceId, sequenceNr)
+        log.debug("Processing event for persistence id '{}', seqNr '{}'", persistenceId, sequenceNr)
         T.cast(event) match {
           case Some(value) =>
-            index(value)
+            retryer(() => index(value), retries)
               .recoverWith {
-                case _: NonRetriableErr =>
-                  skippedLog.storeEvent(value)
+                case _ =>
+                  cassandraRetryer(() => skippedLog.storeEvent(value), retries)
                   Future.successful(off)
               }
               .map(_ => off)
@@ -77,7 +85,7 @@ class SequentialTagIndexer[T](init: () => Future[Unit],
   }
 
   private val storeOffsetFlow = RestartFlow.withBackoff(1 second, 30 seconds, 0.2) { () =>
-    Flow[Offset].mapAsync(1)(offset => projection.storeLatestOffset(offset))
+    Flow[Offset].mapAsync(1)(offset => cassandraRetryer(() => projection.storeLatestOffset(offset), retries))
   }
 
   private def buildStream(offset: Offset): RunnableGraph[(UniqueKillSwitch, Future[Done])] =
@@ -124,22 +132,33 @@ object SequentialIndexer {
 
   final case object Stop
 
-  /**
-    * Signals an error which is not going to be stored but not retried.
-    *
-    * @param th the underlying error
-    */
-  final case class NonRetriableErr(th: Throwable) extends Err(s"Non retriable error '${th.getMessage}'")
-
   // $COVERAGE-OFF$
   final def props[T: Typeable](init: () => Future[Unit],
                                index: T => Future[Unit],
+                               retries: Int,
                                id: String,
                                pluginId: String,
                                tag: String)(implicit as: ActorSystem, E: Encoder[T]): Props =
-    ClusterSingletonManager.props(Props(new SequentialTagIndexer[T](init, index, id, pluginId, tag)),
+    ClusterSingletonManager.props(Props(new SequentialTagIndexer[T](init, index, retries, id, pluginId, tag)),
                                   terminationMessage = Stop,
                                   settings = ClusterSingletonManagerSettings(as))
+
+  final def start[T: Typeable](init: () => Future[Unit],
+                               index: T => Future[Unit],
+                               retries: Int,
+                               id: String,
+                               pluginId: String,
+                               tag: String,
+                               name: String)(implicit as: ActorSystem, E: Encoder[T]): ActorRef =
+    as.actorOf(props[T](init, index, retries, id, pluginId, tag), name)
+
+  final def start[T: Typeable](index: T => Future[Unit],
+                               id: String,
+                               retries: Int,
+                               pluginId: String,
+                               tag: String,
+                               name: String)(implicit as: ActorSystem, E: Encoder[T]): ActorRef =
+    start(() => Future.successful(()), index, retries, id, pluginId, tag, name)
 
   final def start[T: Typeable](init: () => Future[Unit],
                                index: T => Future[Unit],
@@ -147,12 +166,12 @@ object SequentialIndexer {
                                pluginId: String,
                                tag: String,
                                name: String)(implicit as: ActorSystem, E: Encoder[T]): ActorRef =
-    as.actorOf(props[T](init, index, id, pluginId, tag), name)
+    as.actorOf(props[T](init, index, 0, id, pluginId, tag), name)
 
   final def start[T: Typeable](index: T => Future[Unit], id: String, pluginId: String, tag: String, name: String)(
       implicit as: ActorSystem,
       E: Encoder[T]): ActorRef =
-    start(() => Future.successful(()), index, id, pluginId, tag, name)
+    start(() => Future.successful(()), index, 0, id, pluginId, tag, name)
 
   // $COVERAGE-ON$
 }

@@ -7,14 +7,14 @@ import akka.Done
 import akka.cluster.Cluster
 import akka.stream.ActorMaterializer
 import akka.testkit.{TestActorRef, TestKit, TestKitBase}
-import ch.epfl.bluebrain.nexus.common.types.Err
+import ch.epfl.bluebrain.nexus.common.types.{Err, RetriableErr}
 import ch.epfl.bluebrain.nexus.service.commons.persistence.Fixture._
-import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.{NonRetriableErr, Stop}
+import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialIndexer.Stop
 import ch.epfl.bluebrain.nexus.service.commons.persistence.SequentialTagIndexerSpec.{SomeError, SomeOtherError}
 import ch.epfl.bluebrain.nexus.sourcing.akka.{ShardingAggregate, SourcingAkkaSettings}
+import io.circe.generic.auto._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, Matchers, WordSpecLike}
-import io.circe.generic.auto._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -71,7 +71,7 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "executed"))
+        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, 3, projId, pluginId, "executed"))
 
       eventually {
         count.get() shouldEqual 1L
@@ -101,7 +101,8 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[OtherExecuted.type](initFunction(init), index, projId, pluginId, "other"))
+        TestActorRef(
+          new SequentialTagIndexer[OtherExecuted.type](initFunction(init), index, 3, projId, pluginId, "other"))
 
       eventually {
         count.get() shouldEqual 2L
@@ -126,7 +127,7 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "another"))
+        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, 3, projId, pluginId, "another"))
 
       eventually {
         count.get() shouldEqual 1L
@@ -158,11 +159,16 @@ class SequentialTagIndexerSpec
       val projId = UUID.randomUUID().toString
 
       val indexer =
-        TestActorRef(new SequentialTagIndexer[RetryExecuted.type](initFunction(init), index, projId, pluginId, "retry"))
+        TestActorRef(
+          new SequentialTagIndexer[RetryExecuted.type](initFunction(init), index, 3, projId, pluginId, "retry"))
       eventually {
-        count.get() shouldEqual 4L
+        count.get() shouldEqual 4
         init.get shouldEqual 11L
       }
+      eventually {
+        SkippedEventLog(projId).fetchEvents[RetryExecuted.type].futureValue shouldEqual List(RetryExecuted)
+      }
+
       watch(indexer)
       indexer ! Stop
       expectTerminated(indexer)
@@ -176,14 +182,14 @@ class SequentialTagIndexerSpec
       val init  = new AtomicLong(10L)
 
       val index =
-        (_: IgnoreExecuted.type) => Future.failed[Unit](NonRetriableErr(SomeOtherError(count.incrementAndGet())))
+        (_: IgnoreExecuted.type) => Future.failed[Unit](SomeOtherError(count.incrementAndGet()))
       val projId = UUID.randomUUID().toString
 
       SkippedEventLog(projId).fetchEvents[IgnoreExecuted.type].futureValue shouldEqual List()
 
       val indexer =
         TestActorRef(
-          new SequentialTagIndexer[IgnoreExecuted.type](initFunction(init), index, projId, pluginId, "ignore"))
+          new SequentialTagIndexer[IgnoreExecuted.type](initFunction(init), index, 5, projId, pluginId, "ignore"))
       eventually {
         count.get() shouldEqual 1L
         init.get shouldEqual 11L
@@ -198,7 +204,7 @@ class SequentialTagIndexerSpec
 
 }
 object SequentialTagIndexerSpec {
-  case class SomeError(count: Long)      extends Err("some error")
+  case class SomeError(count: Long)      extends RetriableErr("some error")
   case class SomeOtherError(count: Long) extends Err("some OTHER error")
 
 }
