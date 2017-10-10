@@ -50,12 +50,12 @@ lazy val sourcingMem = project
             moduleName := "sourcing-mem",
             libraryDependencies ++= Seq("org.scalatest" %% "scalatest" % scalaTestVersion.value % Test))
 
-lazy val serviceCommons = project
-  .in(file("modules/service-commons"))
+lazy val service = project
+  .in(file("modules/service"))
   .dependsOn(types, sourcingAkka % "test->compile")
   .settings(
-    name := "service-commons",
-    moduleName := "service-commons",
+    name := "commons-service",
+    moduleName := "commons-service",
     libraryDependencies ++= Seq(
       "com.chuusai"           %% "shapeless"                           % shapelessVersion.value,
       "com.typesafe.akka"     %% "akka-actor"                          % akkaVersion.value,
@@ -144,7 +144,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, serviceCommons, shaclValidator, sparqlClient)
+  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 
