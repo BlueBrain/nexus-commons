@@ -1,6 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.shacl.validator
 
-import ch.epfl.bluebrain.nexus.common.types.Err
+import ch.epfl.bluebrain.nexus.commons.types.Err
 
 /**
   * Top level error type for the sealed hierarchy of shacl validation errors.
