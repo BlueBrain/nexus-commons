@@ -8,7 +8,8 @@ import akka.cluster.Cluster
 import akka.stream.ActorMaterializer
 import akka.testkit.{TestActorRef, TestKit, TestKitBase}
 import ch.epfl.bluebrain.nexus.commons.service.persistence.Fixture._
-import ch.epfl.bluebrain.nexus.commons.service.persistence.SequentialIndexer.Stop
+import ch.epfl.bluebrain.nexus.commons.service.stream.SingletonStreamCoordinator
+import ch.epfl.bluebrain.nexus.commons.service.stream.SingletonStreamCoordinator.Stop
 import ch.epfl.bluebrain.nexus.sourcing.akka.{ShardingAggregate, SourcingAkkaSettings}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, Matchers, WordSpecLike}
@@ -45,7 +46,7 @@ class SequentialTagIndexerSpec
   override implicit def patienceConfig: PatienceConfig =
     PatienceConfig(30 seconds, 1 second)
 
-  "A SequentialIndexer" should {
+  "A SequentialTagIndexer" should {
     val pluginId         = "cassandra-query-journal"
     val sourcingSettings = SourcingAkkaSettings(journalPluginId = pluginId)
 
@@ -67,8 +68,9 @@ class SequentialTagIndexerSpec
       }
       val projId = UUID.randomUUID().toString
 
-      val indexer =
-        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "executed"))
+      val initialize = SequentialTagIndexer.initialize(initFunction(init), pluginId)
+      val source     = SequentialTagIndexer.source(index, projId, pluginId, "executed")
+      val indexer    = TestActorRef(new SingletonStreamCoordinator(initialize, source))
 
       eventually {
         count.get() shouldEqual 1L
@@ -97,8 +99,9 @@ class SequentialTagIndexerSpec
       }
       val projId = UUID.randomUUID().toString
 
-      val indexer =
-        TestActorRef(new SequentialTagIndexer[OtherExecuted.type](initFunction(init), index, projId, pluginId, "other"))
+      val initialize = SequentialTagIndexer.initialize(initFunction(init), pluginId)
+      val source     = SequentialTagIndexer.source(index, projId, pluginId, "other")
+      val indexer    = TestActorRef(new SingletonStreamCoordinator(initialize, source))
 
       eventually {
         count.get() shouldEqual 2L
@@ -122,8 +125,9 @@ class SequentialTagIndexerSpec
       }
       val projId = UUID.randomUUID().toString
 
-      val indexer =
-        TestActorRef(new SequentialTagIndexer[Event](initFunction(init), index, projId, pluginId, "another"))
+      val initialize = SequentialTagIndexer.initialize(initFunction(init), pluginId)
+      val source     = SequentialTagIndexer.source(index, projId, pluginId, "another")
+      val indexer    = TestActorRef(new SingletonStreamCoordinator(initialize, source))
 
       eventually {
         count.get() shouldEqual 1L
@@ -144,5 +148,4 @@ class SequentialTagIndexerSpec
       expectTerminated(indexer)
     }
   }
-
 }
