@@ -7,13 +7,15 @@ import akka.Done
 import akka.cluster.Cluster
 import akka.stream.ActorMaterializer
 import akka.testkit.{TestActorRef, TestKit, TestKitBase}
-import ch.epfl.bluebrain.nexus.commons.service.persistence.Fixture._
+import ch.epfl.bluebrain.nexus.commons.service.persistence.Fixture.{RetryExecuted, _}
+import ch.epfl.bluebrain.nexus.commons.service.persistence.SequentialTagIndexerSpec._
 import ch.epfl.bluebrain.nexus.commons.service.stream.SingletonStreamCoordinator
 import ch.epfl.bluebrain.nexus.commons.service.stream.SingletonStreamCoordinator.Stop
+import ch.epfl.bluebrain.nexus.commons.types.{Err, RetriableErr}
 import ch.epfl.bluebrain.nexus.sourcing.akka.{ShardingAggregate, SourcingAkkaSettings}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, Matchers, WordSpecLike}
-
+import io.circe.generic.auto._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -147,5 +149,72 @@ class SequentialTagIndexerSpec
       indexer ! Stop
       expectTerminated(indexer)
     }
+
+    "retry when index function fails" in {
+      val agg = ShardingAggregate("retry", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
+      agg.append("retry", Fixture.RetryExecuted).futureValue
+
+      val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
+
+      val index  = (_: RetryExecuted.type) => Future.failed[Unit](SomeError(count.incrementAndGet()))
+      val projId = UUID.randomUUID().toString
+
+      val initialize = SequentialTagIndexer.initialize(initFunction(init), pluginId)
+      val source     = SequentialTagIndexer.source(index, projId, pluginId, "retry")
+      val indexer    = TestActorRef(new SingletonStreamCoordinator(initialize, source))
+
+      eventually {
+        count.get() shouldEqual 4
+        init.get shouldEqual 11L
+      }
+      eventually {
+        IndexFailuresLog(projId)
+          .fetchEvents[RetryExecuted.type]
+          .runFold(Vector.empty[RetryExecuted.type])(_ :+ _)
+          .futureValue shouldEqual List(RetryExecuted)
+      }
+
+      watch(indexer)
+      indexer ! Stop
+      expectTerminated(indexer)
+    }
+
+    "not retry when index function fails with a non RetriableErr" in {
+      val agg = ShardingAggregate("ignore", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
+      agg.append("ignore", Fixture.IgnoreExecuted).futureValue
+
+      val count = new AtomicLong(0L)
+      val init  = new AtomicLong(10L)
+
+      val index =
+        (_: IgnoreExecuted.type) => Future.failed[Unit](SomeOtherError(count.incrementAndGet()))
+      val projId = UUID.randomUUID().toString
+
+      val initialize = SequentialTagIndexer.initialize(initFunction(init), pluginId)
+      val source     = SequentialTagIndexer.source(index, projId, pluginId, "ignore")
+      val indexer    = TestActorRef(new SingletonStreamCoordinator(initialize, source))
+
+      eventually {
+        count.get() shouldEqual 1L
+        init.get shouldEqual 11L
+      }
+
+      IndexFailuresLog(projId)
+        .fetchEvents[IgnoreExecuted.type]
+        .runFold(Vector.empty[IgnoreExecuted.type])(_ :+ _)
+        .futureValue shouldEqual List(IgnoreExecuted)
+
+      watch(indexer)
+      indexer ! Stop
+      expectTerminated(indexer)
+    }
   }
+
+}
+
+object SequentialTagIndexerSpec {
+  case class SomeError(count: Long)      extends RetriableErr("some error")
+  case class SomeOtherError(count: Long) extends Err("some OTHER error")
+
 }
