@@ -8,9 +8,11 @@ import akka.event.Logging
 import akka.persistence.query.scaladsl.EventsByTagQuery
 import akka.persistence.query.{EventEnvelope, Offset, PersistenceQuery}
 import akka.stream.scaladsl.Source
+import ch.epfl.bluebrain.nexus.commons.service.retryer.RetryStrategy
 import ch.epfl.bluebrain.nexus.commons.service.retryer.RetryStrategy.Backoff
-import ch.epfl.bluebrain.nexus.commons.service.retryer.{RetryStrategy, TaskRetry}
+import ch.epfl.bluebrain.nexus.commons.service.retryer.TaskRetry._
 import ch.epfl.bluebrain.nexus.commons.service.stream.SingletonStreamCoordinator
+import io.circe.Encoder
 import shapeless.Typeable
 
 import scala.concurrent.Future
@@ -22,7 +24,7 @@ import scala.concurrent.duration.Duration
   * clustered deployment.  If the event type is not compatible with the events deserialized from the persistence store
   * the events are skipped.
   */
-object SequentialTagIndexer extends TaskRetry {
+object SequentialTagIndexer {
 
   private[persistence] def initialize(underlying: () => Future[Unit], projectionId: String)(
       implicit as: ActorSystem): () => Future[Offset] = {
@@ -35,13 +37,13 @@ object SequentialTagIndexer extends TaskRetry {
   private[persistence] def source[T](index: T => Future[Unit], id: String, pluginId: String, tag: String)(
       implicit as: ActorSystem,
       T: Typeable[T],
-      E: io.circe.Encoder[T]): Offset => Source[Unit, NotUsed] = {
+      E: Encoder[T]): Offset => Source[Unit, NotUsed] = {
     import as.dispatcher
     val log        = Logging(as, SequentialTagIndexer.getClass)
     val projection = ResumableProjection(id)
     val failureLog = IndexFailuresLog(id)
 
-    val (retries, backoff) = lookupRetriesConfig
+    implicit val (retries, backoff) = lookupRetriesConfig
     (offset: Offset) =>
       PersistenceQuery(as)
         .readJournalFor[EventsByTagQuery](pluginId)
@@ -51,8 +53,9 @@ object SequentialTagIndexer extends TaskRetry {
             log.debug("Processing event for persistence id '{}', seqNr '{}'", persistenceId, sequenceNr)
             T.cast(event) match {
               case Some(value) =>
-                retry(() => index(value), retries, backoff)
-                  .recoverWith { case _ => failureLog.storeEvent(off, value) }
+                (() => index(value))
+                  .retry(retries)
+                  .recoverWith { case _ => failureLog.storeEvent(persistenceId, off, value) }
                   .map(_ => off)
               case None =>
                 log.debug(s"Event not compatible with type '${T.describe}, skipping...'")
@@ -62,9 +65,10 @@ object SequentialTagIndexer extends TaskRetry {
         .mapAsync(1)(offset => projection.storeLatestOffset(offset))
   }
   private def lookupRetriesConfig(implicit as: ActorSystem): (Int, RetryStrategy) = {
-    val config  = as.settings.config.getConfig("indexing.retries")
-    val retries = config.getInt("times")
-    val backoff = Backoff(Duration(config.getDuration("max", SECONDS), SECONDS), config.getDouble("random-factor"))
+    val config  = as.settings.config.getConfig("indexing.retry")
+    val retries = config.getInt("max-count")
+    val backoff =
+      Backoff(Duration(config.getDuration("max-duration", SECONDS), SECONDS), config.getDouble("random-factor"))
     (retries, backoff)
   }
 
@@ -82,7 +86,7 @@ object SequentialTagIndexer extends TaskRetry {
     * @param name     the name of this indexer
     * @param as       an implicitly available actor system
     * @param T        a Typeable instance for the event type T
-    * @param E        an implicitly available [[io.circe.Encoder]] for T
+    * @param E        an implicitly available [[Encoder]] for T
     * @tparam T the event type
     */
   // $COVERAGE-OFF$
@@ -91,7 +95,7 @@ object SequentialTagIndexer extends TaskRetry {
                      id: String,
                      pluginId: String,
                      tag: String,
-                     name: String)(implicit as: ActorSystem, T: Typeable[T], E: io.circe.Encoder[T]): ActorRef =
+                     name: String)(implicit as: ActorSystem, T: Typeable[T], E: Encoder[T]): ActorRef =
     SingletonStreamCoordinator.start(initialize(init, pluginId), source(index, id, pluginId, tag), name)
 
   /**
@@ -107,13 +111,13 @@ object SequentialTagIndexer extends TaskRetry {
     * @param name     the name of this indexer
     * @param as       an implicitly available actor system
     * @param T        a Typeable instance for the event type T
-    * @param E        an implicitly available [[io.circe.Encoder]] for T
+    * @param E        an implicitly available [[Encoder]] for T
     * @tparam T the event type
     */
   final def start[T](index: T => Future[Unit], id: String, pluginId: String, tag: String, name: String)(
       implicit as: ActorSystem,
       T: Typeable[T],
-      E: io.circe.Encoder[T]): ActorRef =
+      E: Encoder[T]): ActorRef =
     start(() => Future.successful(()), index, id, pluginId, tag, name)
   // $COVERAGE-ON$
 }

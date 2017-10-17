@@ -11,7 +11,7 @@ import monix.execution.atomic.AtomicLong
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time._
 import org.scalatest.{Inspectors, Matchers, WordSpecLike}
-
+import ch.epfl.bluebrain.nexus.commons.service.retryer.TaskRetry._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -28,12 +28,12 @@ class TaskRetrySpec
 
   abstract class Context {
     val count = AtomicLong(0L)
-    val task = Task.deferFuture {
+    val future = () =>
       Future[Unit] {
         count.incrementAndGet()
         throw SomeError
-      }
     }
+    val task = Task.deferFuture(future())
   }
 
   "A TaskRetry" should {
@@ -43,7 +43,8 @@ class TaskRetrySpec
     }
 
     "retry a task exponentially when it fails capped to 1 second" in new Context {
-      retry(task, 3, Backoff(1 seconds, 0)).failed.futureValue(timeout(Span(3, Seconds))) shouldBe SomeError
+      private implicit val backoff = Backoff(1 seconds, 0)
+      future.retry(3).failed.futureValue(timeout(Span(3, Seconds))) shouldBe SomeError
       count.get shouldEqual 4
     }
 

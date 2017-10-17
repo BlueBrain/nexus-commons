@@ -61,12 +61,15 @@ final class CassandraProjectionStorage(session: CassandraSession, keyspace: Stri
   }
 }
 
-object ProjectionStorage extends ExtensionId[CassandraProjectionStorage] with ExtensionIdProvider {
+object ProjectionStorage
+    extends ExtensionId[CassandraProjectionStorage]
+    with ExtensionIdProvider
+    with CassandraStorage {
   override def lookup(): ExtensionId[_ <: Extension] = ProjectionStorage
 
   override def createExtension(system: ExtendedActorSystem): CassandraProjectionStorage = {
     val (session, keyspace, table) =
-      CassandraStorageHelper("projection", "identifier varchar primary key, offset text", system)
+      createSession("projection", "identifier varchar primary key, offset text", system)
 
     new CassandraProjectionStorage(session, keyspace, table)(system.dispatcher)
   }

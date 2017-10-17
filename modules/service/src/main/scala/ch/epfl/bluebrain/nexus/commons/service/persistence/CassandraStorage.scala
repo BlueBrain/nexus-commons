@@ -10,7 +10,7 @@ import com.typesafe.config.Config
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object CassandraStorageHelper {
+trait CassandraStorage {
 
   /**
     * Initialize Cassandra session and create keyspace and table if not exists.
@@ -20,7 +20,9 @@ object CassandraStorageHelper {
     * @param system the actor system
     * @return a [[Tuple3]] with the session, the keyspace and the table name
     */
-  def apply(name: String, tableSchema: String, system: ExtendedActorSystem): (CassandraSession, String, String) = {
+  def createSession(name: String,
+                    tableSchema: String,
+                    system: ExtendedActorSystem): (CassandraSession, String, String) = {
     implicit val ec   = system.dispatcher
     val journalConfig = lookupConfig(system)
     val table         = journalConfig.getString(s"$name-table")

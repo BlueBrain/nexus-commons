@@ -30,7 +30,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlServerError(status: StatusCode, body: String)
-      extends Err(s"Server error with status code '$status'")
+      extends RetriableErr(s"Server error with status code '$status'")
       with SparqlFailure
 
   /**
@@ -40,7 +40,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlClientError(status: StatusCode, body: String)
-      extends RetriableErr(s"Client error with status code '$status'")
+      extends Err(s"Client error with status code '$status'")
       with SparqlFailure
 
   /**

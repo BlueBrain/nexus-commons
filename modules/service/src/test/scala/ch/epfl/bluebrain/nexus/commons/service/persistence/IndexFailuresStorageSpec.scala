@@ -30,27 +30,19 @@ class IndexFailuresStorageSpec
 
   "An IndexFailuresLog" should {
     val id          = UUID.randomUUID().toString
+    val resourceId  = s"/some/${UUID.randomUUID()}"
     implicit val mt = ActorMaterializer()
 
     "store an event" in {
-      IndexFailuresLog(id).storeEvent(Offset.sequence(42), SomeEvent(1L, "description")).futureValue
+      IndexFailuresLog(id).storeEvent(resourceId, Offset.sequence(42), SomeEvent(1L, "description")).futureValue
     }
 
     "store another event" in {
-      IndexFailuresLog(id).storeEvent(Offset.sequence(1), SomeEvent(2L, "description2")).futureValue
+      IndexFailuresLog(id).storeEvent(resourceId, Offset.sequence(1), SomeEvent(2L, "description2")).futureValue
     }
 
     "retrieve stored events" in {
-      fetchLogs(id) shouldEqual Seq(SomeEvent(1L, "description"), SomeEvent(2L, "description2"))
-    }
-
-    "retrieve stored events with offset" in {
-      val result = IndexFailuresLog(id)
-        .fetchEventsWithOffset[SomeEvent]
-        .runFold(Vector.empty[(Offset, SomeEvent)])(_ :+ _)
-        .futureValue
-      result shouldEqual Seq(Offset.sequence(42) -> SomeEvent(1L, "description"),
-                             Offset.sequence(1)  -> SomeEvent(2L, "description2"))
+      fetchLogs(id) should contain allElementsOf Seq(SomeEvent(1L, "description"), SomeEvent(2L, "description2"))
     }
 
     "retrieve empty list of events for unknown failure log" in {

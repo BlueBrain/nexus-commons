@@ -17,12 +17,13 @@ trait IndexFailuresLog {
   /**
     * Records the failed event against this failures log.
     *
-    * @param offset the offset to record
-    * @param event  the event to record
+    * @param persistenceId the persistenceId to record
+    * @param offset        the offset to record
+    * @param event         the event to record
     * @tparam T the generic type of the ''event''
     * @return a future of [[Unit]] upon success or a failure otherwise
     */
-  def storeEvent[T](offset: Offset, event: T)(implicit E: Encoder[T]): Future[Unit]
+  def storeEvent[T](persistenceId: String, offset: Offset, event: T)(implicit E: Encoder[T]): Future[Unit]
 
   /**
     * Retrieve the events for this failures log.
@@ -30,14 +31,6 @@ trait IndexFailuresLog {
     * @tparam T the generic type of the returned ''event''s
     */
   def fetchEvents[T](implicit D: Decoder[T]): Source[T, _]
-
-  /**
-    * Retrieve the events with it's offset for this failures log.
-    *
-    * @tparam T the generic type of the returned ''event''s
-    */
-  def fetchEventsWithOffset[T](implicit D: Decoder[T]): Source[(Offset, T), _]
-
 }
 
 object IndexFailuresLog {
@@ -45,13 +38,10 @@ object IndexFailuresLog {
 
     override val identifier: String = id
 
-    override def storeEvent[T](offset: Offset, event: T)(implicit E: Encoder[T]): Future[Unit] =
-      storage.storeEvent(identifier, offset, event)
+    override def storeEvent[T](persistenceId: String, offset: Offset, event: T)(implicit E: Encoder[T]): Future[Unit] =
+      storage.storeEvent(identifier, persistenceId, offset, event)
 
     override def fetchEvents[T](implicit D: Decoder[T]): Source[T, _] = storage.fetchEvents(identifier)
-
-    override def fetchEventsWithOffset[T](implicit D: Decoder[T]): Source[(Offset, T), _] =
-      storage.fetchEventsWithOffset(identifier)
 
   }
 
