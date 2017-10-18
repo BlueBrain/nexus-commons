@@ -3,13 +3,18 @@ package ch.epfl.bluebrain.nexus.commons.service
 import java.io.File
 
 import akka.persistence.cassandra.testkit.CassandraLauncher
-import ch.epfl.bluebrain.nexus.commons.service.persistence.{ResumableProjectionSpec, SequentialTagIndexerSpec}
+import ch.epfl.bluebrain.nexus.commons.service.persistence.{
+  ResumableProjectionSpec,
+  SequentialTagIndexerSpec,
+  IndexFailuresStorageSpec
+}
 import org.scalatest.{BeforeAndAfterAll, Suites}
 
 class CassandraSpec
     extends Suites(
       new SequentialTagIndexerSpec,
       new ResumableProjectionSpec,
+      new IndexFailuresStorageSpec
     )
     with BeforeAndAfterAll {
 

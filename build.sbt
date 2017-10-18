@@ -3,6 +3,7 @@ val metricsCoreVersion   = "3.2.2"
 val jenaVersion          = "3.4.0"
 val blazegraphVersion    = "2.1.4"
 val jacksonVersion       = "2.9.0"
+val monixVersion         = "2.3.0"
 
 lazy val types = project
   .in(file("modules/types"))
@@ -64,6 +65,7 @@ lazy val service = project
       "com.typesafe.akka"     %% "akka-persistence-cassandra"          % akkaPersistenceCassandraVersion.value,
       "io.circe"              %% "circe-core"                          % circeVersion.value,
       "io.circe"              %% "circe-parser"                        % circeVersion.value,
+      "io.monix"              %% "monix"                               % monixVersion,
       "io.verizon.journal"    %% "core"                                % journalVersion.value,
       "io.dropwizard.metrics" % "metrics-core"                         % metricsCoreVersion % Test,
       "com.typesafe.akka"     %% "akka-persistence-cassandra-launcher" % akkaPersistenceCassandraVersion.value % Test,

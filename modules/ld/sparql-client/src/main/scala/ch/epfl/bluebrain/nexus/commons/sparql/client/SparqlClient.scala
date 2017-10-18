@@ -134,7 +134,7 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
           cl.toString(resp.entity).flatMap { body =>
             log.error(
               s"Unexpected Sparql response for intent 'namespace exists':\nRequest: '${req.method} ${req.uri}'\nStatus: '$other'\nResponse: '$body'")
-            F.raiseError(UnexpectedSparqlResponse(resp.status, body))
+            F.raiseError(SparqlFailure.fromStatusCode(resp.status, body))
           }
       }
     }
@@ -164,7 +164,7 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
         cl.toString(resp.entity).flatMap { body =>
           log.error(
             s"Unexpected Sparql response for intent '$intent':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '$body'")
-          F.raiseError(UnexpectedSparqlResponse(resp.status, body))
+          F.raiseError(SparqlFailure.fromStatusCode(resp.status, body))
         }
     }
 }
