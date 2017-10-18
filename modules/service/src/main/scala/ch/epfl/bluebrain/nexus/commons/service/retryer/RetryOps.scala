@@ -11,7 +11,7 @@ import scala.util.Random
 object RetryOps {
 
   /**
-    * Execute a [[Task]] and provide a retry mechanism on failures of any subtype of [[RetriableErr]].
+    * Execute a [[Future]] and provide a retry mechanism on failures of any subtype of [[RetriableErr]].
     *
     * @param source     the [[Future]] function where to add retry support
     * @param maxRetries the max number of retries
@@ -43,18 +43,19 @@ object RetryOps {
     * Interface syntax to expose new functionality into () => Future[A]
     *
     * @param source the [[Future]] function where to add retry support
+    * @param ec     the implicitly available [[ExecutionContext]]
     * @tparam A the generic type of the [[Future]]s result
     */
-  final implicit class Retryable[A](val source: () => Future[A]) extends AnyVal {
+  final implicit class Retryable[A](val source: () => Future[A])(implicit ec: ExecutionContext) {
 
     /**
       * Method exposed on () => Future[A] instances
       *
       * @param maxRetries the max number of retries
-      * @param strategy   the retry strategy between retry delays
+      * @param strategy   the implicitly available retry strategy between retry delays
       * @return an optional Json which contains only the filtered shape.
       */
-    def retry(maxRetries: Int)(implicit strategy: RetryStrategy, ec: ExecutionContext): Future[A] =
+    def retry(maxRetries: Int)(implicit strategy: RetryStrategy): Future[A] =
       RetryOps.retry(source, maxRetries, strategy)
   }
 }
