@@ -20,7 +20,6 @@ class RetryOpsSpec
     with WordSpecLike
     with Matchers
     with Inspectors
-    with RetryOps
     with Eventually
     with ScalaFutures {
 
