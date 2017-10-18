@@ -2,14 +2,15 @@ package ch.epfl.bluebrain.nexus.commons.service.retryer
 
 import ch.epfl.bluebrain.nexus.commons.types.RetriableErr
 import monix.eval.Task
-import monix.execution.CancelableFuture
-import monix.execution.Scheduler.Implicits.global
+import monix.execution.Scheduler
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Random
 
-trait TaskRetry {
+trait RetryOps {}
+
+object RetryOps {
 
   /**
     * Execute a [[Task]] and provide a retry mechanism on failures of any subtype of [[RetriableErr]].
@@ -19,25 +20,15 @@ trait TaskRetry {
     * @param strategy      the delay strategy between retries
     * @tparam A the generic type of the [[Future]]s result
     */
-  def retry[A](source: () => Future[A], maxRetries: Int, strategy: RetryStrategy): CancelableFuture[A] = {
-    val t = Task.deferFuture {
+  def retry[A](source: () => Future[A], maxRetries: Int, strategy: RetryStrategy)(
+      implicit ec: ExecutionContext): Future[A] = {
+    val s = Task.deferFuture {
       source()
     }
-    retry(t, maxRetries, strategy)
-  }
-
-  /**
-    * Execute a [[Task]] and provide a retry mechanism on failures of any subtype of [[RetriableErr]].
-    *
-    * @param source     the [[Task]] where to add retry support
-    * @param maxRetries the max number of retries
-    * @param strategy   the retry strategy between retry delays
-    * @tparam A the generic type of the [[Task]]s result
-    */
-  def retry[A](source: Task[A], maxRetries: Int, strategy: RetryStrategy): CancelableFuture[A] = {
+    implicit val sc = Scheduler(ec)
 
     def inner(retry: Int, currentDelay: FiniteDuration): Task[A] = {
-      source.onErrorHandleWith {
+      s.onErrorHandleWith {
         case ex: RetriableErr =>
           if (retry > 0)
             inner(retry - 1, strategy.next(currentDelay)).delayExecution(currentDelay)
@@ -49,9 +40,6 @@ trait TaskRetry {
 
     inner(maxRetries, strategy.init).runAsync
   }
-}
-
-object TaskRetry extends TaskRetry {
 
   /**
     * Interface syntax to expose new functionality into () => Future[A]
@@ -68,8 +56,8 @@ object TaskRetry extends TaskRetry {
       * @param strategy   the retry strategy between retry delays
       * @return an optional Json which contains only the filtered shape.
       */
-    def retry(maxRetries: Int)(implicit strategy: RetryStrategy): CancelableFuture[A] =
-      TaskRetry.retry(source, maxRetries, strategy)
+    def retry(maxRetries: Int)(implicit strategy: RetryStrategy, ec: ExecutionContext): Future[A] =
+      RetryOps.retry(source, maxRetries, strategy)
   }
 }
 

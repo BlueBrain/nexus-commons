@@ -43,7 +43,7 @@ final class CassandraIndexFailuresStorage(session: CassandraSession, keyspace: S
   override def storeEvent[T](identifier: String, persistenceId: String, offset: Offset, event: T)(
       implicit E: Encoder[T]): Future[Unit] = {
     val stmt =
-      s"insert into $keyspace.$table (identifier, resourceId, offset, event) VALUES (?, ?, ?, ?) IF NOT EXISTS"
+      s"insert into $keyspace.$table (identifier, persistenceId, offset, event) VALUES (?, ?, ?, ?) IF NOT EXISTS"
     session
       .executeWrite(stmt, identifier, persistenceId, toValue(offset), E(event).noSpaces)
       .map(_ => ())
@@ -74,7 +74,7 @@ object IndexFailuresStorage
     val (session, keyspace, table) =
       createSession(
         "index-failures",
-        "identifier varchar, resourceId text, offset bigint, event text, PRIMARY KEY (identifier, resourceId, offset)",
+        "identifier varchar, persistenceId text, offset bigint, event text, PRIMARY KEY (identifier, persistenceId, offset)",
         system)
     new CassandraIndexFailuresStorage(session, keyspace, table)(system.dispatcher)
   }

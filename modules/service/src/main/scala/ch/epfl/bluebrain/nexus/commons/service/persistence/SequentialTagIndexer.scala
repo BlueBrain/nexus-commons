@@ -10,7 +10,7 @@ import akka.persistence.query.{EventEnvelope, Offset, PersistenceQuery}
 import akka.stream.scaladsl.Source
 import ch.epfl.bluebrain.nexus.commons.service.retryer.RetryStrategy
 import ch.epfl.bluebrain.nexus.commons.service.retryer.RetryStrategy.Backoff
-import ch.epfl.bluebrain.nexus.commons.service.retryer.TaskRetry._
+import ch.epfl.bluebrain.nexus.commons.service.retryer.RetryOps._
 import ch.epfl.bluebrain.nexus.commons.service.stream.SingletonStreamCoordinator
 import io.circe.Encoder
 import shapeless.Typeable

@@ -29,16 +29,16 @@ class IndexFailuresStorageSpec
   }
 
   "An IndexFailuresLog" should {
-    val id          = UUID.randomUUID().toString
-    val resourceId  = s"/some/${UUID.randomUUID()}"
-    implicit val mt = ActorMaterializer()
+    val id            = UUID.randomUUID().toString
+    val persistenceId = s"/some/${UUID.randomUUID()}"
+    implicit val mt   = ActorMaterializer()
 
     "store an event" in {
-      IndexFailuresLog(id).storeEvent(resourceId, Offset.sequence(42), SomeEvent(1L, "description")).futureValue
+      IndexFailuresLog(id).storeEvent(persistenceId, Offset.sequence(42), SomeEvent(1L, "description")).futureValue
     }
 
     "store another event" in {
-      IndexFailuresLog(id).storeEvent(resourceId, Offset.sequence(1), SomeEvent(2L, "description2")).futureValue
+      IndexFailuresLog(id).storeEvent(persistenceId, Offset.sequence(1), SomeEvent(2L, "description2")).futureValue
     }
 
     "retrieve stored events" in {
