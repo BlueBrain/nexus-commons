@@ -8,8 +8,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.Random
 
-trait RetryOps {}
-
 object RetryOps {
 
   /**
