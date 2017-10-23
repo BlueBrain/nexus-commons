@@ -17,6 +17,23 @@ lazy val types = project
     )
   )
 
+lazy val iamTypes = project
+  .in(file("modules/iam-types"))
+  .settings(
+    name := "iam-types",
+    moduleName := "iam-types",
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka"  %% "akka-http" % akkaHttpVersion.value,
+      "de.heikoseeberger"  %% "akka-http-circe" % akkaHttpCirceVersion.value,
+      "io.circe"           %% "circe-core" % circeVersion.value,
+      "io.circe"           %% "circe-generic-extras" % circeVersion.value,
+      "io.circe"           %% "circe-optics" % circeVersion.value,
+      "io.circe"           %% "circe-parser" % circeVersion.value,
+      "io.verizon.journal" %% "core" % journalVersion.value,
+      "org.scalatest"      %% "scalatest" % scalaTestVersion.value % Test
+    )
+  )
+
 lazy val sourcing = project
   .in(file("modules/sourcing/core"))
   .dependsOn(types)
@@ -146,7 +163,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient)
+  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient, iamTypes)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 
