@@ -210,7 +210,7 @@ object ShardingAggregate {
   }
 
   /**
-    * Constructs a new sharded aggregate while keeping track of the event, state and command types defined.
+    * Constructs a new sharded aggregate while keeping track of the event, state and command ch.epfl.bluebrain.nexus.commons.iam.types defined.
     *
     * @param name     the name (or type) of the aggregate
     * @param settings instructions on how to configure the aggregate

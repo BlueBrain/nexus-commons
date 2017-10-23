@@ -25,7 +25,7 @@ class AkkaCoproductSerializerSpec extends WordSpecLike with Matchers with Inspec
         }
       }
 
-      "throw an illegal argument exception for unknown types" in {
+      "throw an illegal argument exception for unknown ch.epfl.bluebrain.nexus.commons.iam.types" in {
         intercept[IllegalArgumentException](ser.manifest("a"))
       }
     }
@@ -44,7 +44,7 @@ class AkkaCoproductSerializerSpec extends WordSpecLike with Matchers with Inspec
             new String(ser.toBinary(data), UTF8) shouldEqual out
         }
       }
-      "throw an illegal argument exception for unknown types" in {
+      "throw an illegal argument exception for unknown ch.epfl.bluebrain.nexus.commons.iam.types" in {
         intercept[IllegalArgumentException](ser.toBinary("a"))
       }
     }

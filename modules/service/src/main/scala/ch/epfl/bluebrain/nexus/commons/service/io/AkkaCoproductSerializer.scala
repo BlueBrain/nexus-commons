@@ -8,7 +8,7 @@ import shapeless.ops.coproduct.Unifier
   * An Akka ''SerializerWithStringManifest'' implementation based on an underlying ''CoproductSerializer''.
   *
   * @param identifier the serializer identifier
-  * @param C          the types available for serialization / deserialization encoded as a coproduct
+  * @param C          the ch.epfl.bluebrain.nexus.commons.iam.types available for serialization / deserialization encoded as a coproduct
   * @param U          a unifier instance for the coproduct ''C''
   * @tparam C the type of the underlying coproduct
   */
