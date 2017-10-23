@@ -6,14 +6,31 @@ val jacksonVersion       = "2.9.0"
 val monixVersion         = "2.3.0"
 
 lazy val types = project
-  .in(file("modules/types"))
+  .in(file("modules/ch.epfl.bluebrain.nexus.commons.iam.types"))
   .settings(
-    name := "commons-types",
-    moduleName := "commons-types",
+    name := "commons-ch.epfl.bluebrain.nexus.commons.iam.types",
+    moduleName := "commons-ch.epfl.bluebrain.nexus.commons.iam.types",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core"  % catsVersion.value,
       "io.circe"      %% "circe-core" % circeVersion.value,
       "org.scalatest" %% "scalatest"  % scalaTestVersion.value % Test
+    )
+  )
+
+lazy val iamTypes = project
+  .in(file("modules/iam-types"))
+  .settings(
+    name := "iam-types",
+    moduleName := "iam-types",
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka"  %% "akka-http" % akkaHttpVersion.value,
+      "de.heikoseeberger"  %% "akka-http-circe" % akkaHttpCirceVersion.value,
+      "io.circe"           %% "circe-core" % circeVersion.value,
+      "io.circe"           %% "circe-generic-extras" % circeVersion.value,
+      "io.circe"           %% "circe-optics" % circeVersion.value,
+      "io.circe"           %% "circe-parser" % circeVersion.value,
+      "io.verizon.journal" %% "core" % journalVersion.value,
+      "org.scalatest"      %% "scalatest" % scalaTestVersion.value % Test
     )
   )
 
@@ -146,7 +163,9 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient)
+  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient, iamTypes
+
+  )
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 

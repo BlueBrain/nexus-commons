@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 import akka.http.scaladsl.model.{HttpCharsets, MediaType}
 
 /**
-  * Collection of media types specific to RDF.
+  * Collection of media ch.epfl.bluebrain.nexus.commons.iam.types specific to RDF.
   */
 object RdfMediaTypes {
   final val `text/turtle`: MediaType.WithOpenCharset = MediaType.applicationWithOpenCharset("turtle", "ttl")

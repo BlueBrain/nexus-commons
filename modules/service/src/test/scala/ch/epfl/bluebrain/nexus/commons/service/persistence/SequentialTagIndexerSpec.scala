@@ -84,7 +84,7 @@ class SequentialTagIndexerSpec
       expectTerminated(indexer)
     }
 
-    "select only the configured event types" in {
+    "select only the configured event ch.epfl.bluebrain.nexus.commons.iam.types" in {
       val agg = ShardingAggregate("selected", sourcingSettings)(Fixture.initial, Fixture.next, Fixture.eval)
       agg.append("first", Fixture.Executed).futureValue
       agg.append("second", Fixture.Executed).futureValue

@@ -12,7 +12,7 @@ import shapeless.{Typeable, the}
 import scala.concurrent.duration.FiniteDuration
 
 /**
-  * Persistent actor implementation that keeps track of the State, Event and Command types while operating on them.
+  * Persistent actor implementation that keeps track of the State, Event and Command ch.epfl.bluebrain.nexus.commons.iam.types while operating on them.
   *
   * @param initial            the initial state of the actor
   * @param next               function which computes the next state given the current state and a new event

@@ -7,7 +7,7 @@ import ch.epfl.bluebrain.nexus.sourcing.Aggregate
 import ch.epfl.bluebrain.nexus.sourcing.mem.MemoryAggregate.Value
 
 /**
-  * An in-memory aggregate while keeping track of the event, state and command types defined.
+  * An in-memory aggregate while keeping track of the event, state and command ch.epfl.bluebrain.nexus.commons.iam.types defined.
   *
   * @param name    the name (or type) of the aggregate
   * @param initial the initial state
@@ -80,7 +80,7 @@ final class MemoryAggregate[Evt, St, Cmd, Rej](override val name: String,
 object MemoryAggregate {
 
   /**
-    * Constructs a new in-memory aggregate while keeping track of the event, state and command types defined.
+    * Constructs a new in-memory aggregate while keeping track of the event, state and command ch.epfl.bluebrain.nexus.commons.iam.types defined.
     *
     * @param name    the name (or type) of the aggregate
     * @param initial the initial state

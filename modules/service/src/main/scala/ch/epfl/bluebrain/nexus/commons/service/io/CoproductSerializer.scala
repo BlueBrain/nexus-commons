@@ -6,8 +6,8 @@ import shapeless._
 
 /**
   * Shapeless coproduct based serializer that describes functions for serializing values to byte arrays using
-  * manifests.  Values are serialized only if they compatible with the types described by the coproduct.  When values
-  * are not compatible with the types described by the coproduct the ''manifest'' and ''toBinary'' functions return
+  * manifests.  Values are serialized only if they compatible with the ch.epfl.bluebrain.nexus.commons.iam.types described by the coproduct.  When values
+  * are not compatible with the ch.epfl.bluebrain.nexus.commons.iam.types described by the coproduct the ''manifest'' and ''toBinary'' functions return
   * no value.
   *
   * Deserialization occurs by looking up the the provided manifest in the known manifests in order and attempting to
@@ -34,7 +34,7 @@ trait CoproductSerializer[C <: Coproduct] {
   def toBinary(x: Any): Option[Array[Byte]]
 
   /**
-    * Attempts to deserialize the provided ''bytes'' into a value of one of the types of the coproduct ''C'' using the
+    * Attempts to deserialize the provided ''bytes'' into a value of one of the ch.epfl.bluebrain.nexus.commons.iam.types of the coproduct ''C'' using the
     * argument ''manifest'' as the selector for the appropriate outcome type.
     *
     * @param bytes    the array of bytes to deserialize
@@ -74,7 +74,7 @@ object CoproductSerializer {
     * @param tailSerializer a ''CoproductSerializer'' for the tail ''T'' type
     * @tparam H the type of the coproduct head
     * @tparam T the type of the coproduct tail
-    * @return a new ''CoproductSerializer'' that prepends a new type ''H'' to the list of known serialization types
+    * @return a new ''CoproductSerializer'' that prepends a new type ''H'' to the list of known serialization ch.epfl.bluebrain.nexus.commons.iam.types
     */
   final implicit def cconsSerializer[H, T <: Coproduct](
       implicit
