@@ -34,9 +34,14 @@ class PermissionsSpec extends WordSpecLike with Matchers {
       Permissions(Read, Write).contains(Own) shouldEqual false
     }
 
-    "check if some permissions are contained on permissions" in {
+    "check if all provided permissions are contained on permissions" in {
       Permissions(Read, Write).containsAll(Permissions(Read)) shouldEqual true
       Permissions(Read, Write).containsAll(Permissions(Read, Own)) shouldEqual false
+    }
+
+    "check if some provided permissions are contained on permissions" in {
+      Permissions(Read, Write).containsAny(Permissions(Own, Read)) shouldEqual true
+      Permissions(Read, Write).containsAny(Permissions(Own, Permission("something"))) shouldEqual false
     }
   }
 }
