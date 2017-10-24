@@ -103,6 +103,20 @@ lazy val http = project
     )
   )
 
+lazy val iam = project
+  .in(file("modules/iam"))
+  .dependsOn(http)
+  .settings(
+    name := "iam",
+    moduleName := "iam",
+    libraryDependencies ++= Seq(
+      "de.heikoseeberger"  %% "akka-http-circe" % akkaHttpCirceVersion.value,
+      "io.circe"           %% "circe-generic-extras" % circeVersion.value,
+      "io.circe"           %% "circe-parser" % circeVersion.value,
+      "org.scalatest"      %% "scalatest" % scalaTestVersion.value % Test
+    )
+  )
+
 lazy val shaclValidator = project
   .in(file("modules/ld/shacl-validator"))
   .dependsOn(types)
@@ -146,7 +160,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient)
+  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient, iam)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 
