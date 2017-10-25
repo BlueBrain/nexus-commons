@@ -7,7 +7,6 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
-import akka.util.ByteString
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.iam.IamClientSpec._
@@ -26,8 +25,8 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfter, Matchers, WordSpecLike}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class IamClientSpec
     extends TestKit(ActorSystem("IamClientSpec"))
@@ -95,8 +94,7 @@ object IamClientSpec {
 
   val ValidToken = "validToken"
 
-  def fixedClient[A](anonA: Option[A] = None, authA: Option[A] = None)(implicit ec: ExecutionContext,
-                                                                       mt: Materializer,
+  def fixedClient[A](anonA: Option[A] = None, authA: Option[A] = None)(implicit mt: Materializer,
                                                                        E: Encoder[A]): UntypedHttpClient[Future] =
     new UntypedHttpClient[Future] {
       override def apply(req: HttpRequest): Future[HttpResponse] =

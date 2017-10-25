@@ -2,8 +2,10 @@ package ch.epfl.bluebrain.nexus.commons.iam
 
 import akka.http.scaladsl.client.RequestBuilding.Get
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.headers.{HttpCredentials, OAuth2BearerToken}
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes, Uri}
+import akka.http.scaladsl.model.Uri.Path._
+import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import ch.epfl.bluebrain.nexus.commons.http.PathSanity.Position._
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.iam.acls.AccessControlList
 import ch.epfl.bluebrain.nexus.commons.iam.auth.User
@@ -11,6 +13,7 @@ import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller._
 import ch.epfl.bluebrain.nexus.commons.types.HttpRejection.UnauthorizedAccess
 import journal.Logger
+import ch.epfl.bluebrain.nexus.commons.http.PathSanity._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,9 +25,9 @@ import scala.concurrent.{ExecutionContext, Future}
 trait IamClient[F[_]] {
 
   /**
-    * Retrieve the ''caller'' form the optional [[HttpCredentials]]
+    * Retrieve the ''caller'' form the optional [[OAuth2BearerToken]]
     *
-    * @param optCredentials the optionally provided [[HttpCredentials]]
+    * @param optCredentials the optionally provided [[OAuth2BearerToken]]
     */
   def getCaller(optCredentials: Option[OAuth2BearerToken]): F[Caller]
 
@@ -49,7 +52,7 @@ object IamClient {
     override def getCaller(optCredentials: Option[OAuth2BearerToken]) =
       optCredentials
         .map { cred =>
-          userClient(getRequest("oauth2/user", optCredentials))
+          userClient(getRequest(Path("oauth2/user"), optCredentials))
             .map[Caller](AuthenticatedCaller(cred, _))
             .recoverWith {
               case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
@@ -66,7 +69,7 @@ object IamClient {
         .getOrElse(Future.successful(AnonymousCaller))
 
     override def getAcls(resource: Path)(implicit caller: Caller) =
-      aclClient(getRequest(s"acls/$resource", caller.credential))
+      aclClient(getRequest(Path("acls") ++ /(resource.stripSlash(Start)), caller.credential))
         .recoverWith {
           case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
             Future.failed(UnauthorizedAccess)
@@ -81,8 +84,9 @@ object IamClient {
             Future.failed(err)
         }
 
-    private def getRequest(path: String, credentials: Option[HttpCredentials]) = {
-      val request = Get(Uri(s"${iamUri.value}/$path"))
+    private def getRequest(path: Path, credentials: Option[OAuth2BearerToken]) = {
+      val uri     = iamUri.value.copy(path = iamUri.value.path.stripSlash(End) ++ /(path))
+      val request = Get(uri)
       credentials
         .map(request.addCredentials(_))
         .getOrElse(request)
