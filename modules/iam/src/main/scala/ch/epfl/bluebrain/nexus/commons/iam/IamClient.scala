@@ -1,19 +1,16 @@
 package ch.epfl.bluebrain.nexus.commons.iam
 
 import akka.http.scaladsl.client.RequestBuilding.Get
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.Uri.Path._
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import ch.epfl.bluebrain.nexus.commons.http.PathSanity.Position._
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
-import ch.epfl.bluebrain.nexus.commons.iam.acls.AccessControlList
+import ch.epfl.bluebrain.nexus.commons.iam.acls.Path._
+import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControlList, Path}
 import ch.epfl.bluebrain.nexus.commons.iam.auth.User
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller._
 import ch.epfl.bluebrain.nexus.commons.types.HttpRejection.UnauthorizedAccess
 import journal.Logger
-import ch.epfl.bluebrain.nexus.commons.http.PathSanity._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,7 +39,9 @@ trait IamClient[F[_]] {
 }
 
 object IamClient {
-  private val log = Logger[this.type]
+  private val log  = Logger[this.type]
+  private val Acls = Path("acls")
+  private val User = Path("oauth2/user")
 
   final def apply()(implicit ec: ExecutionContext,
                     aclClient: HttpClient[Future, AccessControlList],
@@ -52,44 +51,34 @@ object IamClient {
     override def getCaller(optCredentials: Option[OAuth2BearerToken]) =
       optCredentials
         .map { cred =>
-          userClient(getRequest(Path("oauth2/user"), optCredentials))
+          userClient(requestFrom(optCredentials, User))
             .map[Caller](AuthenticatedCaller(cred, _))
-            .recoverWith {
-              case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
-                Future.failed(UnauthorizedAccess)
-              case ur: UnexpectedUnsuccessfulHttpResponse =>
-                log.warn(
-                  s"Received an unexpected response status code '${ur.response.status}' from IAM when attempting to retrieve the user information")
-                Future.failed(ur)
-              case err =>
-                log.error(s"IAM returned an exception when attempting to retrieve user information", err)
-                Future.failed(err)
-            }
+            .recoverWith[Caller] { case e => recover(e, User) }
         }
         .getOrElse(Future.successful(AnonymousCaller))
 
-    override def getAcls(resource: Path)(implicit caller: Caller) =
-      aclClient(getRequest(Path("acls") ++ /(resource.stripSlash(Start)), caller.credential))
-        .recoverWith {
-          case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
-            Future.failed(UnauthorizedAccess)
-          case ur: UnexpectedUnsuccessfulHttpResponse =>
-            log.warn(
-              s"Received an unexpected response status code '${ur.response.status}' from IAM when attempting to retrieve permission for resource '$resource' and caller identities '${caller.identities}'")
-            Future.failed(ur)
-          case err =>
-            log.error(
-              s"IAM returned an exception when attempting to retrieve permission for resource '$resource' and caller identities '${caller.identities}'",
-              err)
-            Future.failed(err)
-        }
+    override def getAcls(resource: Path)(implicit caller: Caller) = {
+      aclClient(requestFrom(caller.credentials, Acls ++ resource))
+        .recoverWith[AccessControlList] { case e => recover(e, resource, Some(caller)) }
+    }
+    def recover(th: Throwable, resource: Path, caller: Option[Caller] = None) = th match {
+      case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
+        Future.failed(UnauthorizedAccess)
+      case ur: UnexpectedUnsuccessfulHttpResponse =>
+        log.warn(
+          s"Received an unexpected response status code '${ur.response.status}' from IAM when attempting to perform and operation on a resource '$resource' and caller '${caller.mkString}'")
+        Future.failed(ur)
+      case err =>
+        log.error(
+          s"Received an unexpected exception from IAM when attempting to perform and operation on a resource '$resource' and caller '${caller.mkString}'",
+          err)
+        Future.failed(err)
+    }
 
-    private def getRequest(path: Path, credentials: Option[OAuth2BearerToken]) = {
-      val uri     = iamUri.value.copy(path = iamUri.value.path.stripSlash(End) ++ /(path))
-      val request = Get(uri)
-      credentials
-        .map(request.addCredentials(_))
-        .getOrElse(request)
+    private def requestFrom(credentials: Option[OAuth2BearerToken], path: Path) = {
+      val uriPath: Path = iamUri.value.path
+      val request       = Get(iamUri.value.copy(path = uriPath ++ path))
+      credentials.map(request.addCredentials).getOrElse(request)
     }
   }
 }

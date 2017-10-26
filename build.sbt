@@ -53,7 +53,7 @@ lazy val sourcingMem = project
 
 lazy val service = project
   .in(file("modules/service"))
-  .dependsOn(types, http, sourcingAkka % "test->compile")
+  .dependsOn(types, sourcingAkka % "test->compile")
   .settings(
     name := "commons-service",
     moduleName := "commons-service",

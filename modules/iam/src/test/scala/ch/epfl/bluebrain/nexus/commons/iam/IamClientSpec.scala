@@ -2,7 +2,6 @@ package ch.epfl.bluebrain.nexus.commons.iam
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpMessage.DiscardedEntity
-import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, OAuth2BearerToken}
 import akka.stream.{ActorMaterializer, Materializer}
@@ -11,7 +10,7 @@ import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.iam.IamClientSpec._
 import ch.epfl.bluebrain.nexus.commons.iam.acls.Permission.{Own, Read, Write}
-import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControl, AccessControlList, Permissions}
+import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControl, AccessControlList, Path, Permissions}
 import ch.epfl.bluebrain.nexus.commons.iam.auth.{AuthenticatedUser, User}
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller.{AnonymousCaller, AuthenticatedCaller}
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{AuthenticatedRef, GroupRef, UserRef}
@@ -85,7 +84,7 @@ class IamClientSpec
       implicit val httpClient = HttpClient.withAkkaUnmarshaller[AccessControlList]
       implicit val anonCaller = AnonymousCaller
 
-      IamClient().getAcls(Path("/prefix/some/resource/two")).futureValue shouldEqual aclAnon
+      IamClient().getAcls(Path("///prefix/some/resource/two")).futureValue shouldEqual aclAnon
     }
   }
 }

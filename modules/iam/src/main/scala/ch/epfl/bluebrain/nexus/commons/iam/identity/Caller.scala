@@ -15,9 +15,9 @@ sealed trait Caller extends Product with Serializable {
   def identities: Set[Identity]
 
   /**
-    * @return the ''credential'' used by the caller to authenticate
+    * @return the ''credentials'' used by the caller to authenticate
     */
-  def credential: Option[OAuth2BearerToken]
+  def credentials: Option[OAuth2BearerToken]
 }
 object Caller {
 
@@ -25,17 +25,17 @@ object Caller {
     * An anonymous caller.
     */
   final case object AnonymousCaller extends Caller {
-    override val identities = Set(Anonymous)
-    override val credential = None
+    override val identities  = Set(Anonymous)
+    override val credentials = None
   }
 
   /**
     * An authenticated caller.
     *
-    * @param credential the identities this ''caller'' belongs to
-    * @param identities the ''credential'' used by the caller to authenticate
+    * @param credentials the identities this ''caller'' belongs to
+    * @param identities the ''credentials'' used by the caller to authenticate
     */
-  final case class AuthenticatedCaller(credential: Option[OAuth2BearerToken], identities: Set[Identity])
+  final case class AuthenticatedCaller(credentials: Option[OAuth2BearerToken], identities: Set[Identity])
       extends Caller {
     def this(cred: OAuth2BearerToken, user: User) {
       this(Some(cred), user.identities)
@@ -44,12 +44,12 @@ object Caller {
   object AuthenticatedCaller {
 
     /**
-      * Construct a [[AuthenticatedCaller]] from provided ''credential'' and ''user''.
+      * Construct a [[AuthenticatedCaller]] from provided ''credentials'' and ''user''.
       *
-      * @param credential the identities this ''caller'' belongs to
+      * @param credentials the identities this ''caller'' belongs to
       * @param user       the user information about this caller
       */
-    final def apply(credential: OAuth2BearerToken, user: User): AuthenticatedCaller =
-      new AuthenticatedCaller(credential, user)
+    final def apply(credentials: OAuth2BearerToken, user: User): AuthenticatedCaller =
+      new AuthenticatedCaller(credentials, user)
   }
 }

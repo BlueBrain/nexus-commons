@@ -1,15 +1,27 @@
 package ch.epfl.bluebrain.nexus.commons.service.directives
 
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.server.Directives.rawPathPrefix
 import akka.http.scaladsl.server.{Directive0, PathMatcher}
-import ch.epfl.bluebrain.nexus.commons.http.PathSanity.Position.End
-import ch.epfl.bluebrain.nexus.commons.http.PathSanity._
+
+import scala.annotation.tailrec
 
 /**
   * Collection of custom directives for matching against prefix paths.
   */
 trait PrefixDirectives {
+
+  final def stripTrailingSlashes(path: Path): Path = {
+    @tailrec
+    def strip(p: Path): Path = p match {
+      case Path.Empty       => Path.Empty
+      case Path.Slash(rest) => strip(rest)
+      case other            => other
+    }
+
+    strip(path.reverse).reverse
+  }
 
   /**
     * Creates a path matcher from the argument ''uri'' by stripping the slashes at the end of its path.  The matcher
@@ -18,7 +30,7 @@ trait PrefixDirectives {
     * @param uri the uri to use as a prefix
     */
   final def uriPrefix(uri: Uri): Directive0 =
-    rawPathPrefix(PathMatcher(uri.path.stripSlash(End), ()))
+    rawPathPrefix(PathMatcher(stripTrailingSlashes(uri.path), ()))
 }
 
 /**
