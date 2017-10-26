@@ -110,10 +110,11 @@ lazy val iam = project
     name := "iam",
     moduleName := "iam",
     libraryDependencies ++= Seq(
-      "de.heikoseeberger"  %% "akka-http-circe" % akkaHttpCirceVersion.value,
-      "io.circe"           %% "circe-generic-extras" % circeVersion.value,
-      "io.circe"           %% "circe-parser" % circeVersion.value,
-      "org.scalatest"      %% "scalatest" % scalaTestVersion.value % Test
+      "de.heikoseeberger" %% "akka-http-circe"      % akkaHttpCirceVersion.value,
+      "io.circe"          %% "circe-generic-extras" % circeVersion.value,
+      "io.circe"          %% "circe-parser"         % circeVersion.value,
+      "com.typesafe.akka" %% "akka-testkit"         % akkaVersion.value % Test,
+      "org.scalatest"     %% "scalatest"            % scalaTestVersion.value % Test
     )
   )
 
