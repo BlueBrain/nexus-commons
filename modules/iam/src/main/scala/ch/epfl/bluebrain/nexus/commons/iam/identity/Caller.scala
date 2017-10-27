@@ -35,12 +35,8 @@ object Caller {
     * @param credentials the identities this ''caller'' belongs to
     * @param identities the ''credentials'' used by the caller to authenticate
     */
-  final case class AuthenticatedCaller(credentials: Option[OAuth2BearerToken], identities: Set[Identity])
-      extends Caller {
-    def this(cred: OAuth2BearerToken, user: User) {
-      this(Some(cred), user.identities)
-    }
-  }
+  final case class AuthenticatedCaller(credentials: Option[OAuth2BearerToken], identities: Set[Identity]) extends Caller
+
   object AuthenticatedCaller {
 
     /**
@@ -50,6 +46,6 @@ object Caller {
       * @param user       the user information about this caller
       */
     final def apply(credentials: OAuth2BearerToken, user: User): AuthenticatedCaller =
-      new AuthenticatedCaller(credentials, user)
+      new AuthenticatedCaller(Some(credentials), user.identities)
   }
 }
