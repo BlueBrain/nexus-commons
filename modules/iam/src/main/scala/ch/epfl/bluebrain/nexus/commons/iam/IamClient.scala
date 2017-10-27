@@ -32,10 +32,9 @@ trait IamClient[F[_]] {
     * Retrieve the current ''acls'' for some particular ''resource''
     *
     * @param resource the resource against which to check the acls
-    * @param caller   the implicitly available [[Caller]]
+    * @param credentials    a possibly available token
     */
-  def getAcls(resource: Path)(implicit caller: Caller): F[AccessControlList]
-
+  def getAcls(resource: Path)(implicit credentials: Option[OAuth2BearerToken]): F[AccessControlList]
 }
 
 object IamClient {
@@ -57,20 +56,20 @@ object IamClient {
         }
         .getOrElse(Future.successful(AnonymousCaller))
 
-    override def getAcls(resource: Path)(implicit caller: Caller) = {
-      aclClient(requestFrom(caller.credentials, Acls ++ resource))
-        .recoverWith[AccessControlList] { case e => recover(e, resource, Some(caller)) }
+    override def getAcls(resource: Path)(implicit credentials: Option[OAuth2BearerToken]) = {
+      aclClient(requestFrom(credentials, Acls ++ resource))
+        .recoverWith[AccessControlList] { case e => recover(e, resource) }
     }
-    def recover(th: Throwable, resource: Path, caller: Option[Caller] = None) = th match {
+    def recover(th: Throwable, resource: Path) = th match {
       case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
         Future.failed(UnauthorizedAccess)
       case ur: UnexpectedUnsuccessfulHttpResponse =>
         log.warn(
-          s"Received an unexpected response status code '${ur.response.status}' from IAM when attempting to perform and operation on a resource '$resource' and caller '${caller.mkString}'")
+          s"Received an unexpected response status code '${ur.response.status}' from IAM when attempting to perform and operation on a resource '$resource'")
         Future.failed(ur)
       case err =>
         log.error(
-          s"Received an unexpected exception from IAM when attempting to perform and operation on a resource '$resource' and caller '${caller.mkString}'",
+          s"Received an unexpected exception from IAM when attempting to perform and operation on a resource '$resource'",
           err)
         Future.failed(err)
     }

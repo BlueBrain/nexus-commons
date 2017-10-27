@@ -34,6 +34,14 @@ class AccessControlListSpec extends WordSpecLike with Matchers {
       AccessControlList().hasVoidPermissions shouldEqual true
     }
 
+    "collapse into Permissions" in {
+      val permission = Permission("something")
+      val acls = AccessControlList(
+        Set(AccessControl(GroupRef("BBP", "/bbp-ou-nexus"), permissions),
+            AccessControl(GroupRef("BBP", "/something"), Permissions(permission, Own))))
+      acls.permissions shouldEqual Permissions(Own, Read, Write, Publish, permission)
+    }
+
   }
 
 }

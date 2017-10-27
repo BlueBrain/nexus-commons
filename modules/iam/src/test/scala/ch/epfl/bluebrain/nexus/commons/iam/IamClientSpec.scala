@@ -23,7 +23,7 @@ import io.circe.syntax._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfter, Matchers, WordSpecLike}
-
+import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 

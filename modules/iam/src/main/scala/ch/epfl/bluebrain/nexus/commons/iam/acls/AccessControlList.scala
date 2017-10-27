@@ -15,6 +15,11 @@ final case class AccessControlList(acl: Set[AccessControl]) {
   def toMap: Map[Identity, Permissions] = acl.map { case AccessControl(id, ps) => id -> ps }.toMap
 
   /**
+    * @return a collapsed [[Permissions]] from all the identities
+    */
+  def permissions: Permissions = acl.foldLeft(Permissions.empty)(_ ++ _.permissions)
+
+  /**
     * @return ''true'' if the underlying list is empty or if any pair is found with an empty permissions set
     */
   def hasVoidPermissions: Boolean = acl.isEmpty || acl.exists(_.permissions.isEmpty)
