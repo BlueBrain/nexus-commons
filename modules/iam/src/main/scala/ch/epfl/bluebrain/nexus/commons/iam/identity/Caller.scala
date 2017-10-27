@@ -48,4 +48,13 @@ object Caller {
     final def apply(credentials: OAuth2BearerToken, user: User): AuthenticatedCaller =
       new AuthenticatedCaller(Some(credentials), user.identities)
   }
+
+  /**
+    * Implicit conversion from implicitly available ''available'' to optional [[OAuth2BearerToken]]
+    *
+    * @param caller the implicitly available caller
+    * @return an optional [[OAuth2BearerToken]]
+    */
+  final implicit def callerToToken(implicit caller: Caller): Option[OAuth2BearerToken] =
+    caller.credentials
 }
