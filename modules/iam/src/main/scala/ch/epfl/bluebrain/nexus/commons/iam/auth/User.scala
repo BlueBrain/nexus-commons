@@ -21,7 +21,7 @@ final case class AuthenticatedUser(identities: Set[Identity]) extends User
   * Singleton representing any unauthenticated user.
   */
 case object AnonymousUser extends User {
-  override val identities = Set(Identity.Anonymous)
+  override val identities = Set(Identity.Anonymous())
 }
 
 object User {

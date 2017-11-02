@@ -16,10 +16,10 @@ import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller.{AnonymousCaller, Aut
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{AuthenticatedRef, GroupRef, UserRef}
 import ch.epfl.bluebrain.nexus.commons.types.HttpRejection.UnauthorizedAccess
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
-import io.circe.Encoder
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.auto._
-import io.circe.syntax._
+import _root_.io.circe.Encoder
+import _root_.io.circe.generic.extras.Configuration
+import _root_.io.circe.generic.extras.auto._
+import _root_.io.circe.syntax._
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfter, Matchers, WordSpecLike}

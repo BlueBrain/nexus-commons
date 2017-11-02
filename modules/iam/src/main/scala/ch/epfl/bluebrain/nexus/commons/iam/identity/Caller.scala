@@ -25,7 +25,7 @@ object Caller {
     * An anonymous caller.
     */
   final case object AnonymousCaller extends Caller {
-    override val identities  = Set(Anonymous)
+    override val identities  = Set(Anonymous())
     override val credentials = None
   }
 

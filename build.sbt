@@ -19,6 +19,7 @@ lazy val catsCore           = "org.typelevel"                   %% "cats-core"  
 lazy val circeCore          = "io.circe"                        %% "circe-core"                          % circeVersion
 lazy val circeParser        = "io.circe"                        %% "circe-parser"                        % circeVersion
 lazy val circeGenericExtras = "io.circe"                        %% "circe-generic-extras"                % circeVersion
+lazy val circeJava8         = "io.circe"                        %% "circe-java8"                         % circeVersion
 lazy val scalaTest          = "org.scalatest"                   %% "scalatest"                           % scalaTestVersion
 lazy val shapeless          = "com.chuusai"                     %% "shapeless"                           % shapelessVersion
 lazy val monixEval          = "io.monix"                        %% "monix-eval"                          % monixVersion
@@ -136,7 +137,7 @@ lazy val iam = project
   .settings(
     name                := "iam",
     moduleName          := "iam",
-    libraryDependencies ++= Seq(akkaHttpCirce, circeGenericExtras, circeParser, akkaTestKit % Test, scalaTest % Test)
+    libraryDependencies ++= Seq(akkaHttpCirce, circeGenericExtras, circeParser, circeJava8, akkaTestKit % Test, scalaTest % Test)
   )
 
 lazy val shaclValidator = project
