@@ -53,10 +53,8 @@ trait EventJsonLdEncoder extends ConfigInstance {
     E.contramap(_.acl.toList)
 
   private def identityEncoder(base: Uri): Encoder[Identity] = {
-    def jsonIdOf(identity: Identity): Json = identity.id match {
-      case Some(id) => Json.obj("@id" -> Json.fromString(base.withPath(Path(s"${base.path}/${id.show}")).toString))
-      case None     => Json.Null
-    }
+    def jsonIdOf(identity: Identity): Json =
+      Json.obj("@id" -> Json.fromString(base.withPath(Path(s"${base.path}/${identity.id.show}")).toString))
 
     import io.circe.generic.extras.semiauto._
     Encoder.encodeJson.contramap { id =>

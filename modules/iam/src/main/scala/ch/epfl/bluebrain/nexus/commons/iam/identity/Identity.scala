@@ -4,15 +4,17 @@ import cats.Show
 import io.circe._
 import io.circe.generic.extras.Configuration
 
+import scala.util.matching.Regex
+
 /**
   * Base enumeration type for identity classes.
   */
 sealed trait Identity extends Product with Serializable {
 
   /**
-    * @return the optionally available unique identity identifier
+    * @return the unique identity identifier
     */
-  def id: Option[IdentityId]
+  def id: IdentityId
 }
 
 /**
@@ -22,17 +24,33 @@ trait Authenticated
 
 object Identity {
 
-  val authenticatedKey = "authenticated"
-  val anonymousKey     = "anonymous"
+  val authenticatedKey     = "authenticated"
+  val anonymousKey         = "anonymous"
+  private val allowedInput = "([^/]*)"
 
   /**
     * The ''user'' identity class.
     *
-    * @param id    the optionally available unique identity identifier
-    * @param realm the authentication's realm name
-    * @param sub   the JWT ''sub'' field
+    * @param id    the unique identity identifier
     */
-  final case class UserRef(id: Option[IdentityId], realm: String, sub: String) extends Identity with Authenticated
+  final case class UserRef(id: IdentityId) extends Identity with Authenticated {
+    private val regex: Regex = s"^.*realms/$allowedInput/users/$allowedInput".r
+    require(regex.findFirstIn(id.id).isDefined)
+
+    /**
+      * the authentication's realm name
+      */
+    val realm: String = id.id match {
+      case regex(r, _) => r
+    }
+
+    /**
+      * the JWT ''sub'' field
+      */
+    val sub: String = id.id match {
+      case regex(_, g) => g
+    }
+  }
 
   object UserRef {
 
@@ -43,17 +61,33 @@ object Identity {
       * @param sub   the JWT ''sub'' field
       */
     final def apply(realm: String, sub: String): UserRef =
-      UserRef(Some(IdentityId(s"realms/$realm/users/$sub")), realm, sub)
+      UserRef(IdentityId(s"realms/$realm/users/$sub"))
   }
 
   /**
     * The ''group'' identity class.
     *
-    * @param id    the optionally available unique identity identifier
-    * @param realm the authentication's realm name
-    * @param group the group name
+    * @param id    the unique identity identifier
     */
-  final case class GroupRef(id: Option[IdentityId], realm: String, group: String) extends Identity with Authenticated
+  final case class GroupRef(id: IdentityId) extends Identity with Authenticated {
+    private val regex: Regex = s"^.*realms/$allowedInput/groups/$allowedInput".r
+    require(regex.findFirstIn(id.id).isDefined)
+
+    /**
+      * the authentication's realm name
+      */
+    val realm: String = id.id match {
+      case regex(r, _) => r
+    }
+
+    /**
+      * the group name
+      */
+    val group: String = id.id match {
+      case regex(_, g) => g
+    }
+
+  }
 
   object GroupRef {
 
@@ -64,16 +98,27 @@ object Identity {
       * @param group the group name
       */
     final def apply(realm: String, group: String): GroupRef =
-      GroupRef(Some(IdentityId(s"realms/$realm/groups/$group")), realm, group)
+      GroupRef(IdentityId(s"realms/$realm/groups/$group"))
   }
 
   /**
     * The ''authenticated'' identity class that represents anyone authenticated from ''origin''.
     *
-    * @param id    the optionally available unique identity identifier
-    * @param realm the authentication's realm name
+    * @param id    the unique identity identifier
     */
-  final case class AuthenticatedRef(id: Option[IdentityId], realm: Option[String]) extends Identity with Authenticated
+  final case class AuthenticatedRef(id: IdentityId) extends Identity with Authenticated {
+    private val regex: Regex = s"^.*realms/$allowedInput/$authenticatedKey".r
+    require(id.id.trim.endsWith(authenticatedKey))
+
+    /**
+      * the authentication's realm name
+      */
+    val realm: Option[String] = id.id match {
+      case regex(r) => Some(r)
+      case _        => None
+    }
+
+  }
 
   object AuthenticatedRef {
 
@@ -84,8 +129,8 @@ object Identity {
       */
     final def apply(realm: Option[String]): AuthenticatedRef =
       realm match {
-        case Some(r) => AuthenticatedRef(Some(IdentityId(s"realms/$r/$authenticatedKey")), realm)
-        case None    => AuthenticatedRef(Some(IdentityId(s"$authenticatedKey")), realm)
+        case Some(r) => AuthenticatedRef(IdentityId(s"realms/$r/$authenticatedKey"))
+        case None    => AuthenticatedRef(IdentityId(s"$authenticatedKey"))
       }
 
   }
@@ -93,16 +138,18 @@ object Identity {
   /**
     * The ''anonymous'' identity singleton that covers unknown and unauthenticated users.
     *
-    * @param id    the optionally available unique identity identifier
+    * @param id    the unique identity identifier
     */
-  final case class Anonymous(id: Option[IdentityId]) extends Identity
+  final case class Anonymous(id: IdentityId) extends Identity {
+    require(id.id.trim.endsWith(anonymousKey))
+  }
 
   object Anonymous {
 
     /**
       * Constructs a ''Anonymous'' with the default ''IdentityId''
       */
-    final def apply(): Anonymous = Anonymous(Some(IdentityId(s"$anonymousKey")))
+    final def apply(): Anonymous = Anonymous(IdentityId(s"$anonymousKey"))
   }
 
   implicit val identityShow: Show[Identity] = Show.fromToString[Identity]

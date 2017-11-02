@@ -4,7 +4,6 @@ import java.time.Instant
 import java.util.UUID
 
 import akka.http.scaladsl.model.Uri
-import cats.Show
 import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.commons.iam.acls.Event._
 import ch.epfl.bluebrain.nexus.commons.iam.acls.Path._
@@ -16,7 +15,6 @@ import io.circe.parser._
 import io.circe.{Decoder, Encoder}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Matchers, WordSpecLike}
-import EventJsonLdSerializationSpec._
 import EventJsonLdSerialization._
 
 class EventJsonLdSerializationSpec extends WordSpecLike with Matchers with TableDrivenPropertyChecks {
@@ -28,13 +26,13 @@ class EventJsonLdSerializationSpec extends WordSpecLike with Matchers with Table
   private val path                   = "foo" / "bar" / uuid
   private val local                  = "realm"
   private val user                   = UserRef(local, "alice")
-  private val userExpanded           = user.copy(id = Some(IdentityId(s"$apiUri/${user.id.show}")))
+  private val userExpanded           = user.copy(id = IdentityId(s"$apiUri/${user.id.show}"))
   private val group                  = GroupRef(local, "some-group")
-  private val groupExpanded          = GroupRef(local, "some-group").copy(id = Some(IdentityId(s"$apiUri/${group.id.show}")))
+  private val groupExpanded          = GroupRef(local, "some-group").copy(id = IdentityId(s"$apiUri/${group.id.show}"))
   private val authentcated           = AuthenticatedRef(Some("realm"))
-  private val authenticatedExpanded  = authentcated.copy(id = Some(IdentityId(s"$apiUri/${authentcated.id.show}")))
+  private val authenticatedExpanded  = authentcated.copy(id = IdentityId(s"$apiUri/${authentcated.id.show}"))
   private val anonymous              = Anonymous()
-  private val anonymousExpanded      = anonymous.copy(id = Some(IdentityId(s"$apiUri/${anonymous.id.show}")))
+  private val anonymousExpanded      = anonymous.copy(id = IdentityId(s"$apiUri/${anonymous.id.show}"))
 
   private val meta         = Meta(user, Instant.ofEpochMilli(1))
   private val metaExpanded = Meta(userExpanded, Instant.ofEpochMilli(1))
@@ -43,11 +41,11 @@ class EventJsonLdSerializationSpec extends WordSpecLike with Matchers with Table
   private val context    = s""""${apiUri.withPath(apiUri.path / "context")}""""
   private val pathString = s""""${path.repr}""""
   private val groupString =
-    s"""{"@id":"http://localhost/prefix/realms/realm/groups/some-group","realm":"realm","group":"some-group","@type":"GroupRef"}"""
+    s"""{"@id":"http://localhost/prefix/realms/realm/groups/some-group","@type":"GroupRef"}"""
   private val userString =
-    s"""{"@id":"http://localhost/prefix/realms/realm/users/alice","realm":"realm","sub":"alice","@type":"UserRef"}"""
+    s"""{"@id":"http://localhost/prefix/realms/realm/users/alice","@type":"UserRef"}"""
   private val authenticatedUser =
-    s"""{"@id":"http://localhost/prefix/realms/realm/authenticated","realm":"realm","@type":"AuthenticatedRef"}"""
+    s"""{"@id":"http://localhost/prefix/realms/realm/authenticated","@type":"AuthenticatedRef"}"""
   private val anonUser = s"""{"@id":"http://localhost/prefix/anonymous","@type":"Anonymous"}"""
 
   private val permissionsString = s"""["own","read","write"]"""
@@ -97,12 +95,5 @@ class EventJsonLdSerializationSpec extends WordSpecLike with Matchers with Table
         decode[Event](json) shouldEqual Right(event)
       }
     }
-  }
-}
-
-object EventJsonLdSerializationSpec {
-  implicit def showOption[A](implicit E: Show[A]): Show[Option[A]] = Show.show {
-    case Some(value) => value.show
-    case None        => ""
   }
 }

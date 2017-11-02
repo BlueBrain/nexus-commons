@@ -12,11 +12,11 @@ import scala.util._
 
 class UserSpec extends WordSpecLike with Matchers with Inspectors {
 
-  val identity = GroupRef(None, "BBP", "/bbp-ou-nexus")
+  val identity = GroupRef("BBP", "some-group")
   val printer  = Printer.noSpaces.copy(dropNullKeys = true)
 
   private val values = List[(User, String)](
-    AuthenticatedUser(Set(identity)) -> """{"identities":[{"realm":"BBP","group":"/bbp-ou-nexus","type":"GroupRef"}],"type":"AuthenticatedUser"}""",
+    AuthenticatedUser(Set(identity)) -> """{"identities":[{"id":"realms/BBP/groups/some-group","type":"GroupRef"}],"type":"AuthenticatedUser"}""",
     AnonymousUser                    -> """{"type":"AnonymousUser"}"""
   )
 
