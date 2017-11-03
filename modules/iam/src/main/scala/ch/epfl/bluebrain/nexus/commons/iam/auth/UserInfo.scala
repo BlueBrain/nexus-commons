@@ -30,7 +30,7 @@ final case class UserInfo(sub: String,
     * @return the set of all [[Identity]] references that this user belongs to
     */
   def identities(realm: String): Set[Identity] =
-    Set(Anonymous, AuthenticatedRef(Some(realm)), UserRef(realm, sub)) ++ groups.map(g => GroupRef(realm, g))
+    Set(Anonymous(), AuthenticatedRef(Some(realm)), UserRef(realm, sub)) ++ groups.map(g => GroupRef(realm, g))
 
   /**
     * Converts this object to a [[User]] instance.
