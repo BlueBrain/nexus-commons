@@ -61,5 +61,14 @@ class IdentitySpec extends WordSpecLike with Matchers with Inspectors {
       val authenticated2 = AuthenticatedRef(IdentityId("http://localhost/prefix/realms/realm/authenticated"))
       authenticated2.realm shouldEqual Some("realm")
     }
+
+    "throw exception when user with invalid id is attempted to be created" in {
+      intercept[IllegalArgumentException] {
+        val _ = UserRef(IdentityId("http://localhost/prefix/realms//realm3/users/alice"))
+      }
+      intercept[IllegalArgumentException] {
+        val _ = GroupRef(IdentityId("http://localhost/prefix/realms//realm2/groups/some"))
+      }
+    }
   }
 }
