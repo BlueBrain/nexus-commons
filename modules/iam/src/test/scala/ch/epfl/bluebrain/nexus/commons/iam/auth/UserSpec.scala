@@ -1,6 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.iam.auth
 
-import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.serialization._
+import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity._
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.GroupRef
 import io.circe.{DecodingFailure, Printer}

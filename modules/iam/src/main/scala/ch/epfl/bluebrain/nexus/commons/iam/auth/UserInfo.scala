@@ -2,9 +2,9 @@ package ch.epfl.bluebrain.nexus.commons.iam.auth
 
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity._
+import io.circe.Encoder
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
-import io.circe.{Decoder, Encoder}
 
 /**
   * Detailed user information.
@@ -37,13 +37,10 @@ final case class UserInfo(sub: String,
     * @param realm the authentication provider realm
     */
   def toUser(realm: String): User = AuthenticatedUser(identities(realm))
+
 }
 
 object UserInfo {
-
-  implicit val config: Configuration = Configuration.default.withSnakeCaseKeys
-
-  implicit val userInfoDecoder: Decoder[UserInfo] = deriveDecoder[UserInfo]
-
+  private implicit val config: Configuration      = Configuration.default.withSnakeCaseKeys
   implicit val userInfoEncoder: Encoder[UserInfo] = deriveEncoder[UserInfo]
 }

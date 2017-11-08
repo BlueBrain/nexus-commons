@@ -3,6 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.iam.identity
 import cats.Show
 import io.circe._
 import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 
 import scala.util.matching.Regex
 
@@ -152,15 +153,8 @@ object Identity {
     final def apply(): Anonymous = Anonymous(IdentityId(s"$anonymousKey"))
   }
 
-  implicit val identityShow: Show[Identity] = Show.fromToString[Identity]
-
-  object serialization {
-    import io.circe.generic.extras.semiauto._
-    import ch.epfl.bluebrain.nexus.commons.iam.identity.IdentityId._
-    implicit val config: Configuration              = Configuration.default.withDiscriminator("type")
-    implicit val printer                            = Printer.noSpaces.copy(dropNullKeys = true)
-    implicit val identityEncoder: Encoder[Identity] = deriveEncoder[Identity]
-    implicit val identityDecoder: Decoder[Identity] = deriveDecoder[Identity]
-  }
-
+  implicit val identityShow: Show[Identity]       = Show.fromToString[Identity]
+  private implicit val config: Configuration      = Configuration.default.withDiscriminator("type")
+  implicit val identityEncoder: Encoder[Identity] = deriveEncoder[Identity]
+  implicit val identityDecoder: Decoder[Identity] = deriveDecoder[Identity]
 }
