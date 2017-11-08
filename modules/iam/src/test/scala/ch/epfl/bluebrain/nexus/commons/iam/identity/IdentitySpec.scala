@@ -1,8 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.iam.identity
 
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity._
-import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.serialization._
-import io.circe.DecodingFailure
+import io.circe.{DecodingFailure, Printer}
 import io.circe.parser.decode
 import io.circe.syntax._
 import org.scalatest._
@@ -18,6 +17,7 @@ class IdentitySpec extends WordSpecLike with Matchers with Inspectors {
     ("""{"id":"realms/realm3/users/alice","type":"UserRef"}""", UserRef("realm3", "alice")),
     ("""{"id":"realms/realm2/groups/some-group","type":"GroupRef"}""", GroupRef("realm2", "some-group"))
   )
+  private val printer = Printer.noSpaces.copy(dropNullKeys = true)
 
   "An Identity" should {
     "be decoded from Json properly" in {

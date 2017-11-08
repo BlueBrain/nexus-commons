@@ -135,9 +135,14 @@ lazy val iam = project
   .in(file("modules/iam"))
   .dependsOn(http)
   .settings(
-    name                := "iam",
-    moduleName          := "iam",
-    libraryDependencies ++= Seq(akkaHttpCirce, circeGenericExtras, circeParser, circeJava8, akkaTestKit % Test, scalaTest % Test)
+    name       := "iam",
+    moduleName := "iam",
+    libraryDependencies ++= Seq(akkaHttpCirce,
+                                circeGenericExtras,
+                                circeParser,
+                                circeJava8,
+                                akkaTestKit % Test,
+                                scalaTest   % Test)
   )
 
 lazy val shaclValidator = project
