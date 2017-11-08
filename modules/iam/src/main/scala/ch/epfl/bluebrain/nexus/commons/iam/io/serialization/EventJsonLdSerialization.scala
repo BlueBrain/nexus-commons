@@ -5,6 +5,8 @@ import akka.http.scaladsl.model.Uri.Path
 import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControl, AccessControlList, Event, Meta}
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
+import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{Anonymous, AuthenticatedRef, GroupRef, UserRef}
+import ch.epfl.bluebrain.nexus.commons.iam.io.serialization.EventJsonLdSerialization.SimpleIdentity
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder, Json, Printer}
@@ -31,7 +33,18 @@ trait EventJsonLdDecoder extends ConfigInstance {
 
   private def identityDecoder: Decoder[Identity] = {
     import io.circe.generic.extras.semiauto._
-    deriveDecoder[Identity]
+
+    Decoder.decodeHCursor.emap { hc =>
+      (deriveDecoder[Identity].apply(hc).toOption orElse
+        SimpleIdentity.simpleIdentityDec.apply(hc).toOption.map {
+          case SimpleIdentity.GroupRef(realm, group)       => GroupRef(realm, group)
+          case SimpleIdentity.UserRef(realm, sub)          => UserRef(realm, sub)
+          case SimpleIdentity.AuthenticatedRef(maybeRealm) => AuthenticatedRef(maybeRealm)
+          case SimpleIdentity.Anonymous                    => Anonymous()
+        })
+        .fold[Either[String, Identity]](Left(s"Could not find a proper decoder for Identity '${hc.focus}'"))(
+          Right.apply)
+    }
   }
 
   /**
@@ -53,8 +66,17 @@ trait EventJsonLdEncoder extends ConfigInstance {
     E.contramap(_.acl.toList)
 
   private def identityEncoder(base: Uri): Encoder[Identity] = {
-    def jsonIdOf(identity: Identity): Json =
-      Json.obj("@id" -> Json.fromString(base.withPath(Path(s"${base.path}/${identity.id.show}")).toString))
+    def jsonIdOf(identity: Identity): Json = {
+      val id = Json.obj("@id" -> Json.fromString(base.withPath(Path(s"${base.path}/${identity.id.show}")).toString))
+      val metadata = identity match {
+        case u: UserRef  => Json.obj("realm" -> Json.fromString(u.realm), "sub"   -> Json.fromString(u.sub))
+        case g: GroupRef => Json.obj("realm" -> Json.fromString(g.realm), "group" -> Json.fromString(g.group))
+        case u: AuthenticatedRef =>
+          u.realm.map(realm => Json.obj("realm" -> Json.fromString(realm))).getOrElse(Json.obj())
+        case _ => Json.obj()
+      }
+      metadata deepMerge id
+    }
 
     import io.circe.generic.extras.semiauto._
     Encoder.encodeJson.contramap { id =>
@@ -106,4 +128,19 @@ object EventJsonLdSerialization extends EventJsonLdEncoder with EventJsonLdDecod
       )
       encoder.apply(a).deepMerge(context).pretty(printer)
     }
+
+  /**
+    * Provides a data model for having an alternative decoder of [[Identity]]
+    */
+  private[serialization] sealed trait SimpleIdentity extends Product with Serializable
+
+  private[serialization] object SimpleIdentity {
+    final case class UserRef(realm: String, sub: String)     extends SimpleIdentity
+    final case class GroupRef(realm: String, group: String)  extends SimpleIdentity
+    final case class AuthenticatedRef(realm: Option[String]) extends SimpleIdentity
+    final case object Anonymous                              extends SimpleIdentity
+
+    private implicit val config: Configuration              = Configuration.default.withDiscriminator("@type")
+    implicit val simpleIdentityDec: Decoder[SimpleIdentity] = deriveDecoder[SimpleIdentity]
+  }
 }
