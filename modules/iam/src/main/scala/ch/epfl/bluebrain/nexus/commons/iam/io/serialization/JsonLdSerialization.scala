@@ -48,12 +48,15 @@ trait EventJsonLdDecoder extends ConfigInstance {
   }
 }
 
-trait EventJsonLdEncoder extends ConfigInstance {
+trait IdentityJsonLdEncoder extends ConfigInstance {
 
-  private implicit def aclEncoder(implicit E: Encoder[List[AccessControl]]): Encoder[AccessControlList] =
-    E.contramap(_.acl.toList)
-
-  private def identityEncoder(base: Uri): Encoder[Identity] = {
+  /**
+    * Identity encoder which adds `@id` field to JSON representation of `Identity`
+    *
+    * @param base base URI for the API
+    * @return encoder for `Identity`
+    */
+  def identityEncoder(base: Uri): Encoder[Identity] = {
     def jsonIdOf(identity: Identity): Json = {
       val id = Json.obj("@id" -> Json.fromString(base.withPath(Path(s"${base.path}/${identity.id.show}")).toString))
       val metadata = identity match {
@@ -71,6 +74,12 @@ trait EventJsonLdEncoder extends ConfigInstance {
       deriveEncoder[Identity].apply(id) deepMerge jsonIdOf(id)
     }
   }
+}
+
+trait EventJsonLdEncoder extends IdentityJsonLdEncoder with ConfigInstance {
+
+  private implicit def aclEncoder(implicit E: Encoder[List[AccessControl]]): Encoder[AccessControlList] =
+    E.contramap(_.acl.toList)
 
   /**
     * Event encoder which uses `Encoder[Identity]` which adds `@id` field to JSON representation of `Identity`
@@ -95,7 +104,7 @@ trait EventJsonLdMarshaller[A] {
   def apply(a: A): String
 }
 
-object EventJsonLdSerialization extends EventJsonLdEncoder with EventJsonLdDecoder {
+object JsonLdSerialization extends EventJsonLdEncoder with EventJsonLdDecoder {
 
   /**
     * Creates a marshaller that uses Circe Encoder[A] and adds @context field
@@ -116,19 +125,4 @@ object EventJsonLdSerialization extends EventJsonLdEncoder with EventJsonLdDecod
       )
       encoder.apply(a).deepMerge(context).pretty(printer)
     }
-
-  /**
-    * Provides a data model for having an alternative decoder of [[Identity]]
-    */
-  private[serialization] sealed trait SimpleIdentity extends Product with Serializable
-
-  private[serialization] object SimpleIdentity {
-    final case class UserRef(realm: String, sub: String)     extends SimpleIdentity
-    final case class GroupRef(realm: String, group: String)  extends SimpleIdentity
-    final case class AuthenticatedRef(realm: Option[String]) extends SimpleIdentity
-    final case object Anonymous                              extends SimpleIdentity
-
-    private implicit val config: Configuration              = Configuration.default.withDiscriminator("@type")
-    implicit val simpleIdentityDec: Decoder[SimpleIdentity] = deriveDecoder[SimpleIdentity]
-  }
 }
