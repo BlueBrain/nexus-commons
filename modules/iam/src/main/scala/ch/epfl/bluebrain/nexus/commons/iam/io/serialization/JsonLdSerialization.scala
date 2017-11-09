@@ -48,7 +48,7 @@ trait EventJsonLdDecoder extends ConfigInstance {
   }
 }
 
-trait IdentitysonLdEncoder extends ConfigInstance {
+trait IdentityJsonLdEncoder extends ConfigInstance {
 
   /**
     * Identity encoder which adds `@id` field to JSON representation of `Identity`
@@ -76,7 +76,7 @@ trait IdentitysonLdEncoder extends ConfigInstance {
   }
 }
 
-trait EventJsonLdEncoder extends IdentitysonLdEncoder with ConfigInstance {
+trait EventJsonLdEncoder extends IdentityJsonLdEncoder with ConfigInstance {
 
   private implicit def aclEncoder(implicit E: Encoder[List[AccessControl]]): Encoder[AccessControlList] =
     E.contramap(_.acl.toList)
