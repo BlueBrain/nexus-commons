@@ -16,10 +16,10 @@ import io.circe.parser._
 import io.circe.{Decoder, Encoder}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Matchers, WordSpecLike}
-import EventJsonLdSerialization._
+import ch.epfl.bluebrain.nexus.commons.iam.io.serialization.JsonLdSerialization._
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 
-class EventJsonLdSerializationSpec extends WordSpecLike with Matchers with TableDrivenPropertyChecks with Resources {
+class JsonLdSerializationSpec extends WordSpecLike with Matchers with TableDrivenPropertyChecks with Resources {
   val apiUri: Uri                    = Uri("http://localhost/prefix")
   implicit val evEnc: Encoder[Event] = eventEncoder(apiUri)
   implicit val evDec: Decoder[Event] = eventDecoder
