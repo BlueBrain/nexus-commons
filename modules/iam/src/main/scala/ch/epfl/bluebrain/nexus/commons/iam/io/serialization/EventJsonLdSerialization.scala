@@ -5,8 +5,7 @@ import akka.http.scaladsl.model.Uri.Path
 import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControl, AccessControlList, Event, Meta}
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
-import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{Anonymous, AuthenticatedRef, GroupRef, UserRef}
-import ch.epfl.bluebrain.nexus.commons.iam.io.serialization.EventJsonLdSerialization.SimpleIdentity
+import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{AuthenticatedRef, GroupRef, UserRef}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder, Json, Printer}
@@ -33,18 +32,7 @@ trait EventJsonLdDecoder extends ConfigInstance {
 
   private def identityDecoder: Decoder[Identity] = {
     import io.circe.generic.extras.semiauto._
-
-    Decoder.decodeHCursor.emap { hc =>
-      (deriveDecoder[Identity].apply(hc).toOption orElse
-        SimpleIdentity.simpleIdentityDec.apply(hc).toOption.map {
-          case SimpleIdentity.GroupRef(realm, group)       => GroupRef(realm, group)
-          case SimpleIdentity.UserRef(realm, sub)          => UserRef(realm, sub)
-          case SimpleIdentity.AuthenticatedRef(maybeRealm) => AuthenticatedRef(maybeRealm)
-          case SimpleIdentity.Anonymous                    => Anonymous()
-        })
-        .fold[Either[String, Identity]](Left(s"Could not find a proper decoder for Identity '${hc.focus}'"))(
-          Right.apply)
-    }
+    deriveDecoder[Identity]
   }
 
   /**

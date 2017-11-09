@@ -133,7 +133,7 @@ lazy val http = project
 
 lazy val iam = project
   .in(file("modules/iam"))
-  .dependsOn(http)
+  .dependsOn(http, test)
   .settings(
     name       := "iam",
     moduleName := "iam",
