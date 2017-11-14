@@ -2,6 +2,7 @@ package ch.epfl.bluebrain.nexus.commons.iam.acls
 
 import ch.epfl.bluebrain.nexus.commons.iam.acls.Permission._
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity._
+import ch.epfl.bluebrain.nexus.commons.iam.io.serialization.JsonLdSerialization
 import io.circe.Printer
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
@@ -20,8 +21,16 @@ class AccessControlListSpec extends WordSpecLike with Matchers {
     val json =
       """{"acl":[{"identity":{"id":"realms/BBP/groups/some-group","type":"GroupRef"},"permissions":["own","read","write","publish"]}]}"""
 
+    val json2 =
+      """{"acl" : [{"identity" : {"@id" : "realms/BBP/groups/some-group", "realm":"BBP", "group":"some-group", "@type" : "GroupRef"}, "permissions" : ["own","read","write","publish"] } ] }"""
+
     "be decoded from Json properly" in {
       decode[AccessControlList](json) shouldEqual Right(model)
+    }
+
+    "be decoded from Json-LD properly" in {
+      implicit val identityDecoder = JsonLdSerialization.identityDecoder
+      decode[AccessControlList](json2) shouldEqual Right(model)
     }
     "be encoded to Json properly" in {
       printer.pretty(model.asJson) shouldEqual json
