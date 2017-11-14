@@ -20,8 +20,18 @@ trait ConfigInstance {
         case other => other
       })
 }
+trait IdentityJsonLdDecoder extends ConfigInstance {
 
-trait EventJsonLdDecoder extends ConfigInstance {
+  /**
+    * Identity decoder which converts JSON-LD representation to ''Identity''
+    */
+  def identityDecoder: Decoder[Identity] = {
+    import io.circe.generic.extras.semiauto._
+    deriveDecoder[Identity]
+  }
+}
+
+trait EventJsonLdDecoder extends IdentityJsonLdDecoder {
 
   private implicit def aclDecoder(implicit E: Decoder[List[AccessControl]]): Decoder[AccessControlList] =
     Decoder.decodeHCursor.emap { hc =>
@@ -29,11 +39,6 @@ trait EventJsonLdDecoder extends ConfigInstance {
         .as[List[AccessControl]]
         .fold(f => Left(f.message), acl => Right(AccessControlList(acl.toSet)))
     }
-
-  private def identityDecoder: Decoder[Identity] = {
-    import io.circe.generic.extras.semiauto._
-    deriveDecoder[Identity]
-  }
 
   /**
     * Event decoder which uses `Decoder[Identity]` which maps `@id` JSON field to `id` in the `Identity` data model.
@@ -51,7 +56,7 @@ trait EventJsonLdDecoder extends ConfigInstance {
 trait IdentityJsonLdEncoder extends ConfigInstance {
 
   /**
-    * Identity encoder which adds `@id` field to JSON representation of `Identity`
+    * Identity encoder which adds `@id` field to JSON representation of ''Identity''
     *
     * @param base base URI for the API
     * @return encoder for `Identity`
