@@ -3,6 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.iam.auth
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity._
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.GroupRef
+import io.circe.generic.extras.Configuration
 import io.circe.{DecodingFailure, Printer}
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -12,8 +13,9 @@ import scala.util._
 
 class UserSpec extends WordSpecLike with Matchers with Inspectors {
 
-  val identity = GroupRef("BBP", "some-group")
-  val printer  = Printer.noSpaces.copy(dropNullKeys = true)
+  val identity                               = GroupRef("BBP", "some-group")
+  val printer                                = Printer.noSpaces.copy(dropNullKeys = true)
+  private implicit val config: Configuration = Configuration.default.withDiscriminator("type")
 
   private val values = List[(User, String)](
     AuthenticatedUser(Set(identity)) -> """{"identities":[{"id":"realms/BBP/groups/some-group","type":"GroupRef"}],"type":"AuthenticatedUser"}""",

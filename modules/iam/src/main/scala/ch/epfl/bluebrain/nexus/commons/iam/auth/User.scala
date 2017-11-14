@@ -26,12 +26,10 @@ case object AnonymousUser extends User {
 
 object User {
 
-  implicit val config: Configuration = Configuration.default.withDiscriminator("type")
-
   import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
 
-  implicit def userDecoder(implicit D: Decoder[Identity]): Decoder[User] = deriveDecoder[User]
+  implicit def userDecoder(implicit D: Decoder[Identity], C: Configuration): Decoder[User] = deriveDecoder[User]
 
-  implicit def userEncoder(implicit E: Encoder[Identity]): Encoder[User] = deriveEncoder[User]
+  implicit def userEncoder(implicit E: Encoder[Identity], C: Configuration): Encoder[User] = deriveEncoder[User]
 
 }
