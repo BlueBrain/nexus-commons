@@ -54,7 +54,7 @@ object IamClient {
             .map[Caller](AuthenticatedCaller(cred, _))
             .recoverWith[Caller] { case e => recover(e, User) }
         }
-        .getOrElse(Future.successful(AnonymousCaller))
+        .getOrElse(Future.successful(AnonymousCaller()))
 
     override def getAcls(resource: Path)(implicit credentials: Option[OAuth2BearerToken]) = {
       aclClient(requestFrom(credentials, Acls ++ resource))
