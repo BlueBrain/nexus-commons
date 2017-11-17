@@ -59,7 +59,7 @@ class IamClientSpec
     "return anonymous caller whenever there is no token provided" in {
       implicit val cl         = fixedClient[None.type]()
       implicit val httpClient = HttpClient.withAkkaUnmarshaller[User]
-      IamClient().getCaller(None).futureValue shouldEqual AnonymousCaller
+      IamClient().getCaller(None).futureValue shouldEqual AnonymousCaller()
     }
 
     "return an authenticated caller whenever the token provided is correct" in {
@@ -82,7 +82,7 @@ class IamClientSpec
       val aclAnon             = AccessControlList(Set(AccessControl(AuthenticatedRef(None), Permissions(Read))))
       implicit val cl         = fixedClient(anonA = Some(aclAnon))
       implicit val httpClient = HttpClient.withAkkaUnmarshaller[AccessControlList]
-      implicit val anonCaller = AnonymousCaller
+      implicit val anonCaller = AnonymousCaller()
 
       IamClient().getAcls(Path("///prefix/some/resource/two")).futureValue shouldEqual aclAnon
     }

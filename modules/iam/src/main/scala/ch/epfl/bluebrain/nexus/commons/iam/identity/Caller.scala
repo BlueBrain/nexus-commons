@@ -1,8 +1,10 @@
 package ch.epfl.bluebrain.nexus.commons.iam.identity
 
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
+import ch.epfl.bluebrain.nexus.commons.iam.IamUri
 import ch.epfl.bluebrain.nexus.commons.iam.auth.User
-import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.Anonymous
+import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{Anonymous, anonymousKey}
 
 /**
   * Base enumeration type for caller classes.
@@ -23,10 +25,28 @@ object Caller {
 
   /**
     * An anonymous caller.
+    *
+    * @param identity the ''anonymous'' [[Identity]] for that caller
     */
-  final case object AnonymousCaller extends Caller {
-    override val identities  = Set(Anonymous())
+  final case class AnonymousCaller(identity: Anonymous) extends Caller {
+    override val identities  = Set(identity)
     override val credentials = None
+  }
+  object AnonymousCaller {
+
+    /**
+      * Constructs a [[AnonymousCaller]] form the implicitly available ''iamUri''
+      *
+      * @param iamUri the implicitly available ''iamUri''
+      */
+    final def apply()(implicit iamUri: IamUri): AnonymousCaller = apply(iamUri.value)
+
+    /**
+      * Constructs a [[AnonymousCaller]] form the provided ''uri''.
+      *
+      * @param uri the uri to build the [[Anonymous]] caller
+      */
+    final def apply(uri: Uri): AnonymousCaller = AnonymousCaller(Anonymous(IdentityId(s"$uri/$anonymousKey")))
   }
 
   /**
