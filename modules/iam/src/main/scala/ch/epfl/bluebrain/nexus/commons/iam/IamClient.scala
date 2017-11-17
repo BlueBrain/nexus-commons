@@ -1,6 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.iam
 
 import akka.http.scaladsl.client.RequestBuilding.Get
+import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
@@ -25,8 +26,10 @@ trait IamClient[F[_]] {
     * Retrieve the ''caller'' form the optional [[OAuth2BearerToken]]
     *
     * @param optCredentials the optionally provided [[OAuth2BearerToken]]
+    * @param filterGroups   if true, will only return groups currently in use in IAM
+    *
     */
-  def getCaller(optCredentials: Option[OAuth2BearerToken]): F[Caller]
+  def getCaller(optCredentials: Option[OAuth2BearerToken], filterGroups: Boolean = false): F[Caller]
 
   /**
     * Retrieve the current ''acls'' for some particular ''resource''
@@ -38,19 +41,20 @@ trait IamClient[F[_]] {
 }
 
 object IamClient {
-  private val log  = Logger[this.type]
-  private val Acls = Path("acls")
-  private val User = Path("oauth2/user")
+  private val log               = Logger[this.type]
+  private val Acls              = Path("acls")
+  private val User              = Path("oauth2/user")
+  private val filterGroupsParam = "filterGroups"
 
   final def apply()(implicit ec: ExecutionContext,
                     aclClient: HttpClient[Future, AccessControlList],
                     userClient: HttpClient[Future, User],
                     iamUri: IamUri): IamClient[Future] = new IamClient[Future] {
 
-    override def getCaller(optCredentials: Option[OAuth2BearerToken]) =
+    override def getCaller(optCredentials: Option[OAuth2BearerToken], filterGroups: Boolean = false) =
       optCredentials
         .map { cred =>
-          userClient(requestFrom(optCredentials, User))
+          userClient(requestFrom(optCredentials, User, Query(filterGroupsParam -> filterGroups.toString)))
             .map[Caller](AuthenticatedCaller(cred, _))
             .recoverWith[Caller] { case e => recover(e, User) }
         }
@@ -74,9 +78,9 @@ object IamClient {
         Future.failed(err)
     }
 
-    private def requestFrom(credentials: Option[OAuth2BearerToken], path: Path) = {
+    private def requestFrom(credentials: Option[OAuth2BearerToken], path: Path, query: Query = Query.Empty) = {
       val uriPath: Path = iamUri.value.path
-      val request       = Get(iamUri.value.copy(path = uriPath ++ path))
+      val request       = Get(iamUri.value.copy(path = uriPath ++ path).withQuery(query))
       credentials.map(request.addCredentials).getOrElse(request)
     }
   }
