@@ -1,4 +1,4 @@
-package ch.epfl.bluebrain.nexus.commons.sparql.client
+package ch.epfl.bluebrain.nexus.commons.http
 
 import akka.http.scaladsl.model.{HttpCharsets, MediaType}
 

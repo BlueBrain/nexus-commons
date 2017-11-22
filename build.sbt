@@ -124,11 +124,11 @@ lazy val test = project
 
 lazy val http = project
   .in(file("modules/http"))
-  .dependsOn(types)
+  .dependsOn(types, test % Test)
   .settings(
     name                := "commons-http",
     moduleName          := "commons-http",
-    libraryDependencies ++= Seq(shapeless, akkaHttp, journal, scalaTest % Test)
+    libraryDependencies ++= Seq(shapeless, akkaHttp, akkaHttpCirce, journal, scalaTest % Test)
   )
 
 lazy val iam = project
@@ -164,7 +164,6 @@ lazy val sparqlClient = project
     libraryDependencies ++= Seq(
       akkaStream,
       jenaArq,
-      akkaHttpCirce,
       circeCore,
       circeParser        % Test,
       blazegraph         % Test,
