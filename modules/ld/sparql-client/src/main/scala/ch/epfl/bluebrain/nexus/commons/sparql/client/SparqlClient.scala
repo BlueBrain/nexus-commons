@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.headers.Accept
 import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient
+import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import io.circe.Json
