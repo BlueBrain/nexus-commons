@@ -126,9 +126,15 @@ lazy val http = project
   .in(file("modules/http"))
   .dependsOn(types, test % Test)
   .settings(
-    name                := "commons-http",
-    moduleName          := "commons-http",
-    libraryDependencies ++= Seq(shapeless, akkaHttp, akkaHttpCirce, journal, scalaTest % Test)
+    name       := "commons-http",
+    moduleName := "commons-http",
+    libraryDependencies ++= Seq(shapeless,
+                                akkaHttp,
+                                akkaHttpCirce,
+                                journal,
+                                scalaTest          % Test,
+                                akkaHttpTestKit    % Test,
+                                circeGenericExtras % Test)
   )
 
 lazy val iam = project
@@ -184,4 +190,4 @@ lazy val root = project
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 
 addCommandAlias("review", ";clean;coverage;scapegoat;test;coverageReport;coverageAggregate")
-addCommandAlias("rel", ";release with-defaults")
+addCommandAlias("rel", ";release with-defaults skip-tests")

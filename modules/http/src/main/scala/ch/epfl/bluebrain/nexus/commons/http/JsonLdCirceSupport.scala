@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity}
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
-import io.circe.{Json, JsonObject, Printer}
+import io.circe.{Encoder, Json, JsonObject, Printer}
 
 import scala.collection.immutable.Seq
 
@@ -51,6 +51,21 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
     canonicalJson(json)
   }
 
+  /**
+    * `A` => HTTP entity
+    *
+    * @tparam A type to encode
+    * @return marshaller for any `A` value
+    */
+  implicit final def marshallerHttp[A: Encoder](implicit printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
+                                                keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[A] =
+    jsonLdMarshaller.compose(implicitly[Encoder[A]].apply)
+
+  /**
+    * `Json` => HTTP entity
+    *
+    * @return marshaller for JSON-LD value
+    */
   final implicit def jsonLdMarshaller(implicit printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
                                       keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[Json] =
     Marshaller.withFixedContentType(RdfMediaTypes.`application/ld+json`) { json =>
