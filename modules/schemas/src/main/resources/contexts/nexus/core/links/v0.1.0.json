@@ -1,0 +1,19 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "self": {
+        "@id": "nxv:self",
+        "@type": "@id"
+      },
+      "downloadURL": {
+        "@id": "schema:downloadURL",
+        "@type": "@id"
+      },
+      "schemas": {
+        "@id": "nxv:schema",
+        "@type": "@id"
+      }
+    }
+  ]
+}

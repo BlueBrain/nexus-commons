@@ -1,45 +1,12 @@
 {
-  "@context": {
-    "type": "@type",
-    "id": "@id",
-    "nxv": "https://bbp-nexus.epfl.ch/vocabs/nexus/core/v0.1.0/",
-    "code": {
-      "@id": "nxv:code"
-    },
-    "message": {
-      "@id": "nxv:message"
-    },
-    "links": {
-      "@id": "nxv:links"
-    },
-    "rel": {
-      "@id": "nxv:rel",
-      "@type": "@id"
-    },
-    "self": {
-      "@id": "nxv:self"
-    },
-    "href": {
-      "@id": "nxv:href",
-      "@type": "@id"
-    },
-    "rev": {
-      "@id": "nxv:rev"
-    },
-    "deprecated": {
-      "@id": "nxv:deprecated"
-    },
-    "published": {
-      "@id": "nxv:published"
-    },
-    "createdAtTime": {
-      "@id": "nxv:createdAtTime"
-    },
-    "updatedAtTime": {
-      "@id": "nxv:updatedAtTime"
-    },
-    "publishedAtTime": {
-      "@id": "nxv:publishedAtTime"
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "type": "@type",
+      "id": "@id",
+      "links": {
+        "@id": "nxv:links"
+      }
     }
-  }
+  ]
 }

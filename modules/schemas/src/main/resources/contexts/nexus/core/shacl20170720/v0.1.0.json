@@ -41,10 +41,18 @@
         "@id": "sh:minCount",
         "@type": "xsd:integer"
       },
-      "minInclusive": "sh:minInclusive",
-      "maxInclusive": "sh:maxInclusive",
-      "maxExclusive": "sh:maxExclusive",
-      "minExclusive": "sh:minExclusive",
+      "minInclusive": {
+        "@id": "sh:minInclusive"
+      },
+      "maxInclusive": {
+        "@id": "sh:maxInclusive"
+      },
+      "maxExclusive": {
+        "@id": "sh:maxExclusive"
+      },
+      "minExclusive": {
+        "@id": "sh:minExclusive"
+      },
       "in": {
         "@id": "sh:in",
         "@container": "@list"
