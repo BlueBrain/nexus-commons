@@ -4,8 +4,8 @@
   "@id": "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/core/activity/v0.1.0",
   "nxv:links": [
     {
-      "nxv:rel": "self",
-      "nxv:href": "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/core/activity/v0.1.0"
+      "rel": "self",
+      "href": "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/core/activity/v0.1.0"
     }
   ],
   "nxv:rev": 2,

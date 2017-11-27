@@ -26,9 +26,9 @@ class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources w
       )
       implicit val _ = OrderedKeys(
         List(
-          "@context",
-          "@id",
-          "@type",
+          "*@context",
+          "*@id",
+          "*@type",
           "",
           "nxv:rev",
           "nxv:originalFileName",
@@ -41,8 +41,8 @@ class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources w
           "nxv:published",
           "nxv:deprecated",
           "nxv:links",
-          "nxv:rel",
-          "nxv:href"
+          "nxv:links.rel",
+          "nxv:links.href"
         ))
 
       "order jsonLD input" in {
@@ -82,12 +82,13 @@ class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources w
 
       implicit val _ = OrderedKeys(
         List(
-          "@context",
-          "@id",
-          "@type",
-          "identity",
-          "permissions",
-          "realm",
+          "*@context",
+          "*@id",
+          "*@type",
+          "acl.identity",
+          "acl.permissions",
+          "identity.realm",
+          "identities.realm",
           "",
         ))
 
