@@ -9,12 +9,12 @@
   "nxv:deprecated" : false,
   "nxv:links" : [
     {
-      "href" : "http://localhost/link1",
-      "rel" : "self"
+      "rel" : "self",
+      "href" : "http://localhost/link1"
     },
     {
-      "href" : "http://localhost/link2",
-      "rel" : "schema"
+      "rel" : "schema",
+      "href" : "http://localhost/link2"
     }
   ]
 }

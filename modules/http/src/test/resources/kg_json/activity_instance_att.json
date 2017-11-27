@@ -2,12 +2,12 @@
   "nxv:deprecated": false,
   "nxv:links": [
     {
-      "nxv:rel": "self",
-      "nxv:href": "https://bbp-nexus.epfl.ch/dev/v0/data/bbp/experiment/patchedcell/v0.1.0/a2abf855-53af-4d4a-a601-04d6029591dc"
+      "rel": "self",
+      "href": "https://bbp-nexus.epfl.ch/dev/v0/data/bbp/experiment/patchedcell/v0.1.0/a2abf855-53af-4d4a-a601-04d6029591dc"
     },
     {
-      "nxv:href": "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/experiment/patchedcell/v0.1.0",
-      "nxv:rel": "schema"
+      "href": "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/experiment/patchedcell/v0.1.0",
+      "rel": "schema"
     }
   ],
   "@id": "https://bbp-nexus.epfl.ch/dev/v0/data/bbp/experiment/patchedcell/v0.1.0/a2abf855-53af-4d4a-a601-04d6029591dc",

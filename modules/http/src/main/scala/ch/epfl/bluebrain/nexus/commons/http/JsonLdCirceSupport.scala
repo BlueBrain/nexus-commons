@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.http
 import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity}
-import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
+import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.{Key, OrderedKeys}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import io.circe.{Encoder, Json, JsonObject, Printer}
@@ -29,24 +29,36 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
     */
   def sortKeys(json: Json)(implicit keys: OrderedKeys): Json = {
 
-    implicit val _: Ordering[String] = new Ordering[String] {
+    implicit val _: Ordering[Key] = new Ordering[Key] {
       private val middlePos = keys.withPosition("")
 
-      private def position(key: String): Int = keys.withPosition.getOrElse(key, middlePos)
+      private def position(key: Key): Int =
+        keys.withPosition.get(s"*${key.raw}") orElse keys.withPosition.get(key.prefixed) getOrElse (middlePos)
 
-      override def compare(x: String, y: String): Int = {
+      override def compare(x: Key, y: Key): Int = {
         val posX = position(x)
         val posY = position(y)
-        if (posX == middlePos && posY == middlePos) x compareTo y
+        if (posX == middlePos && posY == middlePos) x.raw compareTo y.raw
         else posX compareTo posY
       }
     }
 
-    def canonicalJson(json: Json): Json =
-      json.arrayOrObject[Json](json, arr => Json.fromValues(arr.map(canonicalJson)), obj => sorted(obj).asJson)
-
-    def sorted(jObj: JsonObject): JsonObject =
-      JsonObject.fromIterable(jObj.toVector.sortBy(_._1).map { case (k, v) => k -> canonicalJson(v) })
+    def canonicalJson(json: Json, prefixPath: Option[String] = None): Json =
+      json.arrayOrObject[Json](
+        json,
+        arr => Json.fromValues(arr.map(j => canonicalJson(j, prefixPath))),
+        obj =>
+          JsonObject
+            .fromIterable(
+              obj.toVector
+                .sortBy {
+                  case (k, _) => Key(prefixPath.map(p => s"${p}.$k").getOrElse(k), k)
+                }
+                .map {
+                  case (k, v) => k -> canonicalJson(v, Some(prefixPath.map(p => k).getOrElse(k)))
+                })
+            .asJson
+      )
 
     canonicalJson(json)
   }
@@ -83,6 +95,9 @@ object JsonLdCirceSupport extends JsonLdCirceSupport {
   final case class OrderedKeys(keys: List[String]) {
     lazy val withPosition = keys.zipWithIndex.toMap
   }
+
+  private[http] case class Key(prefixed: String, raw: String)
+
   object OrderedKeys {
 
     /**
@@ -90,4 +105,5 @@ object JsonLdCirceSupport extends JsonLdCirceSupport {
       */
     final def apply(): OrderedKeys = new OrderedKeys(List(""))
   }
+
 }
