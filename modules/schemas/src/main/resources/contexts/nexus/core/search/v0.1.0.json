@@ -1,0 +1,26 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "total": {
+        "@id": "nxv:total"
+      },
+      "maxScore": {
+        "@id": "nxv:maxScore"
+      },
+      "score": {
+        "@id": "nxv:score"
+      },
+      "results": {
+        "@id": "nxv:results"
+      },
+      "resultId": {
+        "@id": "nxv:resultId",
+        "@type": "@id"
+      },
+      "source": {
+        "@id": "nxv:source"
+      }
+    }
+  ]
+}
