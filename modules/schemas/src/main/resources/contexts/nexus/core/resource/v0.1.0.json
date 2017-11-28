@@ -1,0 +1,12 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "type": "@type",
+      "id": "@id",
+      "links": {
+        "@id": "nxv:links"
+      }
+    }
+  ]
+}
