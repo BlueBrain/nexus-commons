@@ -13,6 +13,22 @@
       "schemas": {
         "@id": "nxv:schema",
         "@type": "@id"
+      },
+      "outgoing": {
+        "@id": "nxv:outgoing",
+        "@type": "@id"
+      },
+      "incoming": {
+        "@id": "nxv:incoming",
+        "@type": "@id"
+      },
+      "previous": {
+        "@id": "nxv:previous",
+        "@type": "@id"
+      },
+      "next": {
+        "@id": "nxv:next",
+        "@type": "@id"
       }
     }
   ]
