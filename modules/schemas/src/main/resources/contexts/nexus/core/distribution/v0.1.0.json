@@ -1,0 +1,38 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "originalFileName": {
+        "@id": "nxv:originalFileName"
+      },
+      "downloadURL": {
+        "@id": "schema:downloadURL",
+        "@type": "@id"
+      },
+      "accessURL": {
+        "@id": "schema:accessURL"
+      },
+      "contentSize": {
+        "@id": "schema:contentSize"
+      },
+      "digest": {
+        "@id": "nxv:digest"
+      },
+      "mediaType": {
+        "@id": "schema:mediaType"
+      },
+      "storage": {
+        "@id": "nxv:storage"
+      },
+      "value": {
+        "@id": "schema:storage"
+      },
+      "unit": {
+        "@id": "schema:unitCode"
+      },
+      "algorithm": {
+        "@id": "schema:algorithm"
+      }
+    }
+  ]
+}
