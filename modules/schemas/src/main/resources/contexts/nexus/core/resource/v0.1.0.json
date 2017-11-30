@@ -4,6 +4,9 @@
     {
       "type": "@type",
       "id": "@id",
+      "distribution": {
+        "@id": "schema:distribution"
+      },
       "links": {
         "@id": "nxv:links"
       }
