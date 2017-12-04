@@ -3,18 +3,18 @@ package ch.epfl.bluebrain.nexus.commons.http
 import akka.http.scaladsl.server.Directives.{complete, get}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.{OrderedKeys, _}
-import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupportSpec._
+import ch.epfl.bluebrain.nexus.commons.http.JsonOpsSpec._
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import io.circe.Json
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.{Inspectors, Matchers, WordSpecLike}
-
+import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
 import scala.collection.mutable.LinkedHashSet
 
-class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
+class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
 
-  "A JsonLdCirceSupport" when {
+  "A JsonOps" when {
     implicit val config = Configuration.default.withDiscriminator("@type")
 
     "dealing with KG data" should {
@@ -48,7 +48,7 @@ class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources w
       "order jsonLD input" in {
         forAll(list) {
           case (unordered, expected) =>
-            sortKeys(unordered).spaces2 shouldEqual expected.spaces2
+            unordered.sortKeys.spaces2 shouldEqual expected.spaces2
         }
       }
 
@@ -94,7 +94,7 @@ class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources w
       "order jsonLD input" in {
         forAll(list) {
           case (unordered, expected) =>
-            sortKeys(unordered).spaces2 shouldEqual expected.spaces2
+            unordered.sortKeys.spaces2 shouldEqual expected.spaces2
         }
       }
 
@@ -118,10 +118,26 @@ class JsonLdCirceSupportSpec extends WordSpecLike with Matchers with Resources w
         }
       }
     }
+
+    "manipulating json" should {
+      "remove keys object" in {
+        val obj = Json.obj("one" -> Json.obj("two" -> Json.fromString("something")), "two" -> Json.fromString("abc"))
+        obj.removeKeys("two") shouldEqual Json.obj("one" -> Json.obj("two" -> Json.fromString("something")))
+        obj.removeKeys("three") shouldEqual obj
+      }
+      "remove keys array" in {
+        val obj      = Json.obj("one" -> Json.obj("two" -> Json.fromString("something")), "two" -> Json.fromString("abc"))
+        val objNoKey = Json.obj("one" -> Json.obj("two" -> Json.fromString("something")))
+        val arrObj   = Json.arr(obj, obj, Json.obj("three" -> Json.fromString("something")))
+        arrObj.removeKeys("two") shouldEqual Json.arr(objNoKey,
+                                                      objNoKey,
+                                                      Json.obj("three" -> Json.fromString("something")))
+      }
+    }
   }
 }
 
-object JsonLdCirceSupportSpec {
+object JsonOpsSpec {
   final case class KgResponse(c: String,
                               `nxv:published`: Boolean,
                               `nxv:rev`: Long,
