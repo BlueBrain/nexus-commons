@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "type": "@type",
+      "id": "@id",
+      "acl": {
+        "@id": "nxv:acl"
+      },
+      "identity": {
+        "@id": "nxv:identity"
+      },
+      "realm": {
+        "@id": "nxv:realm"
+      },
+      "group": {
+        "@id": "nxv:group"
+      },
+      "permissions": {
+        "@id": "nxv:permissions",
+        "@container": "@list"
+      }
+    }
+  ]
+}
