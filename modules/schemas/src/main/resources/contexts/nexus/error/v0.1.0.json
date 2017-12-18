@@ -1,0 +1,16 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "code": {
+        "@code": "nxv:code"
+      },
+      "details": {
+        "@id": "nxv:details"
+      },
+      "message": {
+        "@id": "nxv:message"
+      }
+    }
+  ]
+}
