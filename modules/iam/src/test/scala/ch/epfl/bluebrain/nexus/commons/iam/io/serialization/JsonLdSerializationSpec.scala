@@ -28,8 +28,6 @@ class JsonLdSerializationSpec extends WordSpecLike with Matchers with TableDrive
   private val realm                  = "realm"
   private val user                   = UserRef(realm, "alice")
   private val userExpanded           = user.copy(id = IdentityId(s"$apiUri/${user.id.show}"))
-  private val group                  = GroupRef(realm, "some-group")
-  private val groupExpanded          = GroupRef(realm, "some-group").copy(id = IdentityId(s"$apiUri/${group.id.show}"))
   private val auth                   = AuthenticatedRef(Some("realm"))
   private val authExpanded           = auth.copy(id = IdentityId(s"$apiUri/${auth.id.show}"))
   private val anonymous              = Anonymous()
@@ -43,19 +41,14 @@ class JsonLdSerializationSpec extends WordSpecLike with Matchers with TableDrive
   val results = Table(
     ("event", "eventExpanded", "json"),
     (
-      PermissionsAdded(path, group, permissions, meta),
-      PermissionsAdded(path, groupExpanded, permissions, metaExpanded),
-      jsonContentOf("/serialization/jsonLd/permissions_added.json", replacements)
-    ),
-    (
       PermissionsSubtracted(path, user, permissions, meta),
       PermissionsSubtracted(path, userExpanded, permissions, metaExpanded),
       jsonContentOf("/serialization/jsonLd/permissions_subtracted.json", replacements)
     ),
     (
-      PermissionsCreated(path, AccessControlList(anonymous         -> permissions), meta),
-      PermissionsCreated(path, AccessControlList(anonymousExpanded -> permissions), metaExpanded),
-      jsonContentOf("/serialization/jsonLd/permissions_created.json", replacements)
+      PermissionsAdded(path, AccessControlList(anonymous         -> permissions), meta),
+      PermissionsAdded(path, AccessControlList(anonymousExpanded -> permissions), metaExpanded),
+      jsonContentOf("/serialization/jsonLd/permissions_added.json", replacements)
     ),
     (
       PermissionsRemoved(path, auth, meta),
