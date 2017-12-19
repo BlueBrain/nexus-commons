@@ -1,21 +1,24 @@
 package ch.epfl.bluebrain.nexus.commons.http
 
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directives.{complete, get}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.{OrderedKeys, _}
+import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
+import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
 import ch.epfl.bluebrain.nexus.commons.http.JsonOpsSpec._
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import io.circe.Json
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.{Inspectors, Matchers, WordSpecLike}
-import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
+
 import scala.collection.mutable.LinkedHashSet
 
 class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
 
   "A JsonOps" when {
-    implicit val config = Configuration.default.withDiscriminator("@type")
+    implicit val config: Configuration = Configuration.default.withDiscriminator("@type")
+    implicit val context: Uri          = Uri("https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0")
 
     "dealing with KG data" should {
       val list = List(
@@ -63,8 +66,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
               List(Links("http://localhost/link1", "self"), Links("http://localhost/link2", "schema")),
               "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/core/schema/v0.1.0",
               false,
-              "owl:Ontology",
-              "https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0"
+              "owl:Ontology"
             ))
         }
         Get("/") ~> route ~> check {
@@ -88,7 +90,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
           "identity",
           "permissions",
           "realm",
-          "",
+          ""
         ))
 
       "order jsonLD input" in {
@@ -108,7 +110,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
               UserRef("f:434t3-134e-4444-aa74-bdf00f48dfce:some",
                       "BBP",
                       "https://nexus.example.com/v0/realms/BBP/users/f:434t3-134e-4444-aa74-bdf00f48dfce:some"),
-              AuthenticatedRef(Some("BBP"), "https://nexus.example.com/v0/realms/BBP/authenticated"),
+              AuthenticatedRef(Some("BBP"), "https://nexus.example.com/v0/realms/BBP/authenticated")
             )): User)
         }
         Get("/") ~> route ~> check {
@@ -145,8 +147,7 @@ object JsonOpsSpec {
                               `nxv:links`: List[Links],
                               `@id`: String,
                               `nxv:deprecated`: Boolean,
-                              `@type`: String,
-                              `@context`: String)
+                              `@type`: String)
   final case class Links(href: String, rel: String)
 
   sealed trait User extends Product with Serializable {
