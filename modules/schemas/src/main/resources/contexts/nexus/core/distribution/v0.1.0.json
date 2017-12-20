@@ -25,7 +25,7 @@
         "@id": "nxv:storage"
       },
       "value": {
-        "@id": "schema:storage"
+        "@id": "schema:value"
       },
       "unit": {
         "@id": "schema:unitCode"
