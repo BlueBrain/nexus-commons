@@ -9,30 +9,18 @@ import io.circe.Encoder
 /**
   * Directive to marshall StatusFrom instances into HTTP responses.
   */
-trait ErrorDirectives {
+object ErrorDirectives {
 
   /**
-    * Implicitly derives a [[akka.http.scaladsl.marshalling.ToResponseMarshaller]] for any type ''A'' based on
-    * implicitly available [[StatusFrom]] and [[io.circe.Encoder]] instances.
+    * Implicitly derives a generic [[akka.http.scaladsl.marshalling.ToResponseMarshaller]] based on
+    * implicitly available [[StatusFrom]] and [[io.circe.Encoder]] instances, and a [[ContextUri]], that provides
+    * a JSON-LD response from an entity of type ''A''.
     *
     * @tparam A the generic type for which the marshaller is derived
-    * @return a ''ToResponseMarshaller'' that will generate a JSON response using the status provided by ''StatusFrom''
-    *         and the entity using the JSON representation provided by ''Encoder''
-    */
-  final implicit def jsonMarshallerFromStatusAndEncoder[A: StatusFrom: Encoder]: ToResponseMarshaller[A] =
-    Marshaller.withFixedContentType(ContentTypes.`application/json`) { value =>
-      HttpResponse(status = implicitly[StatusFrom[A]].apply(value),
-                   entity = HttpEntity(ContentTypes.`application/json`, implicitly[Encoder[A]].apply(value).noSpaces))
-    }
-
-  /**
-    * Implicitly derives a [[akka.http.scaladsl.marshalling.ToResponseMarshaller]] for any type ''A'' based on
-    * implicitly available [[StatusFrom]] and [[io.circe.Encoder]] instances.
-    *
-    * @tparam A the generic type for which the marshaller is derived
-    * @return a ''ToResponseMarshaller'' that will generate a JSON-LD response using the status provided by
-    *         ''StatusFrom'' and the entity using the JSON representation provided by ''Encoder'', with
-    *         an appropriate ''context'' injected.
+    * @param statusFrom the StatusFrom instance mapping the entity to an HTTP status
+    * @param encoder the Circe encoder instance to convert the entity into JSON
+    * @param context the context URI to be injected into the JSON-LD response body
+    * @return a ''ToResponseMarshaller'' that will generate an appropriate JSON-LD response
     */
   final implicit def jsonLdMarshallerFromStatusAndEncoder[A](
       implicit
@@ -46,5 +34,3 @@ trait ErrorDirectives {
                                        encoder.mapJson(_.addContext(context)).apply(value).noSpaces))
     }
 }
-
-object ErrorDirectives extends ErrorDirectives
