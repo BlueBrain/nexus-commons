@@ -199,6 +199,9 @@
       "deactivated": {
         "@id": "sh:deactivated"
       },
+      "pattern": {
+        "@id": "sh:pattern"
+      },
       "label": {
         "@id": "rdfs:label",
         "@type": "xsd:string"
