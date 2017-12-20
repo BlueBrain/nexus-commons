@@ -2,7 +2,7 @@ package ch.epfl.bluebrain.nexus.commons.http
 
 import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity, Uri}
+import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity}
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json, Printer}
@@ -28,7 +28,7 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
     * @return marshaller for any `A` value
     */
   implicit final def marshallerHttp[A](implicit
-                                       context: Uri,
+                                       context: ContextUri,
                                        encoder: Encoder[A],
                                        printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
                                        keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[A] =

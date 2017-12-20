@@ -1,6 +1,5 @@
 package ch.epfl.bluebrain.nexus.commons.http
 
-import akka.http.scaladsl.model.Uri
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
 import io.circe.{Json, JsonObject}
 import io.circe.syntax._
@@ -64,7 +63,7 @@ object JsonOps {
       * @param context the standard context URI
       * @return a new JSON object
       */
-    def addContext(context: Uri): Json = {
+    def addContext(context: ContextUri): Json = {
       val contextUriString = Json.fromString(context.toString)
 
       json.asObject match {
