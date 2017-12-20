@@ -89,7 +89,7 @@ lazy val sourcingMem = project
 
 lazy val service = project
   .in(file("modules/service"))
-  .dependsOn(types, sourcingAkka % "test->compile")
+  .dependsOn(types, http, sourcingAkka % "test->compile")
   .settings(
     name       := "commons-service",
     moduleName := "commons-service",
@@ -185,8 +185,8 @@ lazy val schemas = project
   .in(file("modules/schemas"))
   .enablePlugins(WorkbenchPlugin)
   .settings(
-    name       := "commons-schemas",
-    moduleName := "commons-schemas",
+    name             := "commons-schemas",
+    moduleName       := "commons-schemas",
     workbenchVersion := "0.2.0"
   )
 
@@ -194,7 +194,17 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types, sourcing, sourcingAkka, sourcingMem, http, test, service, shaclValidator, sparqlClient, iam, schemas)
+  .aggregate(types,
+             sourcing,
+             sourcingAkka,
+             sourcingMem,
+             http,
+             test,
+             service,
+             shaclValidator,
+             sparqlClient,
+             iam,
+             schemas)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
 
