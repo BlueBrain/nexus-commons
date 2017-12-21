@@ -2,20 +2,22 @@ package ch.epfl.bluebrain.nexus.commons.http
 
 import akka.http.scaladsl.server.Directives.{complete, get}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.{OrderedKeys, _}
+import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
+import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
 import ch.epfl.bluebrain.nexus.commons.http.JsonOpsSpec._
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import io.circe.Json
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.{Inspectors, Matchers, WordSpecLike}
-import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
+
 import scala.collection.mutable.LinkedHashSet
 
 class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
 
   "A JsonOps" when {
-    implicit val config = Configuration.default.withDiscriminator("@type")
+    implicit val config: Configuration = Configuration.default.withDiscriminator("@type")
+    implicit val context: ContextUri   = ContextUri("https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0")
 
     "dealing with KG data" should {
       val list = List(
@@ -29,6 +31,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
           "@context",
           "@id",
           "@type",
+          "self",
           "",
           "nxv:rev",
           "nxv:originalFileName",
@@ -40,9 +43,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
           "nxv:value",
           "nxv:published",
           "nxv:deprecated",
-          "nxv:links",
-          "nxv:rel",
-          "nxv:href"
+          "links"
         ))
 
       "order jsonLD input" in {
@@ -60,11 +61,10 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
               true,
               1L,
               "aValue",
-              List(Links("http://localhost/link1", "self"), Links("http://localhost/link2", "schema")),
+              Map("self" -> "http://localhost/link1", "schema" -> "http://localhost/link2"),
               "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/core/schema/v0.1.0",
               false,
-              "owl:Ontology",
-              "https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0"
+              "owl:Ontology"
             ))
         }
         Get("/") ~> route ~> check {
@@ -88,7 +88,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
           "identity",
           "permissions",
           "realm",
-          "",
+          ""
         ))
 
       "order jsonLD input" in {
@@ -108,7 +108,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
               UserRef("f:434t3-134e-4444-aa74-bdf00f48dfce:some",
                       "BBP",
                       "https://nexus.example.com/v0/realms/BBP/users/f:434t3-134e-4444-aa74-bdf00f48dfce:some"),
-              AuthenticatedRef(Some("BBP"), "https://nexus.example.com/v0/realms/BBP/authenticated"),
+              AuthenticatedRef(Some("BBP"), "https://nexus.example.com/v0/realms/BBP/authenticated")
             )): User)
         }
         Get("/") ~> route ~> check {
@@ -134,6 +134,63 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
                                                       Json.obj("three" -> Json.fromString("something")))
       }
     }
+
+    "injecting context" should {
+      val contextString = Json.fromString(context.toString)
+
+      val mapping = List(
+        Json.obj("@id"        -> Json.fromString("foo-id"), "nxv:rev" -> Json.fromLong(1)) ->
+          Json.obj("@context" -> contextString, "@id" -> Json.fromString("foo-id"), "nxv:rev" -> Json.fromLong(1)),
+        Json.obj("@context"   -> Json.fromString("http://foo.domain/some/context"),
+                 "@id"        -> Json.fromString("foo-id"),
+                 "nxv:rev"    -> Json.fromLong(1)) ->
+          Json.obj(
+            "@context" -> Json.arr(Json.fromString("http://foo.domain/some/context"), contextString),
+            "@id"      -> Json.fromString("foo-id"),
+            "nxv:rev"  -> Json.fromLong(1)
+          ),
+        Json.obj(
+          "@context" -> Json.arr(Json.fromString("http://foo.domain/some/context"),
+                                 Json.fromString("http://bar.domain/another/context")),
+          "@id"     -> Json.fromString("foo-id"),
+          "nxv:rev" -> Json.fromLong(1)
+        ) ->
+          Json.obj(
+            "@context" -> Json.arr(Json.fromString("http://foo.domain/some/context"),
+                                   Json.fromString("http://bar.domain/another/context"),
+                                   contextString),
+            "@id"     -> Json.fromString("foo-id"),
+            "nxv:rev" -> Json.fromLong(1)
+          ),
+        Json.obj(
+          "@context" -> Json.obj("foo" -> Json.fromString("http://foo.domain/some/context"),
+                                 "bar" -> Json.fromString("http://bar.domain/another/context")),
+          "@id"     -> Json.fromString("foo-id"),
+          "nxv:rev" -> Json.fromLong(1)
+        ) ->
+          Json.obj(
+            "@context" -> Json.arr(Json.obj("foo" -> Json.fromString("http://foo.domain/some/context"),
+                                            "bar" -> Json.fromString("http://bar.domain/another/context")),
+                                   contextString),
+            "@id"     -> Json.fromString("foo-id"),
+            "nxv:rev" -> Json.fromLong(1)
+          )
+      )
+
+      "properly add or merge context into JSON payload" in {
+        forAll(mapping) {
+          case (in, out) =>
+            in.addContext(context) shouldEqual out
+        }
+      }
+
+      "be idempotent" in {
+        forAll(mapping) {
+          case (in, _) =>
+            in.addContext(context) shouldEqual in.addContext(context).addContext(context)
+        }
+      }
+    }
   }
 }
 
@@ -142,12 +199,10 @@ object JsonOpsSpec {
                               `nxv:published`: Boolean,
                               `nxv:rev`: Long,
                               a: String,
-                              `nxv:links`: List[Links],
+                              links: Map[String, String],
                               `@id`: String,
                               `nxv:deprecated`: Boolean,
-                              `@type`: String,
-                              `@context`: String)
-  final case class Links(href: String, rel: String)
+                              `@type`: String)
 
   sealed trait User extends Product with Serializable {
     def identities: LinkedHashSet[Identity]

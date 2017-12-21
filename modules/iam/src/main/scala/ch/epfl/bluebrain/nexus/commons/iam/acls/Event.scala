@@ -41,23 +41,13 @@ object Event {
   final case class PermissionsRemoved(path: Path, identity: Identity, meta: Meta) extends Event
 
   /**
-    * Event definition signifying an initial creation of permissions on ''path''.
+    * Event definition signifying a creation or addition of permissions on ''path''.
     *
     * @param path        the path on which the permissions have been created
     * @param acl         the list of pairs of identities and permissions
     * @param meta        the event metadata
     */
-  final case class PermissionsCreated(path: Path, acl: AccessControlList, meta: Meta) extends Event
-
-  /**
-    * Event definition signifying an addition patch of permissions for ''identity'' on ''path''.
-    *
-    * @param path        the path on which the permissions have been added
-    * @param identity    the identity for which the permissions have been added
-    * @param permissions the newly added permissions
-    * @param meta        the event metadata
-    */
-  final case class PermissionsAdded(path: Path, identity: Identity, permissions: Permissions, meta: Meta) extends Event
+  final case class PermissionsAdded(path: Path, acl: AccessControlList, meta: Meta) extends Event
 
   /**
     * Event definition signifying a subtraction patch of permissions for ''identity'' on ''path''.

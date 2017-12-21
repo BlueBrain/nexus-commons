@@ -108,6 +108,7 @@ final case class Permissions(set: Set[Permission]) extends (Permission => Boolea
     */
   def nonEmpty: Boolean = set.nonEmpty
 
+  override def toString(): String = set.toString()
 }
 
 object Permissions {

@@ -26,5 +26,6 @@
         "read"
       ]
     }
-  ]
+  ],
+  "@context": "https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0"
 }

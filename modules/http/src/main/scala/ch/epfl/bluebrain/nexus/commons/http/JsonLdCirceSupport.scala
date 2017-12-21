@@ -27,9 +27,12 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
     * @tparam A type to encode
     * @return marshaller for any `A` value
     */
-  implicit final def marshallerHttp[A: Encoder](implicit printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
-                                                keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[A] =
-    jsonLdMarshaller.compose(implicitly[Encoder[A]].apply)
+  implicit final def marshallerHttp[A](implicit
+                                       context: ContextUri,
+                                       encoder: Encoder[A],
+                                       printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
+                                       keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[A] =
+    jsonLdMarshaller.compose(encoder.mapJson(_.addContext(context)).apply)
 
   /**
     * `Json` => HTTP entity
