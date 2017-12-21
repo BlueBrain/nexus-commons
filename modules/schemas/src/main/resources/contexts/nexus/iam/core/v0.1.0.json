@@ -1,0 +1,43 @@
+{
+  "@context": [
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    {
+      "type": "@type",
+      "id": "@id",
+      "acl": {
+        "@id": "nxv:acl"
+      },
+      "identity": {
+        "@id": "nxv:identity"
+      },
+      "path": {
+        "@id": "nxv:path"
+      },
+      "meta": {
+        "@id": "nxv:meta"
+      },
+      "author": {
+        "@id": "nxv:author"
+      },
+      "instant": {
+        "@id": "nxv:instant",
+        "@type": "xsd:dateTime"
+      },
+      "realm": {
+        "@id": "nxv:realm"
+      },
+      "group": {
+        "@id": "nxv:group"
+      },
+      "sub": {
+        "@id": "nxv:sub"
+      },
+      "permissions": {
+        "@id": "nxv:permissions"
+      },
+      "identities": {
+        "@id": "nxv:identities"
+      }
+    }
+  ]
+}
