@@ -13,8 +13,7 @@
       },
       "path": {
         "@id": "sh:path",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "qualifiedValueShape": {
         "@id": "sh:qualifiedValueShape",
@@ -168,23 +167,19 @@
       },
       "or": {
         "@id": "sh:or",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "and": {
         "@id": "sh:and",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "xone": {
         "@id": "sh:xone",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "not": {
         "@id": "sh:not",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "lessThan": {
         "@id": "sh:lessThan",
@@ -213,6 +208,10 @@
       "editorialNote": {
         "@id": "skos:editorialNote",
         "@type": "xsd:string"
+      },
+      "seeAlso": {
+        "@id": "rdfs:seeAlso",
+        "@type": "@id"
       }
     }
   ]
