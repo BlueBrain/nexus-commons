@@ -20,6 +20,45 @@
       },
       "source": {
         "@id": "nxv:source"
+      },
+      "filter": {
+        "@id": "nxv:filter"
+      },
+      "path": {
+        "@id": "nxv:path"
+      },
+      "op": {
+        "@id": "nxv:op"
+      },
+      "value": {
+        "@id": "nxv:value"
+      },
+      "q": {
+        "@id": "nxv:q"
+      },
+      "resource": {
+        "@id": "nxv:resource"
+      },
+      "deprecated": {
+        "@id": "nxv:deprecated"
+      },
+      "published": {
+        "@id": "nxv:published"
+      },
+      "format": {
+        "@id": "nxv:format"
+      },
+      "fields": {
+        "@id": "nxv:fields"
+      },
+      "sort": {
+        "@id": "nxv:sort"
+      },
+      "from": {
+        "@id": "nxv:from"
+      },
+      "size": {
+        "@id": "nxv:size"
       }
     }
   ]
