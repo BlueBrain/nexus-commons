@@ -182,7 +182,8 @@
       },
       "not": {
         "@id": "sh:not",
-        "@type": "@id"
+        "@type": "@id",
+        "@container": "@list"
       },
       "lessThan": {
         "@id": "sh:lessThan",
