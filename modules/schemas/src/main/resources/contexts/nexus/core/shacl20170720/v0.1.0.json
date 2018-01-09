@@ -13,8 +13,7 @@
       },
       "path": {
         "@id": "sh:path",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "qualifiedValueShape": {
         "@id": "sh:qualifiedValueShape",
@@ -213,6 +212,10 @@
       "editorialNote": {
         "@id": "skos:editorialNote",
         "@type": "xsd:string"
+      },
+      "seeAlso": {
+        "@id": "rdfs:seeAlso",
+        "@type": "@id"
       }
     }
   ]
