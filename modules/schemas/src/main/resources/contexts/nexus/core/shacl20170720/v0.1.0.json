@@ -167,15 +167,18 @@
       },
       "or": {
         "@id": "sh:or",
-        "@type": "@id"
+        "@type": "@id",
+        "@container": "@list"
       },
       "and": {
         "@id": "sh:and",
-        "@type": "@id"
+        "@type": "@id",
+        "@container": "@list"
       },
       "xone": {
         "@id": "sh:xone",
-        "@type": "@id"
+        "@type": "@id",
+        "@container": "@list"
       },
       "not": {
         "@id": "sh:not",
