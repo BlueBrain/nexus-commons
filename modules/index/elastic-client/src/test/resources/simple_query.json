@@ -1,0 +1,13 @@
+{
+  "query" : {
+    "constant_score" : {
+      "filter" : {
+        "bool" : {
+          "must" : {
+            "term" : {"http://localhost/voc/{{k}}" : "{{v}}"}
+          }
+        }
+      }
+    }
+  }
+}

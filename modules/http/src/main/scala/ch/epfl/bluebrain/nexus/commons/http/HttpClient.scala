@@ -3,14 +3,17 @@ package ch.epfl.bluebrain.nexus.commons.http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMessage.DiscardedEntity
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse, StatusCode}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import akka.stream.Materializer
 import akka.util.ByteString
+import cats.MonadError
+import cats.syntax.flatMap._
+import cats.syntax.functor._
 import journal.Logger
-import shapeless.Typeable
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 /**
   * Contract definition for an HTTP client based on the akka http model.
@@ -58,6 +61,29 @@ object HttpClient {
   type UntypedHttpClient[F[_]] = HttpClient[F, HttpResponse]
 
   /**
+    * Interface syntax to expose new functionality into [[F[HttpResponse]]] type
+    *
+    * @param resp the [[HttpResponse]] wrapped in ''F[_]''
+    */
+  implicit class HttpResponseSyntax[F[_]](resp: F[HttpResponse])(implicit F: MonadError[F, Throwable],
+                                                                 cl: UntypedHttpClient[F]) {
+
+    /**
+      * Discards the response's bytes of the response's status matches some of ''expectedCodes''
+      * or triggers ''onFailure'' otherwise
+      *
+      * @param expectedCodes the codes to verify against the response code
+      * @param onFailure     the function to run when the response code does not match ''expectedCodes''
+      */
+    def discardOnCodesOr(expectedCodes: Set[StatusCode])(onFailure: => (HttpResponse) => F[Unit]): F[Unit] = {
+      resp.flatMap { r =>
+        if (expectedCodes.contains(r.status)) cl.discardBytes(r.entity).map(_ => ())
+        else onFailure(r)
+      }
+    }
+  }
+
+  /**
     * Constructs an [[ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient]] instance using an
     * underlying akka http client.
     *
@@ -94,14 +120,14 @@ object HttpClient {
     * @param um an implicit ''FromEntityUnmarshaller[A]''
     * @tparam A the specific type to which the response entity should be unmarshalled into
     */
-  final implicit def withAkkaUnmarshaller[A: Typeable](implicit
+  final implicit def withAkkaUnmarshaller[A: ClassTag](implicit
                                                        ec: ExecutionContext,
                                                        mt: Materializer,
                                                        cl: UntypedHttpClient[Future],
                                                        um: FromEntityUnmarshaller[A]): HttpClient[Future, A] =
     new HttpClient[Future, A] {
 
-      private val log = Logger(s"TypedHttpClient[${implicitly[Typeable[A]].describe}]")
+      private val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
 
       override def apply(req: HttpRequest): Future[A] =
         cl(req).flatMap { resp =>

@@ -14,12 +14,15 @@ val akkaPersistenceInMemVersion     = "2.5.1.1"
 val akkaPersistenceCassandraVersion = "0.55"
 val akkaHttpVersion                 = "10.0.10"
 val akkaHttpCirceVersion            = "1.18.0"
+val elasticSearchVersion            = "5.5.3"
+val log4jVersion                    = "2.8.2"
 
 lazy val catsCore           = "org.typelevel"                   %% "cats-core"                           % catsVersion
 lazy val circeCore          = "io.circe"                        %% "circe-core"                          % circeVersion
 lazy val circeParser        = "io.circe"                        %% "circe-parser"                        % circeVersion
 lazy val circeGenericExtras = "io.circe"                        %% "circe-generic-extras"                % circeVersion
 lazy val circeJava8         = "io.circe"                        %% "circe-java8"                         % circeVersion
+lazy val circeOptics        = "io.circe"                        %% "circe-optics"                        % circeVersion
 lazy val scalaTest          = "org.scalatest"                   %% "scalatest"                           % scalaTestVersion
 lazy val shapeless          = "com.chuusai"                     %% "shapeless"                           % shapelessVersion
 lazy val monixEval          = "io.monix"                        %% "monix-eval"                          % monixVersion
@@ -151,19 +154,40 @@ lazy val iam = project
                                 scalaTest   % Test)
   )
 
-lazy val shaclValidator = project
-  .in(file("modules/ld/shacl-validator"))
-  .dependsOn(types)
+lazy val indexTypes = project
+  .in(file("modules/index/types"))
   .settings(
-    name                := "shacl-validator",
-    moduleName          := "shacl-validator",
-    resolvers           += Resolver.bintrayRepo("bogdanromanx", "maven"),
-    libraryDependencies ++= Seq(journal, wesoSchema, catsCore, circeCore, circeParser % Test, scalaTest % Test)
+    name                := "commons-index-types",
+    moduleName          := "commons-index-types",
+    libraryDependencies ++= Seq(akkaHttp, catsCore, circeCore, scalaTest % Test, circeGenericExtras % Test)
+  )
+
+lazy val elasticClient = project
+  .in(file("modules/index/elastic-client"))
+  .dependsOn(http, indexTypes, test)
+  .settings(
+    name       := "elastic-client",
+    moduleName := "elastic-client",
+    libraryDependencies ++= Seq(
+      akkaStream,
+      circeCore,
+      circeOptics,
+      circeParser                % Test,
+      circeGenericExtras         % Test,
+      akkaTestKit                % Test,
+      scalaTest                  % Test,
+      "org.apache.logging.log4j" % "log4j-api" % log4jVersion % Test,
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Test,
+      "org.elasticsearch"        % "elasticsearch" % elasticSearchVersion % Test,
+      "org.elasticsearch.client" % "rest" % elasticSearchVersion % Test,
+      "org.elasticsearch.plugin" % "transport-netty3-client" % elasticSearchVersion % Test,
+      "org.apache.commons"       % "commons-io" % "1.3.2" % Test
+    )
   )
 
 lazy val sparqlClient = project
-  .in(file("modules/ld/sparql-client"))
-  .dependsOn(http)
+  .in(file("modules/index/sparql-client"))
+  .dependsOn(http, indexTypes)
   .settings(
     name       := "sparql-client",
     moduleName := "sparql-client",
@@ -179,6 +203,16 @@ lazy val sparqlClient = project
       akkaTestKit        % Test,
       scalaTest          % Test
     )
+  )
+
+lazy val shaclValidator = project
+  .in(file("modules/ld/shacl-validator"))
+  .dependsOn(types)
+  .settings(
+    name                := "shacl-validator",
+    moduleName          := "shacl-validator",
+    resolvers           += Resolver.bintrayRepo("bogdanromanx", "maven"),
+    libraryDependencies ++= Seq(journal, wesoSchema, catsCore, circeCore, circeParser % Test, scalaTest % Test)
   )
 
 lazy val schemas = project
@@ -201,8 +235,10 @@ lazy val root = project
              http,
              test,
              service,
-             shaclValidator,
+             indexTypes,
+             elasticClient,
              sparqlClient,
+             shaclValidator,
              iam,
              schemas)
 
