@@ -1,6 +1,6 @@
 val wesoValidatorVersion            = "0.0.63-nexus2"
 val metricsCoreVersion              = "3.2.2"
-val jenaVersion                     = "3.4.0"
+val jenaVersion                     = "3.3.0"
 val blazegraphVersion               = "2.1.4"
 val jacksonVersion                  = "2.9.0"
 val monixVersion                    = "2.3.0"
