@@ -14,8 +14,6 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.{Decoder, Json}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Inspectors, Matchers}
-//import shapeless._
-//import shapeless.{the => shthe}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -24,7 +22,7 @@ class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers wi
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(3 seconds, 100 millis)
 
-  "A ElasticClient" should {
+  "An ElasticClient" should {
     implicit val ec: ExecutionContext          = system.dispatcher
     implicit val ul: UntypedHttpClient[Future] = akkaHttpClient
     val queryCl: ElasticQueryClient[Future]    = ElasticQueryClient[Future](esUri)

@@ -52,16 +52,9 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param `type`  the type to use
     * @param id      the id of the document
     * @param payload the document's payload
-    * @param parent  the optional parent id (if set, parent/child relationship will apply)
     */
-  def createDocument(index: String,
-                     `type`: String,
-                     id: String,
-                     payload: Json,
-                     parent: Option[String] = None): F[Unit] = {
-    val uri = base
-      .copy(path = base.path / index / `type` / id)
-      .withQuery(Uri.Query(parent.map(v => Map("parent" -> v)).getOrElse(Map.empty)))
+  def createDocument(index: String, `type`: String, id: String, payload: Json): F[Unit] = {
+    val uri = base.copy(path = base.path / index / `type` / id)
     execute(Put(uri, payload), Set(OK, Created), "create document")
   }
 
@@ -70,14 +63,9 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     *
     * @param index   the index to use
     * @param `type`  the type to use
-    * @param id      the id of the document to be retrieved
-    * @param parent  the optional parent id (if set, parent/child relationship will apply)
     */
-  def get[A](index: String, `type`: String, id: String, parent: Option[String] = None)(
-      implicit rs: HttpClient[F, A]): F[A] = {
-    val uri = base
-      .copy(path = base.path / index / `type` / id / source)
-      .withQuery(Uri.Query(parent.map(v => Map("parent" -> v)).getOrElse(Map.empty)))
+  def get[A](index: String, `type`: String, id: String)(implicit rs: HttpClient[F, A]): F[A] = {
+    val uri = base.copy(path = base.path / index / `type` / id / source)
     rs(Get(uri)).recoverWith {
       case UnexpectedUnsuccessfulHttpResponse(r) => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
       case other                                 => F.raiseError(other)

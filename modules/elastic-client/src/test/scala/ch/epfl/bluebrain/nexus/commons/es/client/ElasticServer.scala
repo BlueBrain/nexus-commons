@@ -33,7 +33,10 @@ abstract class ElasticServer
     TestKit.shutdownActorSystem(system)
   }
 
-  val esUri       = Uri(s"http://localhost:9200")
+  val startPort = freePort()
+  val endPort   = startPort + 100
+
+  val esUri       = Uri(s"http://localhost:$startPort")
   implicit val mt = ActorMaterializer()
   implicit val ec = system.dispatcher
 
@@ -43,6 +46,7 @@ abstract class ElasticServer
   private val settings = Settings
     .builder()
     .put("path.home", dataDir.toString)
+    .put("http.port", s"$startPort-$endPort")
     .put("http.enabled", true)
     .put("cluster.name", clusterName)
     .put("http.type", "netty4")

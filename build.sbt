@@ -16,7 +16,7 @@ val akkaHttpVersion                 = "10.0.10"
 val akkaHttpCirceVersion            = "1.18.0"
 val elasticSearchVersion            = "6.1.1"
 val log4jVersion                    = "2.10.0"
-val commonsio                       = "1.3.2"
+val commonsIOVersion                = "1.3.2"
 
 lazy val catsCore           = "org.typelevel"                   %% "cats-core"                           % catsVersion
 lazy val circeCore          = "io.circe"                        %% "circe-core"                          % circeVersion
@@ -50,6 +50,13 @@ lazy val akkaPersistenceInMem     = "com.github.dnvriend" %% "akka-persistence-i
 lazy val akkaHttp        = "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion
 lazy val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 lazy val akkaHttpCirce   = "de.heikoseeberger" %% "akka-http-circe"   % akkaHttpCirceVersion
+
+lazy val log4jCore          = "org.apache.logging.log4j" % "log4j-core"                 % log4jVersion
+lazy val log4jApi           = "org.apache.logging.log4j" % "log4j-api"                  % log4jVersion
+lazy val esCore             = "org.elasticsearch"        % "elasticsearch"              % elasticSearchVersion
+lazy val esRestClient       = "org.elasticsearch.client" % "elasticsearch-rest-client"  % elasticSearchVersion
+lazy val esTransportClient  = "org.elasticsearch.plugin" % "transport-netty4-client"    % elasticSearchVersion
+lazy val commonsIO          = "org.apache.commons"       % "commons-io"                 % commonsIOVersion
 
 lazy val types = project
   .in(file("modules/types"))
@@ -159,7 +166,7 @@ lazy val queryTypes = project
   .settings(
     name                := "commons-query-types",
     moduleName          := "commons-query-types",
-    libraryDependencies ++= Seq(catsCore, circeCore, shapeless, scalaTest % Test, circeGenericExtras % Test)
+    libraryDependencies ++= Seq(catsCore, circeCore, scalaTest % Test, circeGenericExtras % Test)
   )
 
 lazy val elasticClient = project
@@ -171,16 +178,16 @@ lazy val elasticClient = project
     libraryDependencies ++= Seq(
       akkaStream,
       circeCore,
-      circeParser                % Test,
-      circeGenericExtras         % Test,
-      akkaTestKit                % Test,
-      scalaTest                  % Test,
-      "org.apache.logging.log4j" % "log4j-api" % log4jVersion % Test,
-      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Test,
-      "org.elasticsearch"        % "elasticsearch" % elasticSearchVersion % Test,
-      "org.elasticsearch.client" % "elasticsearch-rest-client" % elasticSearchVersion % Test,
-      "org.elasticsearch.plugin" % "transport-netty4-client" % elasticSearchVersion % Test,
-      "org.apache.commons"       % "commons-io" % commonsio % Test
+      akkaTestKit         % Test,
+      circeParser         % Test,
+      circeGenericExtras  % Test,
+      commonsIO           % Test,
+      esCore              % Test,
+      esRestClient        % Test,
+      esTransportClient   % Test,
+      log4jCore           % Test,
+      log4jApi            % Test,
+      scalaTest           % Test
     )
   )
 
