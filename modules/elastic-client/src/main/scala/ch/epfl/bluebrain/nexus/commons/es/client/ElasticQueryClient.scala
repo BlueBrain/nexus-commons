@@ -27,8 +27,7 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
                                                           F: MonadError[F, Throwable])
     extends ElasticBaseClient[F] {
 
-  private[client] val searchPath   = "_search"
-  private[client] val anyIndexPath = "_all"
+  private[client] val searchPath = "_search"
 
   /**
     * Search for the provided ''query'' inside the ''indices'' and ''types''
@@ -45,13 +44,7 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
                                                               sort: SortList = SortList.Empty)(
       implicit
       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] = {
-
-    def indexString =
-      if (indices.isEmpty) anyIndexPath
-      else indices.mkString(",")
-
-    val uri = base.copy(path = base.path / indexString / searchPath)
-
+    val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
     rs(Post(uri, query.addPage(page).addSources(fields).addSort(sort)))
   }
 }

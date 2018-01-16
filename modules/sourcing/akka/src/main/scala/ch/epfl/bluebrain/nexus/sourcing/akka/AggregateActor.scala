@@ -95,7 +95,10 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
           log.debug("Applied event '{}' to actor '{}'", e, persistenceId)
         // $COVERAGE-OFF$
         case None =>
-          log.error("Unknown message '{}' during recovery of actor '{}', expected message of type '{}'", value, persistenceId, Event.describe)
+          log.error("Unknown message '{}' during recovery of actor '{}', expected message of type '{}'",
+                    value,
+                    persistenceId,
+                    Event.describe)
         // $COVERAGE-ON$
       }
   }

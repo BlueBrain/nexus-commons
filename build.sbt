@@ -51,12 +51,14 @@ lazy val akkaHttp        = "com.typesafe.akka" %% "akka-http"         % akkaHttp
 lazy val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 lazy val akkaHttpCirce   = "de.heikoseeberger" %% "akka-http-circe"   % akkaHttpCirceVersion
 
-lazy val log4jCore          = "org.apache.logging.log4j" % "log4j-core"                 % log4jVersion
-lazy val log4jApi           = "org.apache.logging.log4j" % "log4j-api"                  % log4jVersion
-lazy val esCore             = "org.elasticsearch"        % "elasticsearch"              % elasticSearchVersion
-lazy val esRestClient       = "org.elasticsearch.client" % "elasticsearch-rest-client"  % elasticSearchVersion
-lazy val esTransportClient  = "org.elasticsearch.plugin" % "transport-netty4-client"    % elasticSearchVersion
-lazy val commonsIO          = "org.apache.commons"       % "commons-io"                 % commonsIOVersion
+lazy val log4jCore         = "org.apache.logging.log4j"          % "log4j-core"                % log4jVersion
+lazy val log4jApi          = "org.apache.logging.log4j"          % "log4j-api"                 % log4jVersion
+lazy val esCore            = "org.elasticsearch"                 % "elasticsearch"             % elasticSearchVersion
+lazy val esPainless        = "org.codelibs.elasticsearch.module" % "lang-painless"             % elasticSearchVersion
+lazy val esReindex         = "org.codelibs.elasticsearch.module" % "reindex"                   % elasticSearchVersion
+lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearch-rest-client" % elasticSearchVersion
+lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
+lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
 
 lazy val types = project
   .in(file("modules/types"))
@@ -178,16 +180,18 @@ lazy val elasticClient = project
     libraryDependencies ++= Seq(
       akkaStream,
       circeCore,
-      akkaTestKit         % Test,
-      circeParser         % Test,
-      circeGenericExtras  % Test,
-      commonsIO           % Test,
-      esCore              % Test,
-      esRestClient        % Test,
-      esTransportClient   % Test,
-      log4jCore           % Test,
-      log4jApi            % Test,
-      scalaTest           % Test
+      akkaTestKit        % Test,
+      circeParser        % Test,
+      circeGenericExtras % Test,
+      commonsIO          % Test,
+      esCore             % Test,
+      esPainless         % Test,
+      esReindex          % Test,
+      esRestClient       % Test,
+      esTransportClient  % Test,
+      log4jCore          % Test,
+      log4jApi           % Test,
+      scalaTest          % Test
     )
   )
 

@@ -5,6 +5,7 @@ import cats.MonadError
 import cats.syntax.flatMap._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
 import journal.Logger
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
 
 /**
   * ElasticBaseClient provides the common methods and vals used for elastic clients.
@@ -24,8 +25,14 @@ abstract class ElasticBaseClient[F[_]](implicit
         F.raiseError(f)
       }
     }
+
+  private[client] def indexPath(indices: Set[String]) =
+    if (indices.isEmpty) anyIndexPath
+    else indices.mkString(",")
 }
 
 object ElasticBaseClient {
-  private[client] val source = "_source"
+  private[client] val source       = "_source"
+  private[client] val anyIndexPath = "_all"
+
 }
