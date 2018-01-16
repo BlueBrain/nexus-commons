@@ -172,7 +172,7 @@ lazy val queryTypes = project
   )
 lazy val elasticServerEmbed = project
   .in(file("modules/elastic-server-embed"))
-  .dependsOn(queryTypes, test)
+  .dependsOn(test)
   .settings(
     name       := "elastic-server-embed",
     moduleName := "elastic-server-embed",
