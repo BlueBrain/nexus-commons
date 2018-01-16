@@ -4,6 +4,7 @@ import java.util.regex.Pattern
 
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
+import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, akkaHttpClient, withAkkaUnmarshaller}
 import ch.epfl.bluebrain.nexus.commons.test.Resources
