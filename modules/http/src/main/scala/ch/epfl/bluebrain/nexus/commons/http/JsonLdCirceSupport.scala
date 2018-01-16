@@ -30,7 +30,7 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
   implicit final def marshallerHttp[A](implicit
                                        context: ContextUri,
                                        encoder: Encoder[A],
-                                       printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
+                                       printer: Printer = Printer.noSpaces.copy(dropNullValues = true),
                                        keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[A] =
     jsonLdMarshaller.compose(encoder.mapJson(_.addContext(context)).apply)
 
@@ -39,7 +39,7 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
     *
     * @return marshaller for JSON-LD value
     */
-  final implicit def jsonLdMarshaller(implicit printer: Printer = Printer.noSpaces.copy(dropNullKeys = true),
+  final implicit def jsonLdMarshaller(implicit printer: Printer = Printer.noSpaces.copy(dropNullValues = true),
                                       keys: OrderedKeys = OrderedKeys()): ToEntityMarshaller[Json] =
     Marshaller.withFixedContentType(RdfMediaTypes.`application/ld+json`) { json =>
       HttpEntity(RdfMediaTypes.`application/ld+json`, printer.pretty(json.sortKeys))

@@ -15,7 +15,7 @@ trait ConfigInstance {
   private[serialization] implicit val config: Configuration =
     Configuration.default
       .withDiscriminator("@type")
-      .copy(transformKeys = {
+      .copy(transformMemberNames = {
         case "id"  => "@id"
         case other => other
       })
@@ -123,7 +123,7 @@ object JsonLdSerialization extends EventJsonLdEncoder with EventJsonLdDecoder {
   def jsonLdMarshaller[A](base: Uri)(
       implicit
       encoder: Encoder[A],
-      printer: Printer = Printer.noSpaces.copy(dropNullKeys = true)): EventJsonLdMarshaller[A] =
+      printer: Printer = Printer.noSpaces.copy(dropNullValues = true)): EventJsonLdMarshaller[A] =
     (a: A) => {
       val context = Json.obj(
         "@context" -> Json.fromString(base.copy(path = base.path / "context").toString())
