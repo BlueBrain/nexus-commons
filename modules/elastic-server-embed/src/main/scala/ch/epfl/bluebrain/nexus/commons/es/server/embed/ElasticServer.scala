@@ -1,4 +1,4 @@
-package ch.epfl.bluebrain.nexus.commons.es.client
+package ch.epfl.bluebrain.nexus.commons.es.server.embed
 
 import java.nio.file.Files
 import java.util.Arrays._
@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticServer.MyNode
+import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer.MyNode
 import ch.epfl.bluebrain.nexus.commons.test.Randomness
 import org.apache.commons.io.FileUtils
 import org.elasticsearch.common.settings.Settings
@@ -18,6 +18,9 @@ import org.elasticsearch.plugins.Plugin
 import org.elasticsearch.transport.Netty4Plugin
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
+import scala.util.Try
+
+// $COVERAGE-OFF$
 abstract class ElasticServer
     extends TestKit(ActorSystem("ElasticServer"))
     with WordSpecLike
@@ -64,12 +67,7 @@ abstract class ElasticServer
 
   def stopElastic(): Unit = {
     node.close()
-
-    try {
-      FileUtils.forceDelete(dataDir)
-    } catch {
-      case _: Exception => // dataDir cleanup failed
-    }
+    Try(FileUtils.forceDelete(dataDir))
     ()
   }
 }
@@ -83,3 +81,4 @@ object ElasticServer {
   private class MyNode(preparedSettings: Settings, classpathPlugins: util.Collection[Class[_ <: Plugin]])
       extends Node(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null), classpathPlugins)
 }
+// $COVERAGE-ON$

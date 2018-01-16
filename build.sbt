@@ -170,28 +170,39 @@ lazy val queryTypes = project
     moduleName          := "commons-query-types",
     libraryDependencies ++= Seq(catsCore, circeCore, scalaTest % Test, circeGenericExtras % Test)
   )
+lazy val elasticServerEmbed = project
+  .in(file("modules/elastic-server-embed"))
+  .dependsOn(test)
+  .settings(
+    name       := "elastic-server-embed",
+    moduleName := "elastic-server-embed",
+    libraryDependencies ++= Seq(
+      akkaHttp,
+      akkaStream,
+      akkaTestKit,
+      commonsIO,
+      esCore,
+      esPainless,
+      esReindex,
+      esRestClient,
+      esTransportClient,
+      log4jCore,
+      log4jApi,
+      scalaTest
+    )
+  )
 
 lazy val elasticClient = project
   .in(file("modules/elastic-client"))
-  .dependsOn(http, queryTypes, test)
+  .dependsOn(http, queryTypes, test % Test, elasticServerEmbed % Test)
   .settings(
     name       := "elastic-client",
     moduleName := "elastic-client",
     libraryDependencies ++= Seq(
       akkaStream,
       circeCore,
-      akkaTestKit        % Test,
       circeParser        % Test,
-      circeGenericExtras % Test,
-      commonsIO          % Test,
-      esCore             % Test,
-      esPainless         % Test,
-      esReindex          % Test,
-      esRestClient       % Test,
-      esTransportClient  % Test,
-      log4jCore          % Test,
-      log4jApi           % Test,
-      scalaTest          % Test
+      circeGenericExtras % Test
     )
   )
 
@@ -246,6 +257,7 @@ lazy val root = project
              test,
              service,
              queryTypes,
+             elasticServerEmbed,
              elasticClient,
              sparqlClient,
              shaclValidator,
