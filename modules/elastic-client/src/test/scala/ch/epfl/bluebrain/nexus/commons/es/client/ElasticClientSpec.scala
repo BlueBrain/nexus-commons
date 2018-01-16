@@ -63,7 +63,8 @@ class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers wi
         createIndex(index)
         forAll(list) {
           case (id, json) =>
-            cl.createDocument(index, t, id, json).futureValue shouldEqual (())
+            cl.create(index, t, id, json).futureValue shouldEqual (())
+
         }
       }
 
@@ -120,6 +121,60 @@ class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers wi
         val qrs = UnscoredQueryResults(0L, List.empty)
         cl.search[Json](query, Set(index))(p).futureValue shouldEqual qrs
 
+      }
+
+      val listModified = list.map {
+        case (id, json) => id -> (json deepMerge Json.obj("key" -> Json.fromString(genString())))
+      }
+
+      "update key field on documents documents" in {
+        forAll(listModified) {
+          case (id, json) =>
+            val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
+            cl.update(index, t, id, updateScript).futureValue shouldEqual (())
+            cl.get[Json](index, t, id).futureValue shouldEqual json
+        }
+      }
+
+      val mapModified = list.map {
+        case (id, json) => id -> (json deepMerge Json.obj("key" -> Json.fromString(genString())))
+      }.toMap
+
+      "update key field on documents documents from query" in {
+        forAll(listModified) {
+          case (id, json) =>
+            val query =
+              jsonContentOf("/simple_query.json",
+                            Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
+            val updateScript =
+              jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", mapModified(id))))
+
+            cl.updateDocuments(Set(index), query, updateScript).futureValue shouldEqual (())
+            cl.get[Json](index, t, id).futureValue shouldEqual mapModified(id)
+        }
+      }
+
+      "delete documents" in {
+        forAll(mapModified.toList.take(3)) {
+          case (id, json) =>
+            cl.delete(index, t, id).futureValue shouldEqual (())
+            whenReady(cl.get[Json](index, t, id).failed) { e =>
+              e shouldBe a[ElasticClientError]
+            }
+        }
+      }
+
+      "delete documents from query" in {
+        forAll(mapModified.toList.drop(3)) {
+          case (id, json) =>
+            val query =
+              jsonContentOf("/simple_query.json",
+                            Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
+            cl.deleteDocuments(Set(index), query).futureValue shouldEqual (())
+            whenReady(cl.get[Json](index, t, id).failed) { e =>
+              e shouldBe a[ElasticClientError]
+            }
+        }
       }
     }
   }

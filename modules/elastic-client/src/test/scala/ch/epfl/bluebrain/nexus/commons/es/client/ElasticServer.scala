@@ -11,7 +11,9 @@ import ch.epfl.bluebrain.nexus.commons.es.client.ElasticServer.MyNode
 import ch.epfl.bluebrain.nexus.commons.test.Randomness
 import org.apache.commons.io.FileUtils
 import org.elasticsearch.common.settings.Settings
+import org.elasticsearch.index.reindex.ReindexPlugin
 import org.elasticsearch.node.Node
+import org.elasticsearch.painless.PainlessPlugin
 import org.elasticsearch.plugins.Plugin
 import org.elasticsearch.transport.Netty4Plugin
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
@@ -52,7 +54,8 @@ abstract class ElasticServer
     .put("http.type", "netty4")
     .build
 
-  private lazy val node = new MyNode(settings, asList(classOf[Netty4Plugin]))
+  private lazy val node =
+    new MyNode(settings, asList(classOf[Netty4Plugin], classOf[PainlessPlugin], classOf[ReindexPlugin]))
 
   def startElastic(): Unit = {
     node.start()

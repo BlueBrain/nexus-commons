@@ -1,13 +1,7 @@
 {
-  "query" : {
-    "constant_score" : {
-      "filter" : {
-        "bool" : {
-          "must" : {
-            "term" : {"{{k}}" : "{{v}}"}
-          }
-        }
-      }
+  "query": {
+    "term": {
+      "{{k}}": "{{v}}"
     }
   }
 }
