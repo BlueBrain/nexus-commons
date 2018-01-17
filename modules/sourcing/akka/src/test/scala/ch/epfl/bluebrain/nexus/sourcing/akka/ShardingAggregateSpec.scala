@@ -65,6 +65,22 @@ class ShardingAggregateSpec
         }
         .futureValue shouldEqual List(PermissionsAppended(read), PermissionsAppended(own))
     }
+
+    "retrieve the appended events only from the log for the same type" in {
+      val id = genId
+      aggregate.append(id, PermissionsAppended(own)).futureValue
+      aggregate.append(id, PermissionsAppended(read)).futureValue
+      val anotherAggregate = ShardingAggregate(
+        "permission2",
+        SourcingAkkaSettings(journalPluginId = "inmemory-read-journal"))(initial, next, eval)
+      anotherAggregate.append(id, PermissionsAppended(ownRead)).futureValue
+      aggregate
+        .foldLeft(id, List.empty[Event]) {
+          case (acc, ev) => ev :: acc
+        }
+        .futureValue shouldEqual List(PermissionsAppended(read), PermissionsAppended(own))
+    }
+
     "reject out of order commands" in {
       val id = genId
       aggregate.eval(id, DeletePermissions).futureValue match {

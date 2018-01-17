@@ -96,7 +96,7 @@ final class ShardingAggregate[Evt: Typeable, St: Typeable, Cmd, Rej: Typeable](o
 
   override def foldLeft[B](id: Identifier, z: B)(f: (B, Event) => B): Future[B] = {
     logger.debug("Folding over the event stream of '{}-{}'", name, id)
-    pq.currentEventsByPersistenceId(id, 0L, Long.MaxValue).runFold(z) {
+    pq.currentEventsByPersistenceId(s"$name-$id", 0L, Long.MaxValue).runFold(z) {
       case (acc, envelope) =>
         Event.cast(envelope.event) match {
           case Some(event) =>
@@ -239,7 +239,7 @@ object ShardingAggregate {
 
     val logger = Logging(as, s"ShardingAggregate($name)")
     val props = Props[AggregateActor[Event, State, Command, Rejection]](
-      new AggregateActor(initial, next, eval, settings.passivationTimeout))
+      new AggregateActor(name, initial, next, eval, settings.passivationTimeout))
     val clusterShardingSettings = settings.shardingSettingsOrDefault(as)
     val pq                      = PersistenceQuery(as).readJournalFor[CurrentEventsByPersistenceIdQuery](settings.journalPluginId)
 
