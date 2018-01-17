@@ -157,7 +157,7 @@ class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers wi
 
       "delete documents" in {
         forAll(mapModified.toList.take(3)) {
-          case (id, json) =>
+          case (id, _) =>
             cl.delete(index, t, id).futureValue shouldEqual (())
             whenReady(cl.get[Json](index, t, id).failed) { e =>
               e shouldBe a[ElasticClientError]
