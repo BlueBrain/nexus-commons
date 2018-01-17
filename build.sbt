@@ -251,7 +251,6 @@ lazy val shaclValidator = project
 
 lazy val schemas = project
   .in(file("modules/schemas"))
-  .enablePlugins(WorkbenchPlugin)
   .settings(publishSettings)
   .settings(
     name       := "commons-schemas",
