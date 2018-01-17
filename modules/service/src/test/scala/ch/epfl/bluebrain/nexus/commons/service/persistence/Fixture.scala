@@ -1,6 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.service.persistence
 
 import akka.persistence.journal.{Tagged, WriteEventAdapter}
+import com.github.ghik.silencer.silent
 
 object Fixture {
 
@@ -37,7 +38,9 @@ object Fixture {
   }
 
   val initial: State                          = Perpetual
+  @silent
   def next(state: State, event: Event): State = Perpetual
+  @silent
   def eval(state: State, cmd: Cmd): Either[Rejection, Event] = cmd match {
     case Execute        => Right(Executed)
     case ExecuteOther   => Right(OtherExecuted)
