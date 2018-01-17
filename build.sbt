@@ -62,6 +62,7 @@ lazy val commonsIO         = "org.apache.commons"                % "commons-io" 
 
 lazy val types = project
   .in(file("modules/types"))
+  .settings(publishSettings)
   .settings(
     name                := "commons-types",
     moduleName          := "commons-types",
@@ -71,6 +72,7 @@ lazy val types = project
 lazy val sourcing = project
   .in(file("modules/sourcing/core"))
   .dependsOn(types)
+  .settings(publishSettings)
   .settings(
     name                := "sourcing-core",
     moduleName          := "sourcing-core",
@@ -80,6 +82,7 @@ lazy val sourcing = project
 lazy val sourcingAkka = project
   .in(file("modules/sourcing/akka"))
   .dependsOn(sourcing % "compile->compile;test->test")
+  .settings(publishSettings)
   .settings(
     name       := "sourcing-akka",
     moduleName := "sourcing-akka",
@@ -97,11 +100,13 @@ lazy val sourcingAkka = project
 lazy val sourcingMem = project
   .in(file("modules/sourcing/mem"))
   .dependsOn(sourcing % "compile->compile;test->test")
+  .settings(publishSettings)
   .settings(name := "sourcing-mem", moduleName := "sourcing-mem", libraryDependencies ++= Seq(scalaTest % Test))
 
 lazy val service = project
   .in(file("modules/service"))
   .dependsOn(types, http, sourcingAkka % "test->compile")
+  .settings(publishSettings)
   .settings(
     name       := "commons-service",
     moduleName := "commons-service",
@@ -127,6 +132,7 @@ lazy val service = project
 lazy val test = project
   .in(file("modules/test"))
   .dependsOn(types)
+  .settings(publishSettings)
   .settings(
     name                := "commons-test",
     moduleName          := "commons-test",
@@ -137,6 +143,7 @@ lazy val test = project
 lazy val http = project
   .in(file("modules/http"))
   .dependsOn(types, test % Test)
+  .settings(publishSettings)
   .settings(
     name       := "commons-http",
     moduleName := "commons-http",
@@ -152,6 +159,7 @@ lazy val http = project
 lazy val iam = project
   .in(file("modules/iam"))
   .dependsOn(http, test)
+  .settings(publishSettings)
   .settings(
     name       := "iam",
     moduleName := "iam",
@@ -165,14 +173,17 @@ lazy val iam = project
 
 lazy val queryTypes = project
   .in(file("modules/query-types"))
+  .settings(publishSettings)
   .settings(
     name                := "commons-query-types",
     moduleName          := "commons-query-types",
     libraryDependencies ++= Seq(catsCore, circeCore, scalaTest % Test, circeGenericExtras % Test)
   )
+
 lazy val elasticServerEmbed = project
   .in(file("modules/elastic-server-embed"))
   .dependsOn(test)
+  .settings(publishSettings)
   .settings(
     name       := "elastic-server-embed",
     moduleName := "elastic-server-embed",
@@ -195,6 +206,7 @@ lazy val elasticServerEmbed = project
 lazy val elasticClient = project
   .in(file("modules/elastic-client"))
   .dependsOn(http, queryTypes, test % Test, elasticServerEmbed % Test)
+  .settings(publishSettings)
   .settings(
     name       := "elastic-client",
     moduleName := "elastic-client",
@@ -209,6 +221,7 @@ lazy val elasticClient = project
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(http, queryTypes)
+  .settings(publishSettings)
   .settings(
     name       := "sparql-client",
     moduleName := "sparql-client",
@@ -229,20 +242,20 @@ lazy val sparqlClient = project
 lazy val shaclValidator = project
   .in(file("modules/ld/shacl-validator"))
   .dependsOn(types)
+  .settings(publishSettings)
   .settings(
     name                := "shacl-validator",
     moduleName          := "shacl-validator",
-    resolvers           += Resolver.bintrayRepo("bogdanromanx", "maven"),
     libraryDependencies ++= Seq(journal, wesoSchema, catsCore, circeCore, circeParser % Test, scalaTest % Test)
   )
 
 lazy val schemas = project
   .in(file("modules/schemas"))
   .enablePlugins(WorkbenchPlugin)
+  .settings(publishSettings)
   .settings(
-    name             := "commons-schemas",
-    moduleName       := "commons-schemas",
-    workbenchVersion := "0.2.0"
+    name       := "commons-schemas",
+    moduleName := "commons-schemas"
   )
 
 lazy val root = project
@@ -265,6 +278,13 @@ lazy val root = project
              schemas)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {})
+
+lazy val publishSettings = Seq(
+  homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
+  licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  scmInfo := Some(
+    ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git"))
+)
 
 addCommandAlias("review", ";clean;coverage;scapegoat;test;coverageReport;coverageAggregate")
 addCommandAlias("rel", ";release with-defaults skip-tests")
