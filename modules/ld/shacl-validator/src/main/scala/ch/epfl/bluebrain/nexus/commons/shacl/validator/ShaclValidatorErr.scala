@@ -23,9 +23,9 @@ object ShaclValidatorErr {
   /**
     * An error that describes the failure to load data into the validator.
     *
-    * @param cause the underlying cause for this exception
+    * @param message the underlying error message for this exception
     */
-  final case class FailedToLoadData(cause: Throwable) extends ShaclValidatorErr("Failed to load the data graph")
+  final case class FailedToLoadData(override val message: String) extends ShaclValidatorErr(message)
 
   /**
     * An error that describes a failed attempt to load referenced schemas.
@@ -42,4 +42,12 @@ object ShaclValidatorErr {
     */
   final case class IllegalImportDefinition(values: Set[String])
       extends ShaclValidatorErr("Failed to follow schema imports, illegal definition")
+
+  /**
+    * An error that describes that the schema file was not found.
+    *
+    * @param message the underlying error message for this exception
+    */
+  final case class FileNotFound(override val message: String) extends ShaclValidatorErr(message)
+
 }

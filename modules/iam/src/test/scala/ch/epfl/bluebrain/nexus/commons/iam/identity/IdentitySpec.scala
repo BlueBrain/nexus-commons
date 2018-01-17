@@ -17,7 +17,7 @@ class IdentitySpec extends WordSpecLike with Matchers with Inspectors {
     ("""{"id":"realms/realm3/users/alice","type":"UserRef"}""", UserRef("realm3", "alice")),
     ("""{"id":"realms/realm2/groups/some-group","type":"GroupRef"}""", GroupRef("realm2", "some-group"))
   )
-  private val printer = Printer.noSpaces.copy(dropNullKeys = true)
+  private val printer = Printer.noSpaces.copy(dropNullValues = true)
 
   "An Identity" should {
     "be decoded from Json properly" in {

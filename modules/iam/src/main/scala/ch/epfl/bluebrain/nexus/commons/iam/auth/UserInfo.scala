@@ -41,6 +41,6 @@ final case class UserInfo(sub: String,
 }
 
 object UserInfo {
-  private implicit val config: Configuration      = Configuration.default.withSnakeCaseKeys
+  private implicit val config: Configuration      = Configuration.default.withSnakeCaseMemberNames
   implicit val userInfoEncoder: Encoder[UserInfo] = deriveEncoder[UserInfo]
 }
