@@ -115,15 +115,23 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
   /**
     * Fetch a document inside the ''index'' and ''`type`'' with the provided ''id''
     *
-    * @param index  the index to use
-    * @param `type` the type to use
-    * @param id     the id of the document to fetch
-    * @param fields   the fields to be returned
+    * @param index   the index to use
+    * @param `type`  the type to use
+    * @param id      the id of the document to fetch
+    * @param include the fields to be returned
+    * @param exclude the fields not to be returned
     */
-  def get[A](index: String, `type`: String, id: String, fields: String*)(implicit rs: HttpClient[F, A]): F[A] = {
-    val uri   = base.copy(path = base.path / index / `type` / id / source)
-    val query = if (fields.nonEmpty) Query(includeFieldsQueryParam -> fields.mkString(",")) else Query.Empty
-    rs(Get(uri.withQuery(query))).recoverWith {
+  def get[A](index: String,
+             `type`: String,
+             id: String,
+             include: Set[String] = Set.empty,
+             exclude: Set[String] = Set.empty)(implicit rs: HttpClient[F, A]): F[A] = {
+    val uri = base.copy(path = base.path / index / `type` / id / source)
+    val includeMap: Map[String, String] =
+      if (include.isEmpty) Map.empty else Map(includeFieldsQueryParam -> include.mkString(","))
+    val excludeMap: Map[String, String] =
+      if (exclude.isEmpty) Map.empty else Map(excludeFieldsQueryParam -> exclude.mkString(","))
+    rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).recoverWith {
       case UnexpectedUnsuccessfulHttpResponse(r) => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
       case other                                 => F.raiseError(other)
     }
@@ -153,6 +161,7 @@ object ElasticClient {
   private[client] val updateByQueryPath       = "_update_by_query"
   private[client] val deleteByQueryPath       = "_delete_by_query"
   private[client] val includeFieldsQueryParam = "_source_include"
+  private[client] val excludeFieldsQueryParam = "_source_exclude"
 
   /**
     * Construct a [[ElasticClient]] from the provided ''base'' uri and the provided query client
