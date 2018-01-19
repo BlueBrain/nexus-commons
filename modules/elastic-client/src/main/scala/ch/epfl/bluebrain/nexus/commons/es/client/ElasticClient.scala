@@ -118,10 +118,12 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param index  the index to use
     * @param `type` the type to use
     * @param id     the id of the document to fetch
+    * @param fields   the fields to be returned
     */
-  def get[A](index: String, `type`: String, id: String)(implicit rs: HttpClient[F, A]): F[A] = {
-    val uri = base.copy(path = base.path / index / `type` / id / source)
-    rs(Get(uri)).recoverWith {
+  def get[A](index: String, `type`: String, id: String, fields: String*)(implicit rs: HttpClient[F, A]): F[A] = {
+    val uri   = base.copy(path = base.path / index / `type` / id / source)
+    val query = if (fields.nonEmpty) Query(includeFieldsQueryParam -> fields.mkString(",")) else Query.Empty
+    rs(Get(uri.withQuery(query))).recoverWith {
       case UnexpectedUnsuccessfulHttpResponse(r) => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
       case other                                 => F.raiseError(other)
     }
@@ -147,9 +149,10 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
 
 object ElasticClient {
 
-  private[client] val updatePath        = "_update"
-  private[client] val updateByQueryPath = "_update_by_query"
-  private[client] val deleteByQueryPath = "_delete_by_query"
+  private[client] val updatePath              = "_update"
+  private[client] val updateByQueryPath       = "_update_by_query"
+  private[client] val deleteByQueryPath       = "_delete_by_query"
+  private[client] val includeFieldsQueryParam = "_source_include"
 
   /**
     * Construct a [[ElasticClient]] from the provided ''base'' uri and the provided query client

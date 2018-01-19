@@ -134,6 +134,9 @@ class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers wi
             val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
             cl.update(index, t, id, updateScript).futureValue shouldEqual (())
             cl.get[Json](index, t, id).futureValue shouldEqual json
+            cl.get[Json](index, t, id, "key").futureValue shouldEqual Json.obj(
+              "key" -> Json.fromString(getValue("key", json)))
+
         }
       }
 
