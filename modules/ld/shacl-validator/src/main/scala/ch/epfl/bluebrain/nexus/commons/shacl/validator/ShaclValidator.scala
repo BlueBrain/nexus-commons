@@ -4,12 +4,13 @@ import java.io.ByteArrayInputStream
 
 import cats.MonadError
 import cats.syntax.applicativeError._
-import cats.syntax.cartesian._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.syntax.semigroupal._
 import ch.epfl.bluebrain.nexus.commons.shacl.validator.ShaclValidatorErr._
 import es.weso.rdf.jena.RDFAsJenaModel
 import es.weso.schema._
+import es.weso.shapeMaps._
 import io.circe.Json
 import journal.Logger
 import org.apache.jena.rdf.model.ModelFactory
@@ -91,13 +92,14 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
             RDFDataMgr.read(model, new ByteArrayInputStream(e.value.noSpaces.getBytes), Lang.JSONLD)
           }
           RDFDataMgr.read(model, new ByteArrayInputStream(schema.noSpaces.getBytes), Lang.JSONLD)
-          model
-        } flatMap { model =>
           Schemas.fromRDF(RDFAsJenaModel(model), schemaEngine)
         } match {
-          case Success(value) =>
+          case Success(Right(value)) =>
             logger.debug("Schema loaded successfully")
             F.pure(value)
+          case Success(Left(message)) =>
+            logger.debug(s"Failed to load schema '${schema.spaces4}' for validation, file not found")
+            F.raiseError(FailedToLoadShaclSchema(FileNotFound(message)))
           case Failure(missing: CouldNotFindImports) =>
             logger.debug(
               s"Failed to load schema '${schema.spaces4}' for validation, missing imports '${missing.missing}'")
@@ -111,34 +113,53 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
       }
   }
 
-  private def loadData(data: Json): F[RDFAsJenaModel] =
-    F.pure {
-      logger.debug("Loading data for validation")
-      RDFAsJenaModel.fromChars(data.noSpaces, jsonLdFormatName)
-    } flatMap {
-      case Success(value) =>
+  private def loadData(data: Json): F[RDFAsJenaModel] = {
+    logger.debug("Loading data for validation")
+    RDFAsJenaModel.fromChars(data.noSpaces, jsonLdFormatName) match {
+      case Right(value) =>
         logger.debug("Data loaded successfully")
         F.pure(value)
       // $COVERAGE-OFF$
-      case Failure(th) =>
+      case Left(message) =>
         logger.debug(s"Failed to load schema '${data.spaces4}' for validation")
-        F.raiseError(FailedToLoadData(th))
+        F.raiseError(FailedToLoadData(message))
       // $COVERAGE-ON$
     }
+  }
 
   private def validate(model: RDFAsJenaModel, schema: Schema): F[ValidationReport] =
     F.pure {
       logger.debug("Validating data against schema")
-      schema.validate(model, triggerMode, Map.empty, None, None, schema.pm)
+      schema.validate(model, triggerMode, "", None, None)
     } map { result =>
       logger.debug(s"Validation result '$result'")
-      if (!result.isValid) ValidationReport(result.errors.map(err => ValidationResult(err.msg)).toList)
-      else if (!hasSolutions(result)) ValidationReport(List(ValidationResult("No data was selected for validation")))
-      else ValidationReport(Nil)
+      if (!result.isValid) {
+        ValidationReport(result.errors.map(err => ValidationResult(err.msg)).toList)
+      } else if (result.shapeMaps.forall(_.noSolutions)) {
+        ValidationReport(List(ValidationResult("No data was selected for validation")))
+      } else {
+        findViolations(result) match {
+          case Nil => ValidationReport(Nil)
+          case violations =>
+            ValidationReport(violations.map {
+              _.reason match {
+                case None          => ValidationResult("Violation found")
+                case Some(message) => ValidationResult(message)
+              }
+            })
+        }
+      }
     }
 
-  private def hasSolutions(result: Result): Boolean =
-    result.solutions.forall(_.nodes.nonEmpty)
+  private def findViolations(result: Result): List[Info] = {
+    for {
+      resultMaps <- result.shapeMaps
+      infoMap    <- resultMaps.resultMap.values
+      (_, info)  <- infoMap
+      if info.status == NonConformant
+    } yield info
+  }.toList
+
 }
 
 object ShaclValidator {

@@ -16,7 +16,7 @@ class AccessControlListSpec extends WordSpecLike with Matchers {
     val Publish                        = Permission("publish")
     val permissions                    = Permissions(Own, Read, Write, Publish)
     implicit val config: Configuration = Configuration.default.withDiscriminator("type")
-    val printer                        = Printer.noSpaces.copy(dropNullKeys = true)
+    val printer                        = Printer.noSpaces.copy(dropNullValues = true)
     val model                          = AccessControlList(Set(AccessControl(GroupRef("BBP", "some-group"), permissions)))
     val json =
       """{"acl":[{"identity":{"id":"realms/BBP/groups/some-group","type":"GroupRef"},"permissions":["own","read","write","publish"]}]}"""

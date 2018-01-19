@@ -14,7 +14,7 @@ import scala.util._
 class UserSpec extends WordSpecLike with Matchers with Inspectors {
 
   val identity                               = GroupRef("BBP", "some-group")
-  val printer                                = Printer.noSpaces.copy(dropNullKeys = true)
+  val printer                                = Printer.noSpaces.copy(dropNullValues = true)
   private implicit val config: Configuration = Configuration.default.withDiscriminator("type")
 
   private val values = List[(User, String)](
