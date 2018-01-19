@@ -24,6 +24,7 @@ import scala.concurrent.duration.FiniteDuration
   * @tparam Rejection the type of rejections issued for commands that cannot be applied
   */
 class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
+    name: String,
     initial: State,
     next: (State, Event) => State,
     eval: (State, Command) => Either[Rejection, Event],
@@ -31,7 +32,7 @@ class AggregateActor[Event: Typeable, State, Command: Typeable, Rejection](
     extends PersistentActor
     with ActorLogging {
 
-  override val persistenceId: String = URLDecoder.decode(self.path.name, "UTF-8")
+  override val persistenceId: String = URLDecoder.decode(s"$name-${self.path.name}", "UTF-8")
 
   private val Event   = the[Typeable[Event]]
   private val Command = the[Typeable[Command]]
