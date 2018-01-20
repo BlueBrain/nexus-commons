@@ -14,12 +14,19 @@ import ch.epfl.bluebrain.nexus.commons.types.search.{Pagination, QueryResults, S
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.{Decoder, Json}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Inspectors, Matchers}
+import org.scalatest.{Assertions, CancelAfterFailure, Inspectors, Matchers}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers with Resources with Inspectors {
+class ElasticClientSpec
+    extends ElasticServer
+    with ScalaFutures
+    with Matchers
+    with Resources
+    with Inspectors
+    with CancelAfterFailure
+    with Assertions {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(3 seconds, 100 millis)
 
@@ -134,9 +141,10 @@ class ElasticClientSpec extends ElasticServer with ScalaFutures with Matchers wi
             val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
             cl.update(index, t, id, updateScript).futureValue shouldEqual (())
             cl.get[Json](index, t, id).futureValue shouldEqual json
-            cl.get[Json](index, t, id, "key").futureValue shouldEqual Json.obj(
-              "key" -> Json.fromString(getValue("key", json)))
-
+            val jsonWithKey = Json.obj("key" -> Json.fromString(getValue("key", json)))
+            cl.get[Json](index, t, id, include = Set("key")).futureValue shouldEqual jsonWithKey
+            cl.get[Json](index, t, id, exclude = Set("key2")).futureValue shouldEqual jsonWithKey
+            cl.get[Json](index, t, id, include = Set("key"), exclude = Set("key2")).futureValue shouldEqual jsonWithKey
         }
       }
 
