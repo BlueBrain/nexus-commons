@@ -14,7 +14,7 @@ val akkaPersistenceInMemVersion     = "2.5.1.1"
 val akkaPersistenceCassandraVersion = "0.55"
 val akkaHttpVersion                 = "10.0.11"
 val akkaHttpCirceVersion            = "1.19.0"
-val elasticSearchVersion            = "6.1.1"
+val elasticSearchVersion            = "6.1.2"
 val log4jVersion                    = "2.10.0"
 val commonsIOVersion                = "1.3.2"
 
