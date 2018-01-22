@@ -25,7 +25,8 @@
         "@id": "nxv:filter"
       },
       "path": {
-        "@id": "nxv:path"
+        "@id": "nxv:path",
+        "@type": "@id"
       },
       "op": {
         "@id": "nxv:op"
