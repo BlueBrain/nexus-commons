@@ -45,10 +45,17 @@ class ElasticClientSpec
     val matchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()))
 
     "perform index operations" when {
+
       "fail when index does not exist" in {
         whenReady(cl.existsIndex("some").failed) { e =>
           e shouldBe a[ElasticClientError]
         }
+      }
+
+      "create mappings when index does not exist" in {
+        val index = genString()
+        cl.createIndexIfNotExist(index, indexPayload).futureValue shouldEqual true
+        cl.createIndexIfNotExist(index, indexPayload).futureValue shouldEqual false
       }
 
       "create mappings and index settings" in {
