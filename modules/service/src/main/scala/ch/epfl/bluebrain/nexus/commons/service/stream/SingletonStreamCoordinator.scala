@@ -71,7 +71,7 @@ class SingletonStreamCoordinator[A: Typeable, E](init: () => Future[A], source: 
       context.become(receive)
     // $COVERAGE-OFF$
     case Status.Failure(th) =>
-      log.error("Stream finished unexpectedly with an error '{}'", th)
+      log.error(th, "Stream finished unexpectedly with an error")
       killSwitch.shutdown()
       initialize()
       context.become(receive)
