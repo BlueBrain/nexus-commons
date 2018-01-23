@@ -46,7 +46,7 @@ class SingletonStreamCoordinator[A: Typeable, E](init: () => Future[A], source: 
     case Start(any) =>
       A.cast(any) match {
         case Some(a) =>
-          log.info("Received initial start value, running the indexing function across the element stream")
+          log.info("Received initial start value of type '{}', running the indexing function across the element stream", A.describe)
           val (killSwitch, doneFuture) = buildStream(a).run()
           doneFuture pipeTo self
           context.become(running(killSwitch))
@@ -71,7 +71,7 @@ class SingletonStreamCoordinator[A: Typeable, E](init: () => Future[A], source: 
       context.become(receive)
     // $COVERAGE-OFF$
     case Status.Failure(th) =>
-      log.error("Stream finished unexpectedly with an error", th)
+      log.error("Stream finished unexpectedly with an error '{}'", th)
       killSwitch.shutdown()
       initialize()
       context.become(receive)
