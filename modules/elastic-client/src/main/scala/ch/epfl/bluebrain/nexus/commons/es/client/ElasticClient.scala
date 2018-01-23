@@ -2,13 +2,15 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.model.Uri.Query
 import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
+import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.types.search._
@@ -46,6 +48,21 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     */
   def existsIndex(index: String): F[Unit] =
     execute(Get(base.copy(path = base.path / index)), Set(OK), "verify the existence of an index")
+
+  /**
+    * Creates an index when it does not exist on the ElasticSearch endpoint
+    *
+    * @param index   the index
+    * @param payload the payload to attach to the index when it does not exist
+    * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped and ''F'' when it already existed
+    */
+  def createIndexIfNotExist(index: String, payload: Json): F[Boolean] = {
+    existsIndex(index).map(_ => false).recoverWith {
+      case ElasticClientError(StatusCodes.NotFound, _) =>
+        createIndex(index, payload).map(_ => true)
+      case other => F.raiseError(other)
+    }
+  }
 
   /**
     * Creates a new document inside the ''index'' and ''`type`'' with the provided ''payload''
