@@ -106,6 +106,7 @@ class PathSpec extends WordSpecLike with Matchers with Inspectors {
       path startsWith Path("a") shouldEqual true
       path startsWith "a" / "b" shouldEqual true
       path startsWith "a" / "b" / "c" shouldEqual true
+      path startsWith "c" / "b" / "a" shouldEqual false
       path startsWith "a" / "b" / "c" / "d" shouldEqual false
       / startsWith / shouldEqual true
       / startsWith path shouldEqual false
