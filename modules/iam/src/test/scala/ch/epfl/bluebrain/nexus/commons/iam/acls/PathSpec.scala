@@ -100,5 +100,16 @@ class PathSpec extends WordSpecLike with Matchers with Inspectors {
     "convert from Path to Uri.Path correctly" in {
       (path: Uri.Path) shouldEqual Uri.Path("/a/b/c")
     }
+
+    "check if startsWith another Path" in {
+      path startsWith / shouldEqual true
+      path startsWith Path("a") shouldEqual true
+      path startsWith "a" / "b" shouldEqual true
+      path startsWith "a" / "b" / "c" shouldEqual true
+      path startsWith "a" / "b" / "c" / "d" shouldEqual false
+      / startsWith / shouldEqual true
+      / startsWith path shouldEqual false
+    }
+
   }
 }
