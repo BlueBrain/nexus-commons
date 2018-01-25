@@ -71,6 +71,11 @@ sealed abstract class Path extends Serializable {
   def repr: String
 
   /**
+    * @return true if the current __Path__ starts with the provided ''path'' and false otherwise
+    */
+  def startsWith(path: Path): Boolean
+
+  /**
     * @return a human readable path in its canonical form.  I.e.: __/a/b/c/d__
     */
   override def toString: String = repr
@@ -138,6 +143,8 @@ object Path {
 
     override val expand: Set[Path] = Set(this)
 
+    override def startsWith(path: Path): Boolean = path.isEmpty
+
     override val repr: String = "/"
   }
 
@@ -178,6 +185,9 @@ object Path {
     }
 
     override def expand: Set[Path] = tail.expand + this
+
+    override def startsWith(path: Path): Boolean =
+      expand.toSeq.startsWith(path.expand.toSeq)
 
     override def repr: String = tail match {
       case Empty => "/" + head
