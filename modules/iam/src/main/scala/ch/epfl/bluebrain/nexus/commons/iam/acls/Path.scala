@@ -187,7 +187,7 @@ object Path {
     override def expand: Set[Path] = tail.expand + this
 
     override def startsWith(path: Path): Boolean =
-      expand.toSeq.startsWith(path.expand.toSeq)
+      expand(path)
 
     override def repr: String = tail match {
       case Empty => "/" + head
