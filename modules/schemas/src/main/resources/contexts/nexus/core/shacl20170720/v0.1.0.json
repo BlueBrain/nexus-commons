@@ -1,6 +1,6 @@
 {
   "@context": [
-    "{{base}}/contexts/nexus/core/standards/v0.1.0",
+    "{{base}}/contexts/nexus/core/resource/v0.1.0",
     {
       "shext": "http://www.w3.org/ns/shacl/ext#",
       "class": {
