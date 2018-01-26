@@ -1,13 +1,13 @@
 {
   "@context": [
-    "{{base}}/contexts/nexus/core/resource/v0.1.0",
+    "{{base}}/contexts/nexus/core/standards/v0.1.0",
     {
       "self": {
         "@id": "nxv:self",
         "@type": "@id"
       },
       "downloadURL": {
-        "@id": "schemaorg:downloadURL",
+        "@id": "http://schema.org/downloadURL",
         "@type": "@id"
       },
       "schema": {

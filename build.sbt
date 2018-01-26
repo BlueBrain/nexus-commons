@@ -285,5 +285,5 @@ lazy val publishSettings = Seq(
     ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git"))
 )
 
-addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")
+addCommandAlias("review", ";clean;coverage;scapegoat;test;coverageReport;coverageAggregate")
 addCommandAlias("rel", ";release with-defaults skip-tests")
