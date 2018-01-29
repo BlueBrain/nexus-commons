@@ -11,7 +11,7 @@ import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.iam.IamClientSpec._
 import ch.epfl.bluebrain.nexus.commons.iam.acls.Permission.{Own, Read, Write}
-import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControl, AccessControlList, Path, Permissions}
+import ch.epfl.bluebrain.nexus.commons.iam.acls._
 import ch.epfl.bluebrain.nexus.commons.iam.auth.{AuthenticatedUser, User}
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller.{AnonymousCaller, AuthenticatedCaller, _}
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity.{AuthenticatedRef, GroupRef, UserRef}
@@ -83,17 +83,23 @@ class IamClientSpec
     }
 
     "return expected acls whenever the caller is authenticated" in {
-      val aclAuth             = AccessControlList(Set(AccessControl(GroupRef("BBP", "group1"), Permissions(Own, Read, Write))))
-      implicit val cl         = fixedClient(uriFor("/acls/prefix/some/resource/one"), authA = Some(aclAuth))
-      implicit val httpClient = HttpClient.withAkkaUnmarshaller[AccessControlList]
+      val aclAuth = FullAccessControlList(
+        (GroupRef("BBP", "group1"), Path("/acls/prefix/some/resource/one"), Permissions(Own, Read, Write)))
+      implicit val cl =
+        fixedClient(uriFor("/acls/prefix/some/resource/one", Query("parents" -> "false", "self" -> "true")),
+                    authA = Some(aclAuth))
+      implicit val httpClient = HttpClient.withAkkaUnmarshaller[FullAccessControlList]
 
       implicit val caller = AuthenticatedCaller(credentials, authUser)
-      IamClient().getAcls(Path("/prefix/some/resource/one")).futureValue shouldEqual aclAuth
+      IamClient().getAcls(Path("/prefix/some/resource/one"), self = true).futureValue shouldEqual aclAuth
     }
     "return expected acls whenever the caller is anonymous" in {
-      val aclAnon             = AccessControlList(Set(AccessControl(AuthenticatedRef(None), Permissions(Read))))
-      implicit val cl         = fixedClient(uriFor("/acls/prefix/some/resource/two"), anonA = Some(aclAnon))
-      implicit val httpClient = HttpClient.withAkkaUnmarshaller[AccessControlList]
+      val aclAnon =
+        FullAccessControlList((AuthenticatedRef(None), Path("/acls/prefix/some/resource/two"), Permissions(Read)))
+      implicit val cl =
+        fixedClient(uriFor("/acls/prefix/some/resource/two", Query("parents" -> "false", "self" -> "false")),
+                    anonA = Some(aclAnon))
+      implicit val httpClient = HttpClient.withAkkaUnmarshaller[FullAccessControlList]
       implicit val anonCaller = AnonymousCaller()
 
       IamClient().getAcls(Path("///prefix/some/resource/two")).futureValue shouldEqual aclAnon
@@ -117,9 +123,9 @@ object IamClientSpec {
         req
           .header[Authorization]
           .collect {
-            case Authorization(OAuth2BearerToken(ValidToken)) if expectedUri equals req.uri =>
+            case Authorization(OAuth2BearerToken(ValidToken)) if expectedUri == req.uri =>
               responseOrEmpty(authA)
-            case Authorization(OAuth2BearerToken(_)) if expectedUri equals req.uri =>
+            case Authorization(OAuth2BearerToken(_)) if expectedUri == req.uri =>
               Future.successful(
                 HttpResponse(
                   entity = HttpEntity(
@@ -127,8 +133,16 @@ object IamClientSpec {
                     """{"code" : "UnauthorizedCaller", "description" : "The caller is not permitted to perform this request"}"""),
                   status = StatusCodes.Unauthorized
                 ))
+            case _ =>
+              responseOrEmpty(authA)
+
           }
-          .getOrElse(responseOrEmpty(anonA))
+          .getOrElse {
+            if (expectedUri == req.uri)
+              responseOrEmpty(anonA)
+            else
+              Future.failed(new RuntimeException(s"Wrong uri ${req.uri}"))
+          }
 
       override def discardBytes(entity: HttpEntity): Future[DiscardedEntity] = Future.successful(entity.discardBytes())
 

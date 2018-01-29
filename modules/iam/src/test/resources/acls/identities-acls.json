@@ -1,31 +1,37 @@
 {
-  "acls" : [
+  "acl" : [
     {
       "identity" : {
         "realm" : "BBP",
         "group" : "some-group",
         "@type" : "GroupRef"
       },
-      "acl" : [
-        {
-          "path" : "/",
-          "permissions" : [
-            "publish"
-          ]
-        },
-        {
-          "path" : "/a/path",
-          "permissions" : [
-            "write",
-            "read"
-          ]
-        },
-        {
-          "path" : "/another/path/longer",
-          "permissions" : [
-            "read"
-          ]
-        }
+      "path" : "/",
+      "permissions" : [
+        "publish"
+      ]
+    },
+    {
+      "identity" : {
+        "realm" : "BBP",
+        "group" : "some-group",
+        "@type" : "GroupRef"
+      },
+      "path" : "/a/path",
+      "permissions" : [
+        "write",
+        "read"
+      ]
+    },
+    {
+      "identity" : {
+        "realm" : "BBP",
+        "group" : "some-group",
+        "@type" : "GroupRef"
+      },
+      "path" : "/another/path/longer",
+      "permissions" : [
+        "read"
       ]
     },
     {
@@ -34,21 +40,22 @@
         "sub" : "user1",
         "@type" : "UserRef"
       },
-      "acl" : [
-        {
-          "path" : "/a/path",
-          "permissions" : [
-            "own",
-            "write",
-            "publish"
-          ]
-        },
-        {
-          "path" : "/another/path/longer",
-          "permissions" : [
-            "own"
-          ]
-        }
+      "path" : "/a/path",
+      "permissions" : [
+        "own",
+        "write",
+        "publish"
+      ]
+    },
+    {
+      "identity" : {
+        "realm" : "BBP",
+        "sub" : "user1",
+        "@type" : "UserRef"
+      },
+      "path" : "/another/path/longer",
+      "permissions" : [
+        "own"
       ]
     }
   ]
