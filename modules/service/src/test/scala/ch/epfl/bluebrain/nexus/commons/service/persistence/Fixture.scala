@@ -37,7 +37,7 @@ object Fixture {
     }
   }
 
-  val initial: State                          = Perpetual
+  val initial: State = Perpetual
   @silent
   def next(state: State, event: Event): State = Perpetual
   @silent

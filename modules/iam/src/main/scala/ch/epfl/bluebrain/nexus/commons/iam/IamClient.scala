@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.iam.acls.Path._
-import ch.epfl.bluebrain.nexus.commons.iam.acls.{AccessControlList, Path}
+import ch.epfl.bluebrain.nexus.commons.iam.acls.{FullAccessControlList, Path}
 import ch.epfl.bluebrain.nexus.commons.iam.auth.User
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller
 import ch.epfl.bluebrain.nexus.commons.iam.identity.Caller._
@@ -35,9 +35,13 @@ trait IamClient[F[_]] {
     * Retrieve the current ''acls'' for some particular ''resource''
     *
     * @param resource the resource against which to check the acls
-    * @param credentials    a possibly available token
+    * @param parents  decides whether it should match only the provided ''path'' (false)
+    *                 or the parents also (true)
+    * @param self     decides whether it should match only the provided ''identities'' (true)
+    *                 or any identity which has the right own access (true)    * @param credentials    a possibly available token
     */
-  def getAcls(resource: Path)(implicit credentials: Option[OAuth2BearerToken]): F[AccessControlList]
+  def getAcls(resource: Path, parents: Boolean = false, self: Boolean = false)(
+      implicit credentials: Option[OAuth2BearerToken]): F[FullAccessControlList]
 }
 
 object IamClient {
@@ -47,7 +51,7 @@ object IamClient {
   private val filterGroupsParam = "filterGroups"
 
   final def apply()(implicit ec: ExecutionContext,
-                    aclClient: HttpClient[Future, AccessControlList],
+                    aclClient: HttpClient[Future, FullAccessControlList],
                     userClient: HttpClient[Future, User],
                     iamUri: IamUri): IamClient[Future] = new IamClient[Future] {
 
@@ -60,9 +64,11 @@ object IamClient {
         }
         .getOrElse(Future.successful(AnonymousCaller()))
 
-    override def getAcls(resource: Path)(implicit credentials: Option[OAuth2BearerToken]) = {
-      aclClient(requestFrom(credentials, Acls ++ resource))
-        .recoverWith[AccessControlList] { case e => recover(e, resource) }
+    override def getAcls(resource: Path, parents: Boolean = false, self: Boolean = false)(
+        implicit credentials: Option[OAuth2BearerToken]) = {
+      aclClient(
+        requestFrom(credentials, Acls ++ resource, Query("parents" -> parents.toString, "self" -> self.toString)))
+        .recoverWith[FullAccessControlList] { case e => recover(e, resource) }
     }
     def recover(th: Throwable, resource: Path) = th match {
       case UnexpectedUnsuccessfulHttpResponse(HttpResponse(StatusCodes.Unauthorized, _, _, _)) =>
@@ -78,7 +84,7 @@ object IamClient {
         Future.failed(err)
     }
 
-    private def requestFrom(credentials: Option[OAuth2BearerToken], path: Path, query: Query = Query.Empty) = {
+    private def requestFrom(credentials: Option[OAuth2BearerToken], path: Path, query: Query) = {
       val uriPath: Path = iamUri.value.path
       val request       = Get(iamUri.value.copy(path = uriPath ++ path).withQuery(query))
       credentials.map(request.addCredentials).getOrElse(request)
