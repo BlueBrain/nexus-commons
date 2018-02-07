@@ -112,5 +112,11 @@ class PathSpec extends WordSpecLike with Matchers with Inspectors {
       / startsWith path shouldEqual false
     }
 
+    "get segments" in {
+      path.segments shouldEqual List("a", "b", "c")
+      /.segments shouldEqual List.empty[String]
+
+    }
+
   }
 }

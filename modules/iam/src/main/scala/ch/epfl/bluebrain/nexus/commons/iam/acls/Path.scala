@@ -76,6 +76,11 @@ sealed abstract class Path extends Serializable {
   def startsWith(path: Path): Boolean
 
   /**
+    * @return the list of segments present in the current ''path''
+    */
+  def segments: List[String]
+
+  /**
     * @return a human readable path in its canonical form.  I.e.: __/a/b/c/d__
     */
   override def toString: String = repr
@@ -146,6 +151,8 @@ object Path {
     override def startsWith(path: Path): Boolean = path.isEmpty
 
     override val repr: String = "/"
+
+    override def segments: List[String] = List.empty
   }
 
   /**
@@ -192,6 +199,15 @@ object Path {
     override def repr: String = tail match {
       case Empty => "/" + head
       case _     => tail.repr + "/" + head
+    }
+
+    override def segments: List[String] = {
+      @tailrec
+      def inner(acc: List[String], remaining: Path): List[String] = remaining match {
+        case Empty         => acc
+        case Segment(h, t) => inner(h :: acc, t)
+      }
+      inner(List.empty[String], this)
     }
   }
 
