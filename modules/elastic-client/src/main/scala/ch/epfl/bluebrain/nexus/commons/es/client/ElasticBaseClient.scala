@@ -32,7 +32,9 @@ abstract class ElasticBaseClient[F[_]](implicit
 }
 
 object ElasticBaseClient {
-  private[client] val source       = "_source"
-  private[client] val anyIndexPath = "_all"
+  private[client] val source            = "_source"
+  private[client] val anyIndexPath      = "_all"
+  private[client] val ignoreUnavailable = "ignore_unavailable"
+  private[client] val allowNoIndices    = "allow_no_indices"
 
 }
