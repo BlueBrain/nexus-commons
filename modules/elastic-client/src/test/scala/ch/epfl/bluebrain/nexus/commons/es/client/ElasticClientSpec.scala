@@ -105,6 +105,12 @@ class ElasticClientSpec
         cl.search[Json](query, Set(index))(p).futureValue shouldEqual qrs
       }
 
+      "search on an index which does not exist" in {
+        val qrs = ScoredQueryResults(0L, 0F, List.empty)
+
+        cl.search[Json](matchAll, Set(genString()))(p).futureValue shouldEqual qrs
+      }
+
       "search which returns only specified fields" in {
         val (_, json) = list.head
         val query = jsonContentOf("/query.json",

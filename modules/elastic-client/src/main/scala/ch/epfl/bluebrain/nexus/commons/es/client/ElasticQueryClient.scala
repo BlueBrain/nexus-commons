@@ -2,6 +2,7 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.model.Uri.Query
 import cats.MonadError
 import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
@@ -32,20 +33,23 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
   /**
     * Search for the provided ''query'' inside the ''indices'' and ''types''
     *
-    * @param query    the initial search query
-    * @param indices  the indices to use on search (if empty, searches in all the indices)
-    * @param page     the paginatoin information
-    * @param fields   the fields to be returned
-    * @param sort     the sorting criteria
+    * @param query   the initial search query
+    * @param indices the indices to use on search (if empty, searches in all the indices)
+    * @param page    the paginatoin information
+    * @param fields  the fields to be returned
+    * @param sort    the sorting criteria
+    * @param qp      the optional query parameters
     * @tparam A the generic type to be returned
     */
-  def apply[A](query: Json, indices: Set[String] = Set.empty)(page: Pagination,
-                                                              fields: Set[String] = Set.empty,
-                                                              sort: SortList = SortList.Empty)(
-      implicit
-      rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] = {
+  def apply[A](query: Json,
+               indices: Set[String] = Set.empty,
+               qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
+      page: Pagination,
+      fields: Set[String] = Set.empty,
+      sort: SortList = SortList.Empty)(implicit
+                                       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] = {
     val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
-    rs(Post(uri, query.addPage(page).addSources(fields).addSort(sort)))
+    rs(Post(uri.withQuery(qp), query.addPage(page).addSources(fields).addSort(sort)))
   }
 }
 object ElasticQueryClient {

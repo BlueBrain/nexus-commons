@@ -157,19 +157,22 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
   /**
     * Search for the provided ''query'' inside the ''indices'' and ''types''
     *
-    * @param query    the initial search query
-    * @param indices  the indices to use on search (if empty, searches in all the indices)
-    * @param page     the paginatoin information
-    * @param fields   the fields to be returned
-    * @param sort     the sorting criteria
+    * @param query   the initial search query
+    * @param indices the indices to use on search (if empty, searches in all the indices)
+    * @param page    the paginatoin information
+    * @param fields  the fields to be returned
+    * @param sort    the sorting criteria
+    * @param qp      the optional query parameters
     * @tparam A the generic type to be returned
     */
-  def search[A](query: Json, indices: Set[String] = Set.empty)(page: Pagination,
-                                                               fields: Set[String] = Set.empty,
-                                                               sort: SortList = SortList.Empty)(
-      implicit
-      rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
-    queryClient(query, indices)(page, fields, sort)
+  def search[A](query: Json,
+                indices: Set[String] = Set.empty,
+                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
+      page: Pagination,
+      fields: Set[String] = Set.empty,
+      sort: SortList = SortList.Empty)(implicit
+                                       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
+    queryClient(query, indices, qp)(page, fields, sort)
 }
 
 object ElasticClient {
