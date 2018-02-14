@@ -3,13 +3,12 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.Accept
+import akka.http.scaladsl.model.headers.{Accept, HttpCredentials}
 import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.HttpResponseSyntax
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import io.circe.Json
 import journal.Logger
@@ -22,14 +21,15 @@ import scala.concurrent.ExecutionContext
 /**
   * Sparql client implementation that uses a RESTful API endpoint for interacting with a Sparql deployment.
   *
-  * @param sparqlBase the base uri of the sparql endpoint
-  * @tparam F         the monadic effect type
+  * @param sparqlBase  the base uri of the sparql endpoint
+  * @param credentials the optional credentials to authenticate to the endpoint
+  * @tparam F          the monadic effect type
   */
-class SparqlClient[F[_]](sparqlBase: Uri)(implicit
-                                          cl: UntypedHttpClient[F],
-                                          rs: HttpClient[F, ResultSet],
-                                          ec: ExecutionContext,
-                                          F: MonadError[F, Throwable]) {
+class SparqlClient[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials])(implicit
+                                                                                cl: UntypedHttpClient[F],
+                                                                                rs: HttpClient[F, ResultSet],
+                                                                                ec: ExecutionContext,
+                                                                                F: MonadError[F, Throwable]) {
 
   private val log = Logger[this.type]
 
@@ -113,7 +113,7 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
     val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
     val formData = FormData("query" -> query)
     val request  = Post(endpointFor(index), formData).withHeaders(accept)
-    rs(request)
+    rs(addCredentials(request))
   }
 
   /**
@@ -124,7 +124,7 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
     *         and it signals an error otherwise.
     */
   def exists(index: String): F[Boolean] = {
-    val req = Get(s"$sparqlBase/namespace/$index")
+    val req = addCredentials(Get(s"$sparqlBase/namespace/$index"))
     cl(req).flatMap { resp =>
       resp.status match {
         case StatusCodes.OK =>
@@ -157,14 +157,20 @@ class SparqlClient[F[_]](sparqlBase: Uri)(implicit
   private def endpointFor(index: String): Uri =
     s"$sparqlBase/namespace/$index/sparql"
 
-  private def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: => String): F[Unit] =
-    cl(req).discardOnCodesOr(expectedCodes) { resp =>
+  private def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: => String): F[Unit] = {
+    cl(addCredentials(req)).discardOnCodesOr(expectedCodes) { resp =>
       SparqlFailure.fromResponse(resp).flatMap { f =>
         log.error(
           s"Unexpected Sparql response for intent '$intent':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
         F.raiseError(f)
       }
     }
+  }
+
+  private def addCredentials(req: HttpRequest) = credentials match {
+    case None        => req
+    case Some(creds) => req.addCredentials(creds)
+  }
 }
 
 object SparqlClient {
@@ -173,13 +179,15 @@ object SparqlClient {
     * Constructs a new ''SparqlClient[F]'' that uses the argument ''sparqlBase'' as the base uri for the sparql
     * endpoint.
     *
-    * @param sparqlBase the base uri of the sparql endpoint
-    * @tparam F         the monadic effect type
+    * @param sparqlBase  the base uri of the sparql endpoint
+    * @param credentials the optional credentials to authenticate to the endpoint
+    * @tparam F          the monadic effect type
     */
-  final def apply[F[_]](sparqlBase: Uri)(implicit
-                                         cl: UntypedHttpClient[F],
-                                         rs: HttpClient[F, ResultSet],
-                                         ec: ExecutionContext,
-                                         F: MonadError[F, Throwable]): SparqlClient[F] =
-    new SparqlClient[F](sparqlBase)
+  final def apply[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials] = None)(
+      implicit
+      cl: UntypedHttpClient[F],
+      rs: HttpClient[F, ResultSet],
+      ec: ExecutionContext,
+      F: MonadError[F, Throwable]): SparqlClient[F] =
+    new SparqlClient[F](sparqlBase, credentials)
 }
