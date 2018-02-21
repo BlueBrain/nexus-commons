@@ -15,6 +15,13 @@ final case class AccessControlList(acl: Set[AccessControl]) {
   def toMap: Map[Identity, Permissions] = acl.map { case AccessControl(id, ps) => id -> ps }.toMap
 
   /**
+    * @return a ''Map'' projection of the underlying pairs of identities and their permission
+    */
+  def toPermissionMap: Map[Identity, Permission] = acl.foldLeft(Map.empty[Identity, Permission]) {
+    case (acc, AccessControl(identity, perms)) => acc ++ perms.set.map(identity -> _).toMap
+  }
+
+  /**
     * @return a collapsed [[Permissions]] from all the identities
     */
   def permissions: Permissions = acl.foldLeft(Permissions.empty)(_ ++ _.permissions)

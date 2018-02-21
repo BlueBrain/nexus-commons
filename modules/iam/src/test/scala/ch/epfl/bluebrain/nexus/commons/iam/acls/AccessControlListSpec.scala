@@ -40,6 +40,18 @@ class AccessControlListSpec extends WordSpecLike with Matchers {
       val identity = GroupRef("BBP", "some-group")
       model.toMap shouldEqual Map(identity -> Permissions(Own, Read, Write, Publish))
     }
+
+    "convert to permission Map" in {
+      val identity  = GroupRef("BBP", "some-group")
+      val identity2 = AuthenticatedRef(Some("BBP"))
+      val model     = AccessControlList(identity -> permissions, identity2 -> Permissions(Read))
+
+      model.toPermissionMap shouldEqual Map(identity  -> Own,
+                                            identity  -> Read,
+                                            identity  -> Write,
+                                            identity  -> Publish,
+                                            identity2 -> Read)
+    }
     "check if it has void permissions" in {
       model.hasVoidPermissions shouldEqual false
       AccessControlList().hasVoidPermissions shouldEqual true
