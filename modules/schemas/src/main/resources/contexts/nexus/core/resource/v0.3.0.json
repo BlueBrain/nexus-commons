@@ -7,7 +7,7 @@
       "@id": "http://schema.org/distribution"
     },
     "links": {
-      "@id": "https://bbp-nexus.epfl.ch/vocabs/nexus/core/terms/v0.1.0/links"
+      "@id": "nxv:links"
     }
   }
 }
