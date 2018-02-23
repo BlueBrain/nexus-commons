@@ -47,7 +47,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param index   the index to verify
     */
   def existsIndex(index: String): F[Unit] =
-    execute(Get(base.copy(path = base.path / index)), Set(OK), "verify the existence of an index")
+    execute(Get(base.copy(path = base.path / index)), Set(OK))
 
   /**
     * Creates an index when it does not exist on the ElasticSearch endpoint
