@@ -17,8 +17,7 @@
       },
       "qualifiedValueShape": {
         "@id": "sh:qualifiedValueShape",
-        "@type": "@id",
-        "@container": "@list"
+        "@type": "@id"
       },
       "qualifiedValueShapesDisjoint": {
         "@id": "sh:qualifiedValueShapesDisjoint",
