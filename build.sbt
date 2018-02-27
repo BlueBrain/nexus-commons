@@ -175,6 +175,7 @@ lazy val shaclValidator = project
   .settings(
     name                := "shacl-validator",
     moduleName          := "shacl-validator",
+    resolvers           += Resolver.bintrayRepo("bogdanromanx", "maven"),
     libraryDependencies ++= Seq(journal, wesoSchema, catsCore, circeCore, circeParser % Test, scalaTest % Test)
   )
 
