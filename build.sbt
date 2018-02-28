@@ -49,7 +49,6 @@ lazy val commonsIO         = "org.apache.commons"                % "commons-io" 
 
 lazy val types = project
   .in(file("modules/types"))
-  .settings(publishSettings)
   .settings(
     name                := "commons-types",
     moduleName          := "commons-types",
@@ -59,7 +58,6 @@ lazy val types = project
 lazy val test = project
   .in(file("modules/test"))
   .dependsOn(types)
-  .settings(publishSettings)
   .settings(
     name                := "commons-test",
     moduleName          := "commons-test",
@@ -70,7 +68,6 @@ lazy val test = project
 lazy val http = project
   .in(file("modules/http"))
   .dependsOn(types, test % Test)
-  .settings(publishSettings)
   .settings(
     name       := "commons-http",
     moduleName := "commons-http",
@@ -88,7 +85,6 @@ lazy val http = project
 lazy val iam = project
   .in(file("modules/iam"))
   .dependsOn(http, test)
-  .settings(publishSettings)
   .settings(
     name       := "iam",
     moduleName := "iam",
@@ -102,7 +98,6 @@ lazy val iam = project
 
 lazy val queryTypes = project
   .in(file("modules/query-types"))
-  .settings(publishSettings)
   .settings(
     name                := "commons-query-types",
     moduleName          := "commons-query-types",
@@ -112,7 +107,6 @@ lazy val queryTypes = project
 lazy val elasticServerEmbed = project
   .in(file("modules/elastic-server-embed"))
   .dependsOn(test)
-  .settings(publishSettings)
   .settings(
     name       := "elastic-server-embed",
     moduleName := "elastic-server-embed",
@@ -135,7 +129,6 @@ lazy val elasticServerEmbed = project
 lazy val elasticClient = project
   .in(file("modules/elastic-client"))
   .dependsOn(http, queryTypes, test % Test, elasticServerEmbed % Test)
-  .settings(publishSettings)
   .settings(
     name       := "elastic-client",
     moduleName := "elastic-client",
@@ -150,7 +143,6 @@ lazy val elasticClient = project
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(http, queryTypes)
-  .settings(publishSettings)
   .settings(
     name       := "sparql-client",
     moduleName := "sparql-client",
@@ -171,7 +163,6 @@ lazy val sparqlClient = project
 lazy val shaclValidator = project
   .in(file("modules/ld/shacl-validator"))
   .dependsOn(types)
-  .settings(publishSettings)
   .settings(
     name                := "shacl-validator",
     moduleName          := "shacl-validator",
@@ -181,7 +172,7 @@ lazy val shaclValidator = project
 
 lazy val schemas = project
   .in(file("modules/schemas"))
-  .settings(publishSettings)
+  .settings(noPublish)
   .settings(
     name       := "commons-schemas",
     moduleName := "commons-schemas"
@@ -202,23 +193,24 @@ lazy val root = project
              iam,
              schemas)
 
-lazy val noPublish = Seq(publishLocal := {}, publish := {})
+lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 
-lazy val publishSettings = Seq(
-  homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
-  licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-  scmInfo := Some(
-    ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git")),
-  developers := List(
-    Developer("bogdanromanx", "Bogdan Roman", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
-    Developer("hygt", "Henry Genet", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
-    Developer("umbreak", "Didac Montero Mendez", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
-    Developer("wwajerowicz", "Wojtek Wajerowicz", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/"))
-  ),
-  // These are the sbt-release-early settings to configure
-  releaseEarlyWith              := BintrayPublisher,
-  releaseEarlyNoGpg             := true,
-  releaseEarlyEnableSyncToMaven := false
-)
+inThisBuild(
+  Seq(
+    homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
+    licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+    scmInfo := Some(
+      ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git")),
+    developers := List(
+      Developer("bogdanromanx", "Bogdan Roman", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+      Developer("hygt", "Henry Genet", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+      Developer("umbreak", "Didac Montero Mendez", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+      Developer("wwajerowicz", "Wojtek Wajerowicz", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/"))
+    ),
+    // These are the sbt-release-early settings to configure
+    releaseEarlyWith              := BintrayPublisher,
+    releaseEarlyNoGpg             := true,
+    releaseEarlyEnableSyncToMaven := false
+  ))
 
 addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")
