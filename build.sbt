@@ -208,8 +208,17 @@ lazy val publishSettings = Seq(
   homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   scmInfo := Some(
-    ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git"))
+    ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git")),
+  developers := List(
+    Developer("bogdanromanx", "Bogdan Roman", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+    Developer("hygt", "Henry Genet", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+    Developer("umbreak", "Didac Montero Mendez", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+    Developer("wwajerowicz", "Wojtek Wajerowicz", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/"))
+  ),
+  // These are the sbt-release-early settings to configure
+  releaseEarlyWith              := BintrayPublisher,
+  releaseEarlyNoGpg             := true,
+  releaseEarlyEnableSyncToMaven := false
 )
 
 addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")
-addCommandAlias("rel", ";release with-defaults skip-tests")

@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 
 class HttpClientSpec extends TestKit(ActorSystem("HttpClientSpec")) with WordSpecLike with Matchers with ScalaFutures {
 
-  override implicit val patienceConfig = PatienceConfig(3 seconds, 100 millis)
+  override implicit val patienceConfig = PatienceConfig(6 seconds, 300 milliseconds)
 
   "An HttpClient" should {
     implicit val mt = ActorMaterializer()
