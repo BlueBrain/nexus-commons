@@ -172,7 +172,6 @@ lazy val shaclValidator = project
 
 lazy val schemas = project
   .in(file("modules/schemas"))
-  .settings(noPublish)
   .settings(
     name       := "commons-schemas",
     moduleName := "commons-schemas"
