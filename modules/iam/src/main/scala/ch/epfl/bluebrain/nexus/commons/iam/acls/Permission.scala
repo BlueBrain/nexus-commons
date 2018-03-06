@@ -15,7 +15,7 @@ final case class Permission(value: String) {
 }
 
 object Permission {
-  private[acls] val valid = "[a-z]{1,16}".r
+  private[acls] val valid = "[a-zA-Z-_\\/]{1,16}".r
 
   /**
     * Resource ownership access permission definition. Owning a resource offers the ability
