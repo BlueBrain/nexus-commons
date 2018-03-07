@@ -23,7 +23,7 @@ class RetryOpsSpec
     with Eventually
     with ScalaFutures {
 
-  override implicit def patienceConfig: PatienceConfig = PatienceConfig(20 seconds, 400 millis)
+  override implicit def patienceConfig: PatienceConfig = PatienceConfig(30 seconds, 500 millis)
 
   abstract class Context {
     val count = AtomicLong(0L)
@@ -52,7 +52,7 @@ class RetryOpsSpec
       count.get shouldEqual 5
     }
 
-    "retry a future linearly when it fails capped to 200 mills" in new Context {
+    "retry a future linearly when it fails capped to 200 millis" in new Context {
       retry(future, 5, Linear(200 millis, 200 millis)).failed
         .futureValue(timeout(Span(1, Seconds))) shouldBe SomeError
       count.get shouldEqual 6

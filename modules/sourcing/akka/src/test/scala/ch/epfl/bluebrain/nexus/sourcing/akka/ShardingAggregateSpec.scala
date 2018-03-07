@@ -20,7 +20,7 @@ class ShardingAggregateSpec
     with ScalaFutures
     with BeforeAndAfterAll {
 
-  override implicit val patienceConfig = PatienceConfig(3 seconds, 50 millis)
+  override implicit val patienceConfig = PatienceConfig(6 seconds, 300 milliseconds)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
