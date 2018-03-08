@@ -296,6 +296,7 @@ lazy val root = project
              sourcingMem,
              http,
              test,
+             kamon,
              service,
              queryTypes,
              elasticServerEmbed,
