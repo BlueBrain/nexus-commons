@@ -42,7 +42,7 @@ class SparqlClientSpec
     NanoSparqlServer.newInstance(port, null, null)
   }
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(6 seconds, 300 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 500 milliseconds)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
