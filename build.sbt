@@ -1,3 +1,28 @@
+/*
+scalafmt: {
+  style = defaultWithAlign
+  maxColumn = 150
+  align.tokens = [
+    { code = "=>", owner = "Case" }
+    { code = "?", owner = "Case" }
+    { code = "extends", owner = "Defn.(Class|Trait|Object)" }
+    { code = "//", owner = ".*" }
+    { code = "{", owner = "Template" }
+    { code = "}", owner = "Template" }
+    { code = ":=", owner = "Term.ApplyInfix" }
+    { code = "++=", owner = "Term.ApplyInfix" }
+    { code = "+=", owner = "Term.ApplyInfix" }
+    { code = "%", owner = "Term.ApplyInfix" }
+    { code = "%%", owner = "Term.ApplyInfix" }
+    { code = "%%%", owner = "Term.ApplyInfix" }
+    { code = "->", owner = "Term.ApplyInfix" }
+    { code = "?", owner = "Term.ApplyInfix" }
+    { code = "<-", owner = "Enumerator.Generator" }
+    { code = "?", owner = "Enumerator.Generator" }
+    { code = "=", owner = "(Enumerator.Val|Defn.(Va(l|r)|Def|Type))" }
+  ]
+}
+ */
 val wesoValidatorVersion            = "0.0.65-nexus1"
 val metricsCoreVersion              = "3.2.6"
 val jenaVersion                     = "3.6.0"
@@ -60,9 +85,17 @@ lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearc
 lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
 lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
 
+lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.0.1"
+lazy val kamonPrometheus = "io.kamon" %% "kamon-prometheus"      % "1.0.0"
+lazy val kamonJaeger     = "io.kamon" %% "kamon-jaeger"          % "1.0.1"
+lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.0"
+lazy val kamonMetrics    = "io.kamon" %% "kamon-system-metrics"  % "1.0.0"
+lazy val kamonAkka       = "io.kamon" %% "kamon-akka-2.5"        % "1.0.1"
+lazy val kamonAkkaHttp   = "io.kamon" %% "kamon-akka-http-2.5"   % "1.1.0"
+lazy val kamonAkkaRemote = "io.kamon" %% "kamon-akka-remote-2.5" % "1.0.0"
+
 lazy val types = project
   .in(file("modules/types"))
-  .settings(publishSettings)
   .settings(
     name                := "commons-types",
     moduleName          := "commons-types",
@@ -72,7 +105,6 @@ lazy val types = project
 lazy val sourcing = project
   .in(file("modules/sourcing/core"))
   .dependsOn(types)
-  .settings(publishSettings)
   .settings(
     name                := "sourcing-core",
     moduleName          := "sourcing-core",
@@ -82,7 +114,6 @@ lazy val sourcing = project
 lazy val sourcingAkka = project
   .in(file("modules/sourcing/akka"))
   .dependsOn(sourcing % "compile->compile;test->test")
-  .settings(publishSettings)
   .settings(
     name       := "sourcing-akka",
     moduleName := "sourcing-akka",
@@ -100,13 +131,11 @@ lazy val sourcingAkka = project
 lazy val sourcingMem = project
   .in(file("modules/sourcing/mem"))
   .dependsOn(sourcing % "compile->compile;test->test")
-  .settings(publishSettings)
   .settings(name := "sourcing-mem", moduleName := "sourcing-mem", libraryDependencies ++= Seq(scalaTest % Test))
 
 lazy val service = project
   .in(file("modules/service"))
   .dependsOn(types, http, sourcingAkka % "test->compile")
-  .settings(publishSettings)
   .settings(
     name       := "commons-service",
     moduleName := "commons-service",
@@ -132,7 +161,6 @@ lazy val service = project
 lazy val test = project
   .in(file("modules/test"))
   .dependsOn(types)
-  .settings(publishSettings)
   .settings(
     name                := "commons-test",
     moduleName          := "commons-test",
@@ -143,37 +171,42 @@ lazy val test = project
 lazy val http = project
   .in(file("modules/http"))
   .dependsOn(types, test % Test)
-  .settings(publishSettings)
   .settings(
-    name       := "commons-http",
-    moduleName := "commons-http",
-    libraryDependencies ++= Seq(shapeless,
-                                akkaHttp,
-                                akkaHttpCirce,
-                                journal,
-                                scalaTest          % Test,
-                                akkaHttpTestKit    % Test,
-                                circeGenericExtras % Test)
+    name                := "commons-http",
+    moduleName          := "commons-http",
+    libraryDependencies ++= Seq(shapeless, akkaHttp, akkaHttpCirce, journal, scalaTest % Test, akkaHttpTestKit % Test, circeGenericExtras % Test)
+  )
+
+lazy val kamon = project
+  .in(file("modules/kamon"))
+  .settings(
+    name       := "commons-kamon",
+    moduleName := "commons-kamon",
+    libraryDependencies ++= Seq(
+      kamonCore,
+      kamonPrometheus,
+      kamonJaeger,
+      kamonLogback,
+      kamonMetrics,
+      kamonAkka % Runtime,
+      kamonAkkaHttp,
+      kamonAkkaRemote % Runtime,
+      akkaHttpTestKit % Test,
+      scalaTest       % Test
+    )
   )
 
 lazy val iam = project
   .in(file("modules/iam"))
   .dependsOn(http, test)
-  .settings(publishSettings)
   .settings(
-    name       := "iam",
-    moduleName := "iam",
-    libraryDependencies ++= Seq(akkaHttpCirce,
-                                circeGenericExtras,
-                                circeParser,
-                                circeJava8,
-                                akkaTestKit % Test,
-                                scalaTest   % Test)
+    name                := "iam",
+    moduleName          := "iam",
+    libraryDependencies ++= Seq(akkaHttpCirce, circeGenericExtras, circeParser, circeJava8, akkaTestKit % Test, scalaTest % Test)
   )
 
 lazy val queryTypes = project
   .in(file("modules/query-types"))
-  .settings(publishSettings)
   .settings(
     name                := "commons-query-types",
     moduleName          := "commons-query-types",
@@ -183,7 +216,6 @@ lazy val queryTypes = project
 lazy val elasticServerEmbed = project
   .in(file("modules/elastic-server-embed"))
   .dependsOn(test)
-  .settings(publishSettings)
   .settings(
     name       := "elastic-server-embed",
     moduleName := "elastic-server-embed",
@@ -206,7 +238,6 @@ lazy val elasticServerEmbed = project
 lazy val elasticClient = project
   .in(file("modules/elastic-client"))
   .dependsOn(http, queryTypes, test % Test, elasticServerEmbed % Test)
-  .settings(publishSettings)
   .settings(
     name       := "elastic-client",
     moduleName := "elastic-client",
@@ -221,7 +252,6 @@ lazy val elasticClient = project
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(http, queryTypes)
-  .settings(publishSettings)
   .settings(
     name       := "sparql-client",
     moduleName := "sparql-client",
@@ -242,16 +272,15 @@ lazy val sparqlClient = project
 lazy val shaclValidator = project
   .in(file("modules/ld/shacl-validator"))
   .dependsOn(types)
-  .settings(publishSettings)
   .settings(
     name                := "shacl-validator",
     moduleName          := "shacl-validator",
+    resolvers           += Resolver.bintrayRepo("bogdanromanx", "maven"),
     libraryDependencies ++= Seq(journal, wesoSchema, catsCore, circeCore, circeParser % Test, scalaTest % Test)
   )
 
 lazy val schemas = project
   .in(file("modules/schemas"))
-  .settings(publishSettings)
   .settings(
     name       := "commons-schemas",
     moduleName := "commons-schemas"
@@ -276,14 +305,28 @@ lazy val root = project
              iam,
              schemas)
 
-lazy val noPublish = Seq(publishLocal := {}, publish := {})
+lazy val noPublish = Seq(
+  publishLocal    := {},
+  publish         := {},
+  publishArtifact := false
+)
 
-lazy val publishSettings = Seq(
-  homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
-  licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-  scmInfo := Some(
-    ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git"))
+inThisBuild(
+  List(
+    homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
+    licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+    scmInfo  := Some(ScmInfo(url("https://github.com/BlueBrain/nexus-service"), "scm:git:git@github.com:BlueBrain/nexus-commons.git")),
+    developers := List(
+      Developer("bogdanromanx", "Bogdan Roman", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+      Developer("hygt", "Henry Genet", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+      Developer("umbreak", "Didac Montero Mendez", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
+      Developer("wwajerowicz", "Wojtek Wajerowicz", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/"))
+    ),
+    // These are the sbt-release-early settings to configure
+    releaseEarlyWith              := BintrayPublisher,
+    releaseEarlyNoGpg             := true,
+    releaseEarlyEnableSyncToMaven := false
+  )
 )
 
 addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")
-addCommandAlias("rel", ";release with-defaults skip-tests")

@@ -45,8 +45,7 @@ class IamClientSpec
   private val authUserWithFilteredGroups: User = AuthenticatedUser(
     Set(GroupRef("BBP", "group1"), UserRef("realm", "f:someUUID:username")))
 
-  override implicit val patienceConfig: PatienceConfig =
-    PatienceConfig(5 seconds, 200 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(6 seconds, 300 milliseconds)
 
   "An IamClient" should {
 
