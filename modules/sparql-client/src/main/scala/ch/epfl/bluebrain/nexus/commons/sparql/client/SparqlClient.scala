@@ -1,6 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, StringWriter}
 
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.Query
@@ -14,7 +14,7 @@ import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import io.circe.Json
 import journal.Logger
-import org.apache.jena.graph.{Graph, Node, Triple}
+import org.apache.jena.graph.Graph
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.{Lang, RDFDataMgr}
@@ -119,23 +119,10 @@ class SparqlClient[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials])(
     * @param data             the new data to insert
     */
   def patchGraph(index: String, ctx: Uri, retainPredicates: Set[Uri], data: Json): F[Unit] = {
-    def asString(node: Node): String = {
-      if (node.isURI) s"<${node.getURI}>"
-      else if (node.isBlank) s"_:b${node.getBlankNodeLabel}"
-      else s"${node.toString(true)}"
-    }
-
     def buildUpdate: Try[String] = Try {
-      import scala.collection.JavaConverters._
       val graph      = ctx
       val filterExpr = retainPredicates.map(p => s"?p != <$p>").mkString(" && ")
-      val triples = graphOf(data)
-        .find(Triple.ANY)
-        .asScala
-        .map { t =>
-          s"${asString(t.getSubject)} ${asString(t.getPredicate)} ${asString(t.getObject)} ."
-        }
-        .mkString("\n")
+      val triples    = toNQuads(graphOf(data))
 
       s"""
          |DELETE {
@@ -240,6 +227,12 @@ class SparqlClient[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials])(
     val model = ModelFactory.createDefaultModel()
     RDFDataMgr.read(model, new ByteArrayInputStream(json.noSpaces.getBytes), Lang.JSONLD)
     model.getGraph
+  }
+
+  private def toNQuads(graph: Graph): String = {
+    val writer = new StringWriter()
+    RDFDataMgr.write(writer, graph, Lang.NQUADS)
+    writer.toString
   }
 }
 
