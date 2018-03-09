@@ -159,7 +159,36 @@ class SparqlClientSpec
       results should have size 2
       results.map(_._3).toSet shouldEqual Set(label + "-updated", value)
     }
+
+    "patch a named graph retaining predicates" in new SparqlClientFixture {
+      val json = parse(s"""
+            |{
+            |  "@context": {
+            |    "label": "http://www.w3.org/2000/01/rdf-schema#label",
+            |    "schema": "http://schema.org/",
+            |    "nested": "http://localhost/nested/"
+            |  },
+            |  "@id": "http://localhost/$id",
+            |  "label": "$label-updated",
+            |  "nested": {
+            |     "schema:name": "name",
+            |     "schema:title": "title"
+            |  }
+            |}
+           """.stripMargin).toTry.get
+      client.createGraph(index, ctx, load(id, label, value)).futureValue
+      client.patchGraph(index, ctx, Set(Uri("http://schema.org/value")), json).futureValue
+      val results = triples(index, ctx, client).futureValue
+      results should have size 5
+      results.map(_._3).toSet should contain allOf (
+        label + "-updated",
+        value,
+        "name",
+        "title"
+      )
+    }
   }
+
 }
 
 object SparqlClientSpec {
