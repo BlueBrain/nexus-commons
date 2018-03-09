@@ -1,5 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
+import java.io.ByteArrayInputStream
+
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
@@ -12,11 +14,16 @@ import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import io.circe.Json
 import journal.Logger
+import org.apache.jena.graph.{Graph, Node, Triple}
 import org.apache.jena.query.ResultSet
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.riot.{Lang, RDFDataMgr}
 import org.apache.jena.sparql.modify.request.{Target, UpdateClear}
 import org.apache.jena.update.UpdateFactory
 
 import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 /**
   * Sparql client implementation that uses a RESTful API endpoint for interacting with a Sparql deployment.
@@ -103,6 +110,63 @@ class SparqlClient[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials])(
     } yield ()
 
   /**
+    * Updates the data of a named graph by removing all the triples except the ones that have a predicate in the
+    * ''retainPredicates'' set and inserts the triples described by the ''data'' argument.
+    *
+    * @param index            the index to use
+    * @param ctx              the graph address
+    * @param retainPredicates the collection of predicates to retain in the graph
+    * @param data             the new data to insert
+    */
+  def patchGraph(index: String, ctx: Uri, retainPredicates: Set[Uri], data: Json): F[Unit] = {
+    def asString(node: Node): String = {
+      if (node.isURI) s"<${node.getURI}>"
+      else if (node.isBlank) s"_:b${node.getBlankNodeLabel}"
+      else s"${node.toString(true)}"
+    }
+
+    def buildUpdate: Try[String] = Try {
+      import scala.collection.JavaConverters._
+      val graph      = ctx
+      val filterExpr = retainPredicates.map(p => s"?p != <$p>").mkString(" && ")
+      val triples = graphOf(data)
+        .find(Triple.ANY)
+        .asScala
+        .map { t =>
+          s"${asString(t.getSubject)} ${asString(t.getPredicate)} ${asString(t.getObject)} ."
+        }
+        .mkString("\n")
+
+      s"""
+         |DELETE {
+         |  GRAPH <$graph> {
+         |    ?s ?p ?o .
+         |  }
+         |}
+         |INSERT {
+         |  GRAPH <$graph> {
+         |    $triples
+         |  }
+         |}
+         |WHERE {
+         |  GRAPH <$graph> {
+         |    ?s ?p ?o .
+         |    FILTER ( $filterExpr )
+         |  }
+         |}
+    """.stripMargin
+    }
+
+    buildUpdate match {
+      case Success(value) =>
+        val formData = FormData("update" -> value)
+        execute(Post(endpointFor(index), formData), Set(StatusCodes.OK), "sparql update")
+      case Failure(NonFatal(th)) =>
+        F.raiseError(th)
+    }
+  }
+
+  /**
     * Queries the index, producing a possibly empty result set.
     *
     * @param index the index to use
@@ -170,6 +234,12 @@ class SparqlClient[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials])(
   private def addCredentials(req: HttpRequest) = credentials match {
     case None        => req
     case Some(creds) => req.addCredentials(creds)
+  }
+
+  private def graphOf(json: Json): Graph = {
+    val model = ModelFactory.createDefaultModel()
+    RDFDataMgr.read(model, new ByteArrayInputStream(json.noSpaces.getBytes), Lang.JSONLD)
+    model.getGraph
   }
 }
 
