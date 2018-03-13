@@ -6,251 +6,185 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Accept, HttpCredentials}
-import cats.MonadError
+import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import cats.{ApplicativeError, MonadError}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
-import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
+import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlClient._
 import io.circe.Json
 import journal.Logger
 import org.apache.jena.graph.Graph
-import org.apache.jena.query.ResultSet
+import org.apache.jena.query.{QueryFactory, ResultSet}
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.{Lang, RDFDataMgr}
-import org.apache.jena.sparql.modify.request.{Target, UpdateClear}
 import org.apache.jena.update.UpdateFactory
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
 
 /**
-  * Sparql client implementation that uses a RESTful API endpoint for interacting with a Sparql deployment.
+  * A minimalistic sparql client that operates on a predefined endpoint with optional HTTP basic authentication.
   *
-  * @param sparqlBase  the base uri of the sparql endpoint
-  * @param credentials the optional credentials to authenticate to the endpoint
-  * @tparam F          the monadic effect type
+  * @param endpoint    the sparql endpoint
+  * @param credentials the credentials to use when communicating with the sparql endpoint
   */
-class SparqlClient[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials])(implicit
-                                                                                cl: UntypedHttpClient[F],
-                                                                                rs: HttpClient[F, ResultSet],
-                                                                                ec: ExecutionContext,
-                                                                                F: MonadError[F, Throwable]) {
+class SparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
+                                                                              cl: UntypedHttpClient[F],
+                                                                              rs: HttpClient[F, ResultSet],
+                                                                              ec: ExecutionContext) {
 
   private val log = Logger[this.type]
 
   /**
-    * Creates a new named graph within the specified index with the provided data.
+    * Drops the graph identified by the argument URI from the store.
     *
-    * @param index the index to use
-    * @param ctx   the graph address
-    * @param data  the graph data to insert
+    * @param graph the graph to drop
     */
-  def createGraph(index: String, ctx: Uri, data: Json): F[Unit] = {
-    val uri = endpointFor(index).withQuery(Query("context-uri" -> ctx.toString()))
-    execute(Post(uri, data), Set(StatusCodes.Created, StatusCodes.OK), "create graph")
+  def drop(graph: Uri): F[Unit] = {
+    val query = s"DROP GRAPH <$graph>"
+    executeUpdate(graph, query)
   }
 
   /**
-    * Clears all data within a named graph.  Does not remove the graph itself.
+    * Removes all triples from the graph identified by the argument URI and stores the triples in the data argument in
+    * the same graph.
     *
-    * @param index the index to use
-    * @param ctx   the graph address
+    * @param graph the target graph
+    * @param data  the new graph content
     */
-  def clearGraph(index: String, ctx: Uri): F[Unit] = {
-    val clear = new UpdateClear(Target.create(ctx.toString()))
-    val query = UpdateFactory.create().add(clear).toString
-    val uri   = endpointFor(index).withQuery(Query("update" -> query, "using-named-graph-uri" -> ctx.toString()))
-    execute(Post(uri), Set(StatusCodes.OK), "clear graph")
-  }
-
-  /**
-    * Replaces all data within a named graph with the provided data.  The operation is NOT atomic.
-    *
-    * @param index the index to use
-    * @param ctx   the graph address
-    * @param data  the new data to insert
-    * @return
-    */
-  def replaceGraph(index: String, ctx: Uri, data: Json): F[Unit] =
-    for {
-      _ <- clearGraph(index, ctx)
-      _ <- createGraph(index, ctx, data)
-    } yield ()
-
-  /**
-    * Removes all triples selected by the argument ''query'' in the ''index''.
-    *
-    * __Important__: the query must be a ''CONSTRUCT'' or ''DESCRIBE'' query.
-    *
-    * @param index the index to use
-    * @param query the query used in selecting the triples to be removed
-    */
-  def delete(index: String, query: String): F[Unit] = {
-    val uri = endpointFor(index).withQuery(Query("query" -> query))
-    execute(Delete(uri), Set(StatusCodes.OK), "delete with query")
-  }
-
-  /**
-    * Updates the data of a named graph, removing the triples selected with the argument ''query'' and inserting the
-    * provided data.  The operation is NOT atomic.
-    *
-    * __Important__: the query must be a ''CONSTRUCT'' or ''DESCRIBE'' query.
-    *
-    * @param index the index to use
-    * @param ctx   the graph address
-    * @param query the query used in selecting the triples to be removed
-    * @param data  the new data to insert
-    */
-  def patchGraph(index: String, ctx: Uri, query: String, data: Json): F[Unit] =
-    for {
-      _ <- delete(index, query)
-      _ <- createGraph(index, ctx, data)
-    } yield ()
-
-  /**
-    * Updates the data of a named graph by removing all the triples except the ones that have a predicate in the
-    * ''retainPredicates'' set and inserts the triples described by the ''data'' argument.
-    *
-    * @param index            the index to use
-    * @param ctx              the graph address
-    * @param retainPredicates the collection of predicates to retain in the graph
-    * @param data             the new data to insert
-    */
-  def patchGraph(index: String, ctx: Uri, retainPredicates: Set[Uri], data: Json): F[Unit] = {
-    def buildUpdate: Try[String] = Try {
-      val graph      = ctx
-      val filterExpr = retainPredicates.map(p => s"?p != <$p>").mkString(" && ")
-      val triples    = toNQuads(graphOf(data))
-
-      s"""
-         |DELETE {
-         |  GRAPH <$graph> {
-         |    ?s ?p ?o .
-         |  }
-         |}
-         |INSERT {
-         |  GRAPH <$graph> {
-         |    $triples
-         |  }
-         |}
-         |WHERE {
-         |  GRAPH <$graph> {
-         |    ?s ?p ?o .
-         |    FILTER ( $filterExpr )
-         |  }
-         |}
-    """.stripMargin
-    }
-
-    buildUpdate match {
-      case Success(value) =>
-        val formData = FormData("update" -> value)
-        execute(Post(endpointFor(index), formData), Set(StatusCodes.OK), "sparql update")
-      case Failure(NonFatal(th)) =>
-        F.raiseError(th)
+  def replace(graph: Uri, data: Json): F[Unit] = {
+    toNTriples(data).flatMap { triples =>
+      val query =
+        s"""DROP GRAPH <$graph>;
+           |
+           |INSERT DATA {
+           |  GRAPH <$graph> {
+           |    $triples
+           |  }
+           |}""".stripMargin
+      executeUpdate(graph, query)
     }
   }
 
   /**
-    * Queries the index, producing a possibly empty result set.
+    * Patches the graph by selecting a collection of triples to remove or retain and inserting the triples in the data
+    * argument.
     *
-    * @param index the index to use
+    * @see [[ch.epfl.bluebrain.nexus.commons.sparql.client.PatchStrategy]]
+    * @param graph    the target graph
+    * @param data     the additional graph content
+    * @param strategy the patch strategy
+    */
+  def patch(graph: Uri, data: Json, strategy: PatchStrategy): F[Unit] = {
+    toNTriples(data).flatMap { triples =>
+      val query = strategy match {
+        case RemovePredicates(predicates) =>
+          val remove = predicates.zipWithIndex.map({ case (p, i) => s"?s$i <$p> ?o$i ." }).mkString("\n")
+          s"""DELETE WHERE {
+             |  GRAPH <$graph> {
+             |    $remove
+             |  }
+             |};
+             |
+             |INSERT DATA {
+             |  GRAPH <$graph> {
+             |    $triples
+             |  }
+             |}""".stripMargin
+        case RemoveButPredicates(predicates) =>
+          val filterExpr = predicates.map(p => s"?p != <$p>").mkString(" && ")
+          s"""DELETE {
+             |  GRAPH <$graph> {
+             |    ?s ?p ?o .
+             |  }
+             |}
+             |WHERE {
+             |  GRAPH <$graph> {
+             |    ?s ?p ?o .
+             |    FILTER ( $filterExpr )
+             |  }
+             |};
+             |
+             |INSERT DATA {
+             |  GRAPH <$graph> {
+             |    $triples
+             |  }
+             |}""".stripMargin
+      }
+      executeUpdate(graph, query)
+    }
+  }
+
+  /**
+    * Executes the argument ''query'' against the underlying sparql endpoint.
+    *
     * @param query the query to execute
     * @return the query result set
     */
-  def query(index: String, query: String): F[ResultSet] = {
-    val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
-    val formData = FormData("query" -> query)
-    val request  = Post(endpointFor(index), formData).withHeaders(accept)
-    rs(addCredentials(request))
-  }
-
-  /**
-    * Checks if a index exists as a namespace
-    *
-    * @param index the name of the index
-    * @return ''false'' when the index does not exist, ''true'' when it does exist
-    *         and it signals an error otherwise.
-    */
-  def exists(index: String): F[Boolean] = {
-    val req = addCredentials(Get(s"$sparqlBase/namespace/$index"))
-    cl(req).flatMap { resp =>
-      resp.status match {
-        case StatusCodes.OK =>
-          cl.discardBytes(resp.entity).map(_ => true)
-        case StatusCodes.NotFound =>
-          cl.discardBytes(resp.entity).map(_ => false)
-        case other =>
-          cl.toString(resp.entity).flatMap { body =>
-            log.error(
-              s"Unexpected Sparql response for intent 'namespace exists':\nRequest: '${req.method} ${req.uri}'\nStatus: '$other'\nResponse: '$body'")
-            F.raiseError(SparqlFailure.fromStatusCode(resp.status, body))
-          }
+  def query(query: String): F[ResultSet] = {
+    F.catchNonFatal(QueryFactory.create(query)).flatMap { q =>
+      val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
+      val formData = FormData("query" -> q.serialize())
+      val req      = Post(endpoint, formData).withHeaders(accept)
+      rs(addCredentials(req)).handleErrorWith {
+        case NonFatal(th) =>
+          log.error(s"""Unexpected Sparql response for sparql query:
+               |Request: '${req.method} ${req.uri}'
+               |Query: '$query'
+             """.stripMargin)
+          F.raiseError(th)
       }
     }
   }
 
-  /**
-    * Creates a new index with the specified name and collection of properties.
-    *
-    * @param name       the name of the index
-    * @param properties the sparql index properties
-    */
-  def createIndex(name: String, properties: Map[String, String]): F[Unit] = {
-    val updated = properties + ("com.bigdata.rdf.sail.namespace" -> name)
-    val payload = updated.map { case (key, value) => s"$key=$value" }.mkString("\n")
-    val req     = Post(s"$sparqlBase/namespace", HttpEntity(payload))
-    execute(req, Set(StatusCodes.Created), "create index")
-  }
-
-  private def endpointFor(index: String): Uri =
-    s"$sparqlBase/namespace/$index/sparql"
-
-  private def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: => String): F[Unit] = {
-    cl(addCredentials(req)).discardOnCodesOr(expectedCodes) { resp =>
-      SparqlFailure.fromResponse(resp).flatMap { f =>
-        log.error(
-          s"Unexpected Sparql response for intent '$intent':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
-        F.raiseError(f)
+  private def executeUpdate(graph: Uri, query: String): F[Unit] = {
+    F.catchNonFatal(UpdateFactory.create(query)).flatMap { _ =>
+      val formData = FormData("update" -> query)
+      val req      = Post(endpoint.withQuery(Query("using-named-graph-uri" -> graph.toString())), formData)
+      log.debug(s"Executing sparql update: '$query'")
+      cl(addCredentials(req)).discardOnCodesOr(Set(StatusCodes.OK)) { resp =>
+        SparqlFailure.fromResponse(resp).flatMap { f =>
+          log.error(s"""Unexpected Sparql response for sparql update:
+               |Request: '${req.method} ${req.uri}'
+               |Query: '$query'
+               |Status: '${resp.status}'
+               |Response: '${f.body}'
+             """.stripMargin)
+          F.raiseError(f)
+        }
       }
     }
   }
 
-  private def addCredentials(req: HttpRequest) = credentials match {
+  protected def addCredentials(req: HttpRequest): HttpRequest = credentials match {
     case None        => req
-    case Some(creds) => req.addCredentials(creds)
-  }
-
-  private def graphOf(json: Json): Graph = {
-    val model = ModelFactory.createDefaultModel()
-    RDFDataMgr.read(model, new ByteArrayInputStream(json.noSpaces.getBytes), Lang.JSONLD)
-    model.getGraph
-  }
-
-  private def toNQuads(graph: Graph): String = {
-    val writer = new StringWriter()
-    RDFDataMgr.write(writer, graph, Lang.NQUADS)
-    writer.toString
+    case Some(value) => req.addCredentials(value)
   }
 }
 
 object SparqlClient {
 
-  /**
-    * Constructs a new ''SparqlClient[F]'' that uses the argument ''sparqlBase'' as the base uri for the sparql
-    * endpoint.
-    *
-    * @param sparqlBase  the base uri of the sparql endpoint
-    * @param credentials the optional credentials to authenticate to the endpoint
-    * @tparam F          the monadic effect type
-    */
-  final def apply[F[_]](sparqlBase: Uri, credentials: Option[HttpCredentials] = None)(
-      implicit
-      cl: UntypedHttpClient[F],
-      rs: HttpClient[F, ResultSet],
-      ec: ExecutionContext,
-      F: MonadError[F, Throwable]): SparqlClient[F] =
-    new SparqlClient[F](sparqlBase, credentials)
+  def apply[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
+                                                                       cl: UntypedHttpClient[F],
+                                                                       rs: HttpClient[F, ResultSet],
+                                                                       ec: ExecutionContext): SparqlClient[F] =
+    new SparqlClient[F](endpoint, credentials)
+
+  private[client] def graphOf[F[_]](json: Json)(implicit F: ApplicativeError[F, Throwable]): F[Graph] =
+    F.catchNonFatal {
+      val model = ModelFactory.createDefaultModel()
+      RDFDataMgr.read(model, new ByteArrayInputStream(json.noSpaces.getBytes), Lang.JSONLD)
+      model.getGraph
+    }
+
+  private[client] def toNTriples(graph: Graph): String = {
+    val writer = new StringWriter()
+    RDFDataMgr.write(writer, graph, Lang.NTRIPLES)
+    writer.toString
+  }
+
+  private[client] def toNTriples[F[_]](json: Json)(implicit F: ApplicativeError[F, Throwable]): F[String] =
+    graphOf(json).map(toNTriples)
 }
