@@ -22,7 +22,6 @@ object PatchStrategy {
     * graph.
     *
     * @param predicates the predicates that select the triples to be retained
-    * @return
     */
   def removeButPredicates(predicates: Set[Uri]): PatchStrategy =
     RemoveButPredicates(predicates)

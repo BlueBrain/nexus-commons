@@ -167,6 +167,25 @@ class BlazegraphClientSpec
     }
   }
 
+  implicit class BlazegraphClientOps(cl: BlazegraphClient[Future])(implicit ec: ExecutionContext) {
+    private def triplesFor(query: String) =
+      cl.query(query).map { rs =>
+        rs.asScala.toList.map { qs =>
+          val obj = {
+            val node = qs.get("?o")
+            if (node.isLiteral) node.asLiteral().getLexicalForm
+            else node.asResource().toString
+          }
+          (qs.get("?s").toString, qs.get("?p").toString, obj)
+        }
+      }
+
+    def triples(graph: Uri): List[(String, String, String)] =
+      triplesFor(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue
+
+    def triples(): List[(String, String, String)] =
+      triplesFor("SELECT * { ?s ?p ?o }").futureValue
+  }
 }
 
 object BlazegraphClientSpec {
@@ -193,28 +212,4 @@ object BlazegraphClientSpec {
     props.load(getClass.getResourceAsStream("/index.properties"))
     props.asScala.toMap
   }
-
-  implicit class BlazegraphClientOps(cl: BlazegraphClient[Future])(implicit ec: ExecutionContext) {
-
-    import ScalaFutures._
-
-    private def triplesFor(query: String) =
-      cl.query(query).map { rs =>
-        rs.asScala.toList.map { qs =>
-          val obj = {
-            val node = qs.get("?o")
-            if (node.isLiteral) node.asLiteral().getLexicalForm
-            else node.asResource().toString
-          }
-          (qs.get("?s").toString, qs.get("?p").toString, obj)
-        }
-      }
-
-    def triples(graph: Uri): List[(String, String, String)] =
-      triplesFor(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue
-
-    def triples(): List[(String, String, String)] =
-      triplesFor("SELECT * { ?s ?p ?o }").futureValue
-  }
-
 }
