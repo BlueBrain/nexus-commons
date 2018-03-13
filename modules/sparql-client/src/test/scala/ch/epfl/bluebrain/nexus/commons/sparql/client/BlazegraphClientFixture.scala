@@ -1,21 +1,22 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import akka.http.scaladsl.model.Uri
-import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlClientFixture._
+import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 
 import scala.annotation.tailrec
 import scala.util.Random
 
-class SparqlClientFixture {
+class BlazegraphClientFixture {
 
-  val rand: String  = genString(length = 8)
-  val ctx: Uri      = Uri(s"http://$localhost:8080/graphs/$rand")
-  val id: String    = genString()
-  val label: String = genString()
-  val value: String = genString()
+  val namespace: String = genString(8)
+  val rand: String      = genString(length = 8)
+  val graph: Uri        = Uri(s"http://$localhost:8080/graphs/$rand")
+  val id: String        = genString()
+  val label: String     = genString()
+  val value: String     = genString()
 }
 
-object SparqlClientFixture {
+object BlazegraphClientFixture {
 
   val localhost = "127.0.0.1"
 
