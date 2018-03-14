@@ -28,7 +28,7 @@ class ElasticClientSpec
     with CancelAfterFailure
     with Assertions {
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(6 seconds, 300 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 300 milliseconds)
 
   "An ElasticClient" should {
     implicit val ec: ExecutionContext          = system.dispatcher

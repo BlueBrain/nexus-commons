@@ -79,40 +79,28 @@ class SparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(im
     */
   def patch(graph: Uri, data: Json, strategy: PatchStrategy): F[Unit] = {
     toNTriples(data).flatMap { triples =>
-      val query = strategy match {
-        case RemovePredicates(predicates) =>
-          val remove = predicates.zipWithIndex.map({ case (p, i) => s"?s$i <$p> ?o$i ." }).mkString("\n")
-          s"""DELETE WHERE {
-             |  GRAPH <$graph> {
-             |    $remove
-             |  }
-             |};
-             |
-             |INSERT DATA {
-             |  GRAPH <$graph> {
-             |    $triples
-             |  }
-             |}""".stripMargin
-        case RemoveButPredicates(predicates) =>
-          val filterExpr = predicates.map(p => s"?p != <$p>").mkString(" && ")
-          s"""DELETE {
-             |  GRAPH <$graph> {
-             |    ?s ?p ?o .
-             |  }
-             |}
-             |WHERE {
-             |  GRAPH <$graph> {
-             |    ?s ?p ?o .
-             |    FILTER ( $filterExpr )
-             |  }
-             |};
-             |
-             |INSERT DATA {
-             |  GRAPH <$graph> {
-             |    $triples
-             |  }
-             |}""".stripMargin
+      val filterExpr = strategy match {
+        case RemovePredicates(predicates)    => predicates.map(p => s"?p = <$p>").mkString(" || ")
+        case RemoveButPredicates(predicates) => predicates.map(p => s"?p != <$p>").mkString(" && ")
       }
+      val query =
+        s"""DELETE {
+           |  GRAPH <$graph> {
+           |    ?s ?p ?o .
+           |  }
+           |}
+           |WHERE {
+           |  GRAPH <$graph> {
+           |    ?s ?p ?o .
+           |    FILTER ( $filterExpr )
+           |  }
+           |};
+           |
+           |INSERT DATA {
+           |  GRAPH <$graph> {
+           |    $triples
+           |  }
+           |}""".stripMargin
       executeUpdate(graph, query)
     }
   }
