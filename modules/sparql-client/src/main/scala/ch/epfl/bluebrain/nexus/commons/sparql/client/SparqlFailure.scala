@@ -16,6 +16,7 @@ trait SparqlFailure extends Err {
   def body: String
 }
 
+// $COVERAGE-OFF$
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
 object SparqlFailure {
 
@@ -73,3 +74,4 @@ object SparqlFailure {
       with SparqlFailure
 
 }
+// $COVERAGE-ON$

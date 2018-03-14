@@ -16,7 +16,7 @@ import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlClient._
 import io.circe.Json
 import journal.Logger
 import org.apache.jena.graph.Graph
-import org.apache.jena.query.{QueryFactory, ResultSet}
+import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.{Lang, RDFDataMgr}
 import org.apache.jena.update.UpdateFactory
@@ -124,18 +124,16 @@ class SparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(im
     * @return the query result set
     */
   def query(query: String): F[ResultSet] = {
-    F.catchNonFatal(QueryFactory.create(query)).flatMap { q =>
-      val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
-      val formData = FormData("query" -> q.serialize())
-      val req      = Post(endpoint, formData).withHeaders(accept)
-      rs(addCredentials(req)).handleErrorWith {
-        case NonFatal(th) =>
-          log.error(s"""Unexpected Sparql response for sparql query:
-               |Request: '${req.method} ${req.uri}'
-               |Query: '$query'
-             """.stripMargin)
-          F.raiseError(th)
-      }
+    val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
+    val formData = FormData("query" -> query)
+    val req      = Post(endpoint, formData).withHeaders(accept)
+    rs(addCredentials(req)).handleErrorWith {
+      case NonFatal(th) =>
+        log.error(s"""Unexpected Sparql response for sparql query:
+             |Request: '${req.method} ${req.uri}'
+             |Query: '$query'
+           """.stripMargin)
+        F.raiseError(th)
     }
   }
 
