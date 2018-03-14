@@ -16,7 +16,7 @@ import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlClient._
 import io.circe.Json
 import journal.Logger
 import org.apache.jena.graph.Graph
-import org.apache.jena.query.{QueryFactory, ResultSet}
+import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.{Lang, RDFDataMgr}
 import org.apache.jena.update.UpdateFactory
@@ -79,40 +79,28 @@ class SparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(im
     */
   def patch(graph: Uri, data: Json, strategy: PatchStrategy): F[Unit] = {
     toNTriples(data).flatMap { triples =>
-      val query = strategy match {
-        case RemovePredicates(predicates) =>
-          val remove = predicates.zipWithIndex.map({ case (p, i) => s"?s$i <$p> ?o$i ." }).mkString("\n")
-          s"""DELETE WHERE {
-             |  GRAPH <$graph> {
-             |    $remove
-             |  }
-             |};
-             |
-             |INSERT DATA {
-             |  GRAPH <$graph> {
-             |    $triples
-             |  }
-             |}""".stripMargin
-        case RemoveButPredicates(predicates) =>
-          val filterExpr = predicates.map(p => s"?p != <$p>").mkString(" && ")
-          s"""DELETE {
-             |  GRAPH <$graph> {
-             |    ?s ?p ?o .
-             |  }
-             |}
-             |WHERE {
-             |  GRAPH <$graph> {
-             |    ?s ?p ?o .
-             |    FILTER ( $filterExpr )
-             |  }
-             |};
-             |
-             |INSERT DATA {
-             |  GRAPH <$graph> {
-             |    $triples
-             |  }
-             |}""".stripMargin
+      val filterExpr = strategy match {
+        case RemovePredicates(predicates)    => predicates.map(p => s"?p = <$p>").mkString(" || ")
+        case RemoveButPredicates(predicates) => predicates.map(p => s"?p != <$p>").mkString(" && ")
       }
+      val query =
+        s"""DELETE {
+           |  GRAPH <$graph> {
+           |    ?s ?p ?o .
+           |  }
+           |}
+           |WHERE {
+           |  GRAPH <$graph> {
+           |    ?s ?p ?o .
+           |    FILTER ( $filterExpr )
+           |  }
+           |};
+           |
+           |INSERT DATA {
+           |  GRAPH <$graph> {
+           |    $triples
+           |  }
+           |}""".stripMargin
       executeUpdate(graph, query)
     }
   }
@@ -124,18 +112,16 @@ class SparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(im
     * @return the query result set
     */
   def query(query: String): F[ResultSet] = {
-    F.catchNonFatal(QueryFactory.create(query)).flatMap { q =>
-      val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
-      val formData = FormData("query" -> q.serialize())
-      val req      = Post(endpoint, formData).withHeaders(accept)
-      rs(addCredentials(req)).handleErrorWith {
-        case NonFatal(th) =>
-          log.error(s"""Unexpected Sparql response for sparql query:
-               |Request: '${req.method} ${req.uri}'
-               |Query: '$query'
-             """.stripMargin)
-          F.raiseError(th)
-      }
+    val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
+    val formData = FormData("query" -> query)
+    val req      = Post(endpoint, formData).withHeaders(accept)
+    rs(addCredentials(req)).handleErrorWith {
+      case NonFatal(th) =>
+        log.error(s"""Unexpected Sparql response for sparql query:
+             |Request: '${req.method} ${req.uri}'
+             |Query: '$query'
+           """.stripMargin)
+        F.raiseError(th)
     }
   }
 
