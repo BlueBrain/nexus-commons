@@ -26,13 +26,17 @@ class InMemorySparqlActor extends Actor with ActorLogging {
       }
       sender() ! UpdateResponse(result)
     case Query(query) =>
-      val q          = QueryFactory.create(query)
-      val qExecution = QueryExecutionFactory.create(q, dataset)
       val result = Try {
-        //https://jena.apache.org/documentation/query/app_api.html#passing-a-result-set-out-of-the-processing-loop
-        ResultSetFactory.copyResults(qExecution.execSelect())
+        val q = QueryFactory.create(query)
+        QueryExecutionFactory.create(q, dataset)
+      }.flatMap { qExecution =>
+        val rs = Try {
+          ResultSetFactory.copyResults(qExecution.execSelect())
+        }
+        qExecution.close()
+        rs
       }
-      qExecution.close()
+
       sender() ! QueryResponse(result)
   }
 }
