@@ -26,7 +26,7 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     cl: UntypedHttpClient[F],
     rs: HttpClient[F, ResultSet],
     ec: ExecutionContext)
-    extends SparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
+    extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
 
   private val log = Logger[this.type]
 
