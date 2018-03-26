@@ -17,6 +17,7 @@ import kamon.util.Registration
 import kamon.{Kamon, SpanReporter}
 import org.scalatest._
 import org.scalatest.concurrent.Eventually
+import scala.concurrent.duration._
 
 class TracingDirectivesSpec
     extends WordSpecLike
@@ -27,7 +28,8 @@ class TracingDirectivesSpec
     with BeforeAndAfterAll
     with OptionValues {
 
-  override def testConfig: Config = ConfigFactory.load("test-kamon.conf").withFallback(ConfigFactory.load())
+  override def testConfig: Config                      = ConfigFactory.load("test-kamon.conf").withFallback(ConfigFactory.load())
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 300 milliseconds)
 
   private var reporter: TestSpanReporter = _
   private var registration: Registration = _
