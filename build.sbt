@@ -31,6 +31,7 @@ lazy val jacksonDatabind    = "com.fasterxml.jackson.core"      % "jackson-datab
 
 lazy val akkaActor   = "com.typesafe.akka" %% "akka-actor"   % akkaVersion
 lazy val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion
+lazy val akkaSlf4j   = "com.typesafe.akka" %% "akka-slf4j"   % akkaVersion
 lazy val akkaStream  = "com.typesafe.akka" %% "akka-stream"  % akkaVersion
 
 lazy val akkaHttp        = "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion
@@ -122,7 +123,8 @@ lazy val elasticServerEmbed = project
       esTransportClient,
       log4jCore,
       log4jApi,
-      scalaTest
+      scalaTest,
+      akkaSlf4j % Test,
     )
   )
 
@@ -135,6 +137,7 @@ lazy val elasticClient = project
     libraryDependencies ++= Seq(
       akkaStream,
       circeCore,
+      akkaSlf4j          % Test,
       circeParser        % Test,
       circeGenericExtras % Test
     )
@@ -150,6 +153,7 @@ lazy val sparqlClient = project
       akkaStream,
       jenaArq,
       circeCore,
+      akkaSlf4j          % Test,
       circeParser        % Test,
       blazegraph         % Test,
       jacksonAnnotations % Test,
@@ -164,10 +168,16 @@ lazy val shaclValidator = project
   .in(file("modules/ld/shacl-validator"))
   .dependsOn(types)
   .settings(
-    name                := "shacl-validator",
-    moduleName          := "shacl-validator",
-    resolvers           += Resolver.bintrayRepo("bogdanromanx", "maven"),
-    libraryDependencies ++= Seq(journal, wesoSchema, catsCore, circeCore, circeParser % Test, scalaTest % Test)
+    name       := "shacl-validator",
+    moduleName := "shacl-validator",
+    resolvers  += Resolver.bintrayRepo("bogdanromanx", "maven"),
+    libraryDependencies ++= Seq(journal,
+                                wesoSchema,
+                                catsCore,
+                                circeCore,
+                                akkaSlf4j   % Test,
+                                circeParser % Test,
+                                scalaTest   % Test)
   )
 
 lazy val schemas = project
