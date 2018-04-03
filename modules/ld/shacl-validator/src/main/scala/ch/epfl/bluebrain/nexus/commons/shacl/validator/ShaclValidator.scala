@@ -14,7 +14,7 @@ import es.weso.shapeMaps._
 import io.circe.Json
 import journal.Logger
 import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.riot.{Lang, RDFDataMgr, RDFFormat}
+import org.apache.jena.riot.{Lang, RDFDataMgr}
 
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -31,9 +31,8 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
 
   private val logger = Logger[this.type]
 
-  private val jsonLdFormatName = RDFFormat.JSONLD.getLang.getName
-  private val schemaEngine     = ShaclexSchema.empty.name
-  private val triggerMode      = TargetDeclarations.name
+  private val schemaEngine = ShaclexSchema.empty.name
+  private val triggerMode  = TargetDeclarations.name
 
   /**
     * Validates ''data'' in its json representation against the specified ''schema''.  It produces a
@@ -43,7 +42,7 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
     * @param data   the data to be validated
     * @return a ''ValidationReport'' in the ''F[_]'' context
     */
-  def apply(schema: ShaclSchema, data: Json): F[ValidationReport] =
+  def apply(schema: ShaclSchema, data: Json*): F[ValidationReport] =
     loadData(data) product loadSchema(schema.value) flatMap {
       case (mod, sch) => validate(mod, sch)
     } recoverWith {
@@ -113,16 +112,22 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
       }
   }
 
-  private def loadData(data: Json): F[RDFAsJenaModel] = {
-    logger.debug("Loading data for validation")
-    RDFAsJenaModel.fromChars(data.noSpaces, jsonLdFormatName) match {
-      case Right(value) =>
+  private def loadData(data: Seq[Json]): F[RDFAsJenaModel] = {
+    Try {
+      logger.debug("Loading data for validation")
+      val model = ModelFactory.createDefaultModel()
+      data.foreach { e =>
+        RDFDataMgr.read(model, new ByteArrayInputStream(e.noSpaces.getBytes), Lang.JSONLD)
+      }
+      RDFAsJenaModel(model)
+    } match {
+      case Success(m) =>
         logger.debug("Data loaded successfully")
-        F.pure(value)
+        F.pure(m)
       // $COVERAGE-OFF$
-      case Left(message) =>
-        logger.debug(s"Failed to load schema '${data.spaces4}' for validation")
-        F.raiseError(FailedToLoadData(message))
+      case Failure(NonFatal(_)) =>
+        logger.debug("Failed to load data collection for validation")
+        F.raiseError(FailedToLoadData("Failed to load data collection for validation"))
       // $COVERAGE-ON$
     }
   }
