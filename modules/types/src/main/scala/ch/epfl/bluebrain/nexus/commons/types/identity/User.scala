@@ -1,6 +1,5 @@
-package ch.epfl.bluebrain.nexus.commons.iam.auth
+package ch.epfl.bluebrain.nexus.commons.types.identity
 
-import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -26,10 +25,7 @@ case object AnonymousUser extends User {
 
 object User {
 
-  import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
-
   implicit def userDecoder(implicit D: Decoder[Identity], C: Configuration): Decoder[User] = deriveDecoder[User]
-
   implicit def userEncoder(implicit E: Encoder[Identity], C: Configuration): Encoder[User] = deriveEncoder[User]
 
 }

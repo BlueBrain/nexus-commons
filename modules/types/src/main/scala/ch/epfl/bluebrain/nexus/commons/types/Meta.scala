@@ -1,8 +1,8 @@
-package ch.epfl.bluebrain.nexus.commons.iam.acls
+package ch.epfl.bluebrain.nexus.commons.types
 
 import java.time.Instant
 
-import ch.epfl.bluebrain.nexus.commons.iam.identity.Identity
+import ch.epfl.bluebrain.nexus.commons.types.identity.Identity
 
 /**
   * Type definition that aggregates ''author'' and ''timestamp'' as meta information for commands and events

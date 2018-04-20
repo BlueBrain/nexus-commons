@@ -1,16 +1,16 @@
 val wesoValidatorVersion = "0.0.65-nexus1"
-val jenaVersion          = "3.6.0"
+val jenaVersion          = "3.7.0"
 val blazegraphVersion    = "2.1.4"
 val jacksonVersion       = "2.9.5"
 val catsVersion          = "1.1.0"
-val circeVersion         = "0.9.2"
+val circeVersion         = "0.9.3"
 val scalaTestVersion     = "3.0.5"
 val shapelessVersion     = "2.3.3"
 val journalVersion       = "3.0.19"
-val akkaVersion          = "2.5.11"
+val akkaVersion          = "2.5.12"
 val akkaHttpVersion      = "10.0.13"
-val akkaHttpCirceVersion = "1.20.0"
-val elasticSearchVersion = "6.2.3"
+val akkaHttpCirceVersion = "1.20.1"
+val elasticSearchVersion = "6.2.4"
 val log4jVersion         = "2.11.0"
 val commonsIOVersion     = "1.3.2"
 
@@ -53,7 +53,7 @@ lazy val types = project
   .settings(
     name                := "commons-types",
     moduleName          := "commons-types",
-    libraryDependencies ++= Seq(catsCore, circeCore, scalaTest % Test)
+    libraryDependencies ++= Seq(catsCore, circeCore, circeGenericExtras, circeParser % Test, scalaTest % Test)
   )
 
 lazy val test = project
@@ -81,20 +81,6 @@ lazy val http = project
                                 akkaHttpTestKit    % Test,
                                 circeGenericExtras % Test,
                                 scalaTest          % Test)
-  )
-
-lazy val iam = project
-  .in(file("modules/iam"))
-  .dependsOn(http, test)
-  .settings(
-    name       := "iam",
-    moduleName := "iam",
-    libraryDependencies ++= Seq(akkaHttpCirce,
-                                circeGenericExtras,
-                                circeParser,
-                                circeJava8,
-                                akkaTestKit % Test,
-                                scalaTest   % Test)
   )
 
 lazy val queryTypes = project
@@ -191,16 +177,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types,
-             http,
-             test,
-             queryTypes,
-             elasticServerEmbed,
-             elasticClient,
-             sparqlClient,
-             shaclValidator,
-             iam,
-             schemas)
+  .aggregate(types, http, test, queryTypes, elasticServerEmbed, elasticClient, sparqlClient, shaclValidator, schemas)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 
