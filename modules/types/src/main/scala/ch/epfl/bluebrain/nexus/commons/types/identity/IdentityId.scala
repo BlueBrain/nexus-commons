@@ -16,9 +16,9 @@ object IdentityId {
   /**
     * The prefix of the identityId
     *
-    * @param value the value of the prefix
+    * @param prefix the value of the prefix
     */
-  final case class IdentityIdPrefix(value: String) {
+  final case class IdentityIdPrefix(prefix: String) {
 
     /**
       * Append a value to the prefix as a path
@@ -26,9 +26,11 @@ object IdentityId {
       * @param value the path value to append to the prefix
       */
     def appendAsPath(value: String): String =
-      if (this == IdentityIdPrefix.Empty) value
-      else if (value.endsWith("/") || value.startsWith("/")) s"$value$value"
-      else s"$value/$value"
+      this match {
+        case IdentityIdPrefix.Empty                              => value
+        case _ if prefix.endsWith("/") || prefix.startsWith("/") => s"$prefix$value"
+        case _                                                   => s"$prefix/$value"
+      }
   }
   object IdentityIdPrefix {
 
@@ -38,7 +40,7 @@ object IdentityId {
     val Empty: IdentityIdPrefix = IdentityIdPrefix("")
   }
 
-  final implicit val identityIdShow: Show[IdentityId] = Show.show { _.id }
+  final implicit val identityIdShow: Show[IdentityId] = Show.show(_.id)
 
   final implicit val identityIdEncoder: Encoder[IdentityId] = Encoder.encodeString.contramap(_.show)
   final implicit val identityIdDecider: Decoder[IdentityId] = Decoder.decodeString.map(IdentityId(_))
