@@ -1,6 +1,7 @@
-package ch.epfl.bluebrain.nexus.commons.iam.identity
+package ch.epfl.bluebrain.nexus.commons.types.identity
 
 import cats.Show
+import ch.epfl.bluebrain.nexus.commons.types.identity.IdentityId.IdentityIdPrefix
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
@@ -34,9 +35,8 @@ object Identity {
     *
     * @param id    the unique identity identifier
     */
-  final case class UserRef(id: IdentityId) extends Identity with Authenticated {
+  final case class UserRef private (id: IdentityId) extends Identity with Authenticated {
     private val regex: Regex = s"^.*realms/$allowedInput/users/$allowedInput".r
-    require(regex.findFirstIn(id.id).isDefined)
 
     /**
       * the authentication's realm name
@@ -61,8 +61,8 @@ object Identity {
       * @param realm the authentication's realm name
       * @param sub   the JWT ''sub'' field
       */
-    final def apply(realm: String, sub: String): UserRef =
-      UserRef(IdentityId(s"realms/$realm/users/$sub"))
+    final def apply(realm: String, sub: String)(implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty): UserRef =
+      UserRef(IdentityId(prefix.appendAsPath(s"realms/$realm/users/$sub")))
   }
 
   /**
@@ -70,9 +70,8 @@ object Identity {
     *
     * @param id    the unique identity identifier
     */
-  final case class GroupRef(id: IdentityId) extends Identity with Authenticated {
+  final case class GroupRef private (id: IdentityId) extends Identity with Authenticated {
     private val regex: Regex = s"^.*realms/$allowedInput/groups/$allowedInput".r
-    require(regex.findFirstIn(id.id).isDefined)
 
     /**
       * the authentication's realm name
@@ -98,8 +97,9 @@ object Identity {
       * @param realm the authentication's realm name
       * @param group the group name
       */
-    final def apply(realm: String, group: String): GroupRef =
-      GroupRef(IdentityId(s"realms/$realm/groups/$group"))
+    final def apply(realm: String, group: String)(
+        implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty): GroupRef =
+      GroupRef(IdentityId(prefix.appendAsPath(s"realms/$realm/groups/$group")))
   }
 
   /**
@@ -107,9 +107,8 @@ object Identity {
     *
     * @param id    the unique identity identifier
     */
-  final case class AuthenticatedRef(id: IdentityId) extends Identity with Authenticated {
+  final case class AuthenticatedRef private (id: IdentityId) extends Identity with Authenticated {
     private val regex: Regex = s"^.*realms/$allowedInput/$authenticatedKey".r
-    require(id.id.trim.endsWith(authenticatedKey))
 
     /**
       * the authentication's realm name
@@ -128,10 +127,10 @@ object Identity {
       *
       * @param realm the authentication's realm name
       */
-    final def apply(realm: Option[String]): AuthenticatedRef =
+    def apply(realm: Option[String])(implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty): AuthenticatedRef =
       realm match {
-        case Some(r) => AuthenticatedRef(IdentityId(s"realms/$r/$authenticatedKey"))
-        case None    => AuthenticatedRef(IdentityId(s"$authenticatedKey"))
+        case Some(r) => AuthenticatedRef(IdentityId(prefix.appendAsPath(s"realms/$r/$authenticatedKey")))
+        case None    => AuthenticatedRef(IdentityId(prefix.appendAsPath(s"$authenticatedKey")))
       }
 
   }
@@ -141,20 +140,18 @@ object Identity {
     *
     * @param id    the unique identity identifier
     */
-  final case class Anonymous(id: IdentityId) extends Identity {
-    require(id.id.trim.endsWith(anonymousKey))
-  }
+  final case class Anonymous private (id: IdentityId) extends Identity
 
   object Anonymous {
 
     /**
       * Constructs a ''Anonymous'' with the default ''IdentityId''
       */
-    final def apply(): Anonymous = Anonymous(IdentityId(s"$anonymousKey"))
+    final def apply()(implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty): Anonymous =
+      Anonymous(IdentityId(prefix.appendAsPath(anonymousKey)))
   }
 
-  implicit val identityShow: Show[Identity]       = Show.fromToString[Identity]
-  private implicit val config: Configuration      = Configuration.default.withDiscriminator("type")
-  implicit val identityEncoder: Encoder[Identity] = deriveEncoder[Identity]
-  implicit val identityDecoder: Decoder[Identity] = deriveDecoder[Identity]
+  implicit val identityShow: Show[Identity]                                  = Show.fromToString[Identity]
+  implicit def identityEncoder(implicit c: Configuration): Encoder[Identity] = deriveEncoder[Identity]
+  implicit def identityDecoder(implicit c: Configuration): Decoder[Identity] = deriveDecoder[Identity]
 }
