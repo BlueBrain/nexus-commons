@@ -1,5 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.types.identity
 
+import ch.epfl.bluebrain.nexus.commons.types.identity.IdentityId.IdentityIdPrefix
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -19,7 +20,8 @@ final case class AuthenticatedUser(identities: Set[Identity]) extends User
 /**
   * Singleton representing any unauthenticated user.
   */
-case object AnonymousUser extends User {
+@SuppressWarnings(Array("EmptyCaseClass"))
+final case class AnonymousUser()(implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty) extends User {
   override val identities = Set(Identity.Anonymous())
 }
 

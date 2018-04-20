@@ -147,7 +147,7 @@ object Identity {
     /**
       * Constructs a ''Anonymous'' with the default ''IdentityId''
       */
-    final def apply(implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty): Anonymous =
+    final def apply()(implicit prefix: IdentityIdPrefix = IdentityIdPrefix.Empty): Anonymous =
       Anonymous(IdentityId(prefix.appendAsPath(anonymousKey)))
   }
 
