@@ -6,6 +6,7 @@ import akka.http.scaladsl.model._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.{ApplicativeError, MonadError}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlClient._
 import io.circe.Json
 import org.apache.jena.graph.Graph
@@ -86,7 +87,23 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable]) {
     }
   }
 
-  def query(query: String): F[ResultSet]
+  /**
+    * @param q the query to execute
+    * @return the unmarshalled result set of the provided query executed against the sparql endpoint
+    */
+  def queryRs(q: String)(implicit rs: HttpClient[F, ResultSet]): F[ResultSet] =
+    query(q)(rs)
+
+  /**
+    * Executes the argument ''query'' against the underlying sparql endpoint.
+    *
+    * @param q the query to execute
+    * @return the raw result of the provided query executed against the sparql endpoint
+    */
+  def queryRaw(q: String)(implicit rs: HttpClient[F, Json]): F[Json] =
+    query(q)(rs)
+
+  def query[A](query: String)(implicit rs: HttpClient[F, A]): F[A]
 
   protected def executeUpdate(graph: Uri, query: String): F[Unit]
 

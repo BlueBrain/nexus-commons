@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 import java.net.InetSocketAddress
 import java.nio.channels.ServerSocketChannel
 import java.util.Properties
-import java.util.regex.Pattern
+import java.util.regex.Pattern.quote
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
@@ -15,6 +15,7 @@ import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientSpec._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
+import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.Json
 import io.circe.parser._
@@ -23,9 +24,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, EitherValues, Matchers, WordSpecLike}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.io.Source
+import scala.concurrent.{ExecutionContext, Future}
 
 //noinspection TypeAnnotation
 class BlazegraphClientSpec
@@ -100,6 +100,15 @@ class BlazegraphClientSpec
       cl.triples().map(_._3) should contain theSameElementsAs Set(label, value + "-updated")
     }
 
+    "return the JSON response from query" in new BlazegraphClientFixture {
+      val cl = client(namespace)
+      cl.createNamespace(properties).futureValue
+      cl.replace(graph, load(id, label, value)).futureValue
+      val expected = jsonContentOf("/sparql-json.json",
+                                   Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
+      cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue shouldEqual expected
+    }
+
     "patch a named graph removing matching predicates" in new BlazegraphClientFixture {
       val cl = client(namespace)
       cl.createNamespace(properties).futureValue
@@ -169,7 +178,7 @@ class BlazegraphClientSpec
 
   implicit class BlazegraphClientOps(cl: BlazegraphClient[Future])(implicit ec: ExecutionContext) {
     private def triplesFor(query: String) =
-      cl.query(query).map { rs =>
+      cl.queryRs(query).map { rs =>
         rs.asScala.toList.map { qs =>
           val obj = {
             val node = qs.get("?o")
@@ -198,14 +207,7 @@ object BlazegraphClientSpec {
   }
 
   private def load(id: String, label: String, value: String): Json =
-    parse(
-      Source
-        .fromInputStream(getClass.getResourceAsStream("/ld.json"))
-        .mkString
-        .replaceAll(Pattern.quote("{{ID}}"), id)
-        .replaceAll(Pattern.quote("{{LABEL}}"), label)
-        .replaceAll(Pattern.quote("{{VALUE}}"), value)
-    ).toTry.get
+    jsonContentOf("/ld.json", Map(quote("{{ID}}") -> id, quote("{{LABEL}}") -> label, quote("{{VALUE}}") -> value))
 
   private val properties: Map[String, String] = {
     val props = new Properties()
