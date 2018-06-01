@@ -10,7 +10,6 @@ import cats.syntax.flatMap._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
 import journal.Logger
-import org.apache.jena.query.ResultSet
 import org.apache.jena.update.UpdateFactory
 
 import scala.concurrent.ExecutionContext
@@ -24,19 +23,12 @@ import scala.util.control.NonFatal
   */
 class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
                                                                                   cl: UntypedHttpClient[F],
-                                                                                  rs: HttpClient[F, ResultSet],
                                                                                   ec: ExecutionContext)
     extends SparqlClient[F] {
 
   private val log = Logger[this.type]
 
-  /**
-    * Executes the argument ''query'' against the underlying sparql endpoint.
-    *
-    * @param query the query to execute
-    * @return the query result set
-    */
-  def query(query: String): F[ResultSet] = {
+  def query[A](query: String)(implicit rs: HttpClient[F, A]): F[A] = {
     val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
     val formData = FormData("query" -> query)
     val req      = Post(endpoint, formData).withHeaders(accept)
@@ -52,6 +44,7 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
 
   /**
     * Executes the argument update query against the underlying sparql endpoint
+    *
     * @param graph Graph targeted in the update
     * @param query the update query
     * @return successful Future[Unit] if update succeeded, failure otherwise
@@ -85,7 +78,6 @@ object HttpSparqlClient {
 
   def apply[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
                                                                        cl: UntypedHttpClient[F],
-                                                                       rs: HttpClient[F, ResultSet],
                                                                        ec: ExecutionContext): SparqlClient[F] =
     new HttpSparqlClient[F](endpoint, credentials)
 

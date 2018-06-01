@@ -131,7 +131,7 @@ lazy val elasticClient = project
 
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
-  .dependsOn(http, queryTypes)
+  .dependsOn(http, queryTypes, test % Test)
   .settings(
     name       := "sparql-client",
     moduleName := "sparql-client",

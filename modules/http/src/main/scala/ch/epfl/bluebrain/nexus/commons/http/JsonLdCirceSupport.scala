@@ -19,7 +19,7 @@ import scala.collection.immutable.Seq
 trait JsonLdCirceSupport extends FailFastCirceSupport {
 
   override def unmarshallerContentTypes: Seq[ContentTypeRange] =
-    List(`application/json`, RdfMediaTypes.`application/ld+json`)
+    List(`application/json`, RdfMediaTypes.`application/ld+json`, RdfMediaTypes.`application/sparql-results+json`)
 
   /**
     * `A` => HTTP entity
