@@ -88,21 +88,26 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable]) {
   }
 
   /**
-    * @param q the query to execute
+    * @param q the query to execute against the sparql endpoint
     * @return the unmarshalled result set of the provided query executed against the sparql endpoint
     */
   def queryRs(q: String)(implicit rs: HttpClient[F, ResultSet]): F[ResultSet] =
     query(q)(rs)
 
   /**
-    * Executes the argument ''query'' against the underlying sparql endpoint.
-    *
-    * @param q the query to execute
+    * @param q the query to execute against the sparql endpoint
     * @return the raw result of the provided query executed against the sparql endpoint
     */
   def queryRaw(q: String)(implicit rs: HttpClient[F, Json]): F[Json] =
     query(q)(rs)
 
+  /**
+    *
+    * @param query the query to execute against the sparql endpoint
+    * @param rs the implicitly available httpclient used to unmarshall the response
+    * @tparam A the generic type of the unmarshalled response
+    * @return the unmarshalled result ''A'' of the provided query executed against the sparql endpoint
+    */
   def query[A](query: String)(implicit rs: HttpClient[F, A]): F[A]
 
   protected def executeUpdate(graph: Uri, query: String): F[Unit]

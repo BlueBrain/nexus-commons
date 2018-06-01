@@ -28,12 +28,6 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
 
   private val log = Logger[this.type]
 
-  /**
-    * Executes the argument ''query'' against the underlying sparql endpoint.
-    *
-    * @param query the query to execute
-    * @return the query result set
-    */
   def query[A](query: String)(implicit rs: HttpClient[F, A]): F[A] = {
     val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
     val formData = FormData("query" -> query)
