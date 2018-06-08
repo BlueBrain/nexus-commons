@@ -28,7 +28,7 @@ class SingletonStreamCoordinator[A: Typeable, E](init: () => Future[A], source: 
   private implicit val mt: ActorMaterializer = ActorMaterializer()
 
   private def initialize(): Unit = {
-    val _ = init().map(Start) pipeTo self
+    val _ = init().map(Start).recover { case _ => initialize() } pipeTo self
   }
 
   override def preStart(): Unit = {
