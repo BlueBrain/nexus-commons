@@ -9,10 +9,11 @@ val shapelessVersion     = "2.3.3"
 val journalVersion       = "3.0.19"
 val akkaVersion          = "2.5.12"
 val akkaHttpVersion      = "10.0.13"
-val akkaHttpCirceVersion = "1.20.1"
+val akkaHttpCirceVersion = "1.21.1"
 val elasticSearchVersion = "6.2.4"
 val log4jVersion         = "2.11.0"
 val commonsIOVersion     = "1.3.2"
+val rdfVersion           = "0.2.0"
 
 lazy val catsCore           = "org.typelevel"                   %% "cats-core"            % catsVersion
 lazy val circeCore          = "io.circe"                        %% "circe-core"           % circeVersion
@@ -47,6 +48,7 @@ lazy val esReindex         = "org.codelibs.elasticsearch.module" % "reindex"    
 lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearch-rest-client" % elasticSearchVersion
 lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
 lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
+lazy val rdfJena           = "ch.epfl.bluebrain.nexus"           %% "rdf-jena"                 % rdfVersion
 
 lazy val types = project
   .in(file("modules/types"))
@@ -137,8 +139,9 @@ lazy val sparqlClient = project
     moduleName := "sparql-client",
     libraryDependencies ++= Seq(
       akkaStream,
-      jenaArq,
       circeCore,
+      jenaArq,
+      rdfJena,
       akkaSlf4j          % Test,
       circeParser        % Test,
       blazegraph         % Test,

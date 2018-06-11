@@ -4,14 +4,15 @@ import java.io.{ByteArrayInputStream, StringWriter}
 
 import akka.http.scaladsl.model._
 import cats.syntax.flatMap._
-import cats.syntax.functor._
 import cats.{ApplicativeError, MonadError}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlClient._
+import ch.epfl.bluebrain.nexus.rdf
+import ch.epfl.bluebrain.nexus.rdf.syntax.jena._
 import io.circe.Json
 import org.apache.jena.graph.Graph
 import org.apache.jena.query.ResultSet
-import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.{Model, ModelFactory}
 import org.apache.jena.riot.{Lang, RDFDataMgr}
 
 /**
@@ -22,32 +23,45 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable]) {
   /**
     * Drops the graph identified by the argument URI from the store.
     *
-    * @param graph the graph to drop
+    * @param uri the graph to drop
     */
-  def drop(graph: Uri): F[Unit] = {
-    val query = s"DROP GRAPH <$graph>"
-    executeUpdate(graph, query)
+  def drop(uri: Uri): F[Unit] = {
+    val query = s"DROP GRAPH <$uri>"
+    executeUpdate(uri, query)
   }
 
   /**
     * Removes all triples from the graph identified by the argument URI and stores the triples in the data argument in
     * the same graph.
     *
-    * @param graph the target graph
-    * @param data  the new graph content
+    * @param uri  the target graph
+    * @param data the new graph content
     */
-  def replace(graph: Uri, data: Json): F[Unit] = {
-    toNTriples(data).flatMap { triples =>
-      val query =
-        s"""DROP GRAPH <$graph>;
+  def replace(uri: Uri, data: Json): F[Unit] =
+    graphOf(data).flatMap(replace(uri, _))
+
+  /**
+    * Removes all triples from the graph identified by the argument URI and stores the triples in the data argument in
+    * the same graph.
+    *
+    * @param uri  the target graph
+    * @param data the new graph content
+    */
+  def replace(uri: Uri, data: rdf.Graph): F[Unit] = {
+    val model: Model = data
+    replace(uri, model.getGraph)
+  }
+
+  private def replace(uri: Uri, graph: Graph): F[Unit] = {
+    val query =
+      s"""DROP GRAPH <$uri>;
            |
            |INSERT DATA {
-           |  GRAPH <$graph> {
-           |    $triples
+           |  GRAPH <$uri> {
+           |    ${toNTriples(graph)}
            |  }
            |}""".stripMargin
-      executeUpdate(graph, query)
-    }
+    executeUpdate(uri, query)
   }
 
   /**
@@ -55,36 +69,51 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable]) {
     * argument.
     *
     * @see [[ch.epfl.bluebrain.nexus.commons.sparql.client.PatchStrategy]]
-    * @param graph    the target graph
+    * @param uri    the target graph
     * @param data     the additional graph content
     * @param strategy the patch strategy
     */
-  def patch(graph: Uri, data: Json, strategy: PatchStrategy): F[Unit] = {
-    toNTriples(data).flatMap { triples =>
-      val filterExpr = strategy match {
-        case RemovePredicates(predicates)    => predicates.map(p => s"?p = <$p>").mkString(" || ")
-        case RemoveButPredicates(predicates) => predicates.map(p => s"?p != <$p>").mkString(" && ")
-      }
-      val query =
-        s"""DELETE {
-           |  GRAPH <$graph> {
+  def patch(uri: Uri, data: rdf.Graph, strategy: PatchStrategy): F[Unit] = {
+    val model: Model = data
+    patch(uri, model.getGraph, strategy)
+  }
+
+  /**
+    * Patches the graph by selecting a collection of triples to remove or retain and inserting the triples in the data
+    * argument.
+    *
+    * @see [[ch.epfl.bluebrain.nexus.commons.sparql.client.PatchStrategy]]
+    * @param uri    the target graph
+    * @param data     the additional graph content
+    * @param strategy the patch strategy
+    */
+  def patch(uri: Uri, data: Json, strategy: PatchStrategy): F[Unit] =
+    graphOf(data).flatMap(patch(uri, _, strategy))
+
+  private def patch(uri: Uri, data: Graph, strategy: PatchStrategy): F[Unit] = {
+    val filterExpr = strategy match {
+      case RemovePredicates(predicates)    => predicates.map(p => s"?p = <$p>").mkString(" || ")
+      case RemoveButPredicates(predicates) => predicates.map(p => s"?p != <$p>").mkString(" && ")
+    }
+    val query =
+      s"""DELETE {
+           |  GRAPH <$uri> {
            |    ?s ?p ?o .
            |  }
            |}
            |WHERE {
-           |  GRAPH <$graph> {
+           |  GRAPH <$uri> {
            |    ?s ?p ?o .
            |    FILTER ( $filterExpr )
            |  }
            |};
            |
            |INSERT DATA {
-           |  GRAPH <$graph> {
-           |    $triples
+           |  GRAPH <$uri> {
+           |    ${toNTriples(data)}
            |  }
            |}""".stripMargin
-      executeUpdate(graph, query)
-    }
+    executeUpdate(uri, query)
   }
 
   /**
@@ -128,7 +157,4 @@ object SparqlClient {
     RDFDataMgr.write(writer, graph, Lang.NTRIPLES)
     writer.toString
   }
-
-  private[client] def toNTriples[F[_]](json: Json)(implicit F: ApplicativeError[F, Throwable]): F[String] =
-    graphOf(json).map(toNTriples)
 }
