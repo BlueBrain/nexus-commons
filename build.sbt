@@ -14,6 +14,7 @@ val elasticSearchVersion = "6.3.0"
 val log4jVersion         = "2.11.0"
 val commonsIOVersion     = "1.3.2"
 val rdfVersion           = "0.2.0"
+val monixVersion         = "3.0.0-RC1"
 
 lazy val catsCore           = "org.typelevel"                   %% "cats-core"            % catsVersion
 lazy val circeCore          = "io.circe"                        %% "circe-core"           % circeVersion
@@ -48,6 +49,7 @@ lazy val esReindex         = "org.codelibs.elasticsearch.module" % "reindex"    
 lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearch-rest-client" % elasticSearchVersion
 lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
 lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
+lazy val monixTail         = "io.monix"                          %% "monix-tail"               % monixVersion
 lazy val rdfJena           = "ch.epfl.bluebrain.nexus"           %% "rdf-jena"                 % rdfVersion
 
 lazy val types = project
@@ -76,10 +78,11 @@ lazy val http = project
     moduleName := "commons-http",
     libraryDependencies ++= Seq(shapeless,
                                 akkaHttp,
+                                akkaHttpCirce,
                                 catsCore,
                                 circeCore,
-                                akkaHttpCirce,
                                 journal,
+                                monixTail,
                                 akkaHttpTestKit    % Test,
                                 circeGenericExtras % Test,
                                 scalaTest          % Test)
