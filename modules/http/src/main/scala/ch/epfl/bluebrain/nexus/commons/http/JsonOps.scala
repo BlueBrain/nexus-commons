@@ -92,17 +92,17 @@ object JsonOps {
     def contextValue: Json = json.hcursor.get[Json]("@context").getOrElse(Json.obj())
 
     /**
-      * @param other the other context from where to merge this context with
-      * @return a new Json with the values of the top ''@context'' key (this) and the provided ''other'' top ''@context'' key
+      * @param that the other context from where to merge this context with
+      * @return a new Json with the values of the top ''@context'' key (this) and the provided ''that'' top ''@context'' key
       *         If two keys inside both contexts collide, the one in the ''other'' context will override the one in this context
       */
-    def mergeContext(other: Json): Json =
-      Json.obj("@context" -> (contextValue deepMerge other.contextValue))
+    def mergeContext(that: Json): Json =
+      Json.obj("@context" -> (contextValue deepMerge that.contextValue))
 
     /**
-      * @param other the context to append to this json
-      * @return a new Json with the original context plus the context on the provided (''other'') json
+      * @param that the context to append to this json
+      * @return a new Json with the original context plus the context on the provided (''that'') json
       */
-    def appendContext(other: Json): Json = json deepMerge mergeContext(other)
+    def appendContextOf(that: Json): Json = json deepMerge mergeContext(that)
   }
 }

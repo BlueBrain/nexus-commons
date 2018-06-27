@@ -215,7 +215,7 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
         val context2 = jsonContentOf("/context/context2.json")
         val json2    = context2 deepMerge Json.obj("three" -> Json.fromInt(3), "four" -> Json.fromInt(4))
 
-        json appendContext json2 shouldEqual (jsonContentOf("/context/context_merged.json") deepMerge Json.obj(
+        json appendContextOf json2 shouldEqual (jsonContentOf("/context/context_merged.json") deepMerge Json.obj(
           "one" -> Json.fromInt(1),
           "two" -> Json.fromInt(2)))
       }
