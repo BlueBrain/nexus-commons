@@ -173,7 +173,7 @@ object HttpClient {
     }
 
   /**
-    * Constructs a typed ''HttpClient[Task, A]'' from an ''UntypedHttpClient[Future]'' by attempting to unmarshal the
+    * Constructs a typed ''HttpClient[Task, A]'' from an ''UntypedHttpClient[Task]'' by attempting to unmarshal the
     * response entity into the specific type ''A'' using an implicit ''FromEntityUnmarshaller[A]''.
     *
     * Delegates all calls to the underlying untyped http client.
@@ -185,19 +185,29 @@ object HttpClient {
   final implicit def withTaskUnmarshaller[A: ClassTag](implicit
                                                        ec: ExecutionContext,
                                                        mt: Materializer,
-                                                       cl: UntypedHttpClient[Future],
+                                                       cl: UntypedHttpClient[Task],
                                                        um: FromEntityUnmarshaller[A]): HttpClient[Task, A] = {
     new HttpClient[Task, A] {
-      private val underlying = withAkkaUnmarshaller
+
+      private val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
 
       override def apply(req: HttpRequest): Task[A] =
-        Task.deferFuture(underlying(req))
+        cl(req).flatMap { resp =>
+          if (resp.status.isSuccess()) Task.deferFuture(um(resp.entity))
+          else {
+            log.error(s"Unsuccessful HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+            discardBytes(resp.entity).flatMap { _ =>
+              log.debug(s"Discarded response bytes for request '${req.uri}'")
+              Task.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+            }
+          }
+        }
 
       override def discardBytes(entity: HttpEntity): Task[DiscardedEntity] =
-        Task.deferFuture(underlying.discardBytes(entity))
+        cl.discardBytes(entity)
 
       override def toString(entity: HttpEntity): Task[String] =
-        Task.deferFuture(underlying.toString(entity))
+        cl.toString(entity)
     }
   }
   // $COVERAGE-ON$
