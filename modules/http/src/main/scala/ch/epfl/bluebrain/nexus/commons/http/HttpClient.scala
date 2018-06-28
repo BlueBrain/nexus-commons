@@ -11,6 +11,7 @@ import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import journal.Logger
+import monix.eval.Task
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -107,6 +108,29 @@ object HttpClient {
     }
 
   /**
+    * Constructs an [[ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient]] of a [[Task]]
+    * instance using an underlying akka http client.
+    *
+    * @param as an implicit actor system
+    * @param mt an implicit materializer
+    * @return an untyped http client based on akka http transport wrapped in a [[Task]]
+    */
+  final def taskHttpClient(implicit as: ActorSystem, mt: Materializer): UntypedHttpClient[Task] = {
+    val underlying = akkaHttpClient
+
+    new HttpClient[Task, HttpResponse] {
+      override def apply(req: HttpRequest): Task[HttpResponse] =
+        Task.deferFuture(underlying(req))
+
+      override def discardBytes(entity: HttpEntity): Task[DiscardedEntity] =
+        Task.deferFuture(underlying.discardBytes(entity))
+
+      override def toString(entity: HttpEntity): Task[String] =
+        Task.deferFuture(underlying.toString(entity))
+    }
+  }
+
+  /**
     * Constructs a typed ''HttpClient[Future, A]'' from an ''UntypedHttpClient[Future]'' by attempting to unmarshal the
     * response entity into the specific type ''A'' using an implicit ''FromEntityUnmarshaller[A]''.
     *
@@ -147,5 +171,44 @@ object HttpClient {
       override def toString(entity: HttpEntity): Future[String] =
         cl.toString(entity)
     }
+
+  /**
+    * Constructs a typed ''HttpClient[Task, A]'' from an ''UntypedHttpClient[Task]'' by attempting to unmarshal the
+    * response entity into the specific type ''A'' using an implicit ''FromEntityUnmarshaller[A]''.
+    *
+    * Delegates all calls to the underlying untyped http client.
+    *
+    * If the response status is not successful, the entity bytes will be discarded instead.
+    *
+    * @tparam A the specific type to which the response entity should be unmarshalled into
+    */
+  final implicit def withTaskUnmarshaller[A: ClassTag](implicit
+                                                       ec: ExecutionContext,
+                                                       mt: Materializer,
+                                                       cl: UntypedHttpClient[Task],
+                                                       um: FromEntityUnmarshaller[A]): HttpClient[Task, A] = {
+    new HttpClient[Task, A] {
+
+      private val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
+
+      override def apply(req: HttpRequest): Task[A] =
+        cl(req).flatMap { resp =>
+          if (resp.status.isSuccess()) Task.deferFuture(um(resp.entity))
+          else {
+            log.error(s"Unsuccessful HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+            discardBytes(resp.entity).flatMap { _ =>
+              log.debug(s"Discarded response bytes for request '${req.uri}'")
+              Task.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+            }
+          }
+        }
+
+      override def discardBytes(entity: HttpEntity): Task[DiscardedEntity] =
+        cl.discardBytes(entity)
+
+      override def toString(entity: HttpEntity): Task[String] =
+        cl.toString(entity)
+    }
+  }
   // $COVERAGE-ON$
 }
