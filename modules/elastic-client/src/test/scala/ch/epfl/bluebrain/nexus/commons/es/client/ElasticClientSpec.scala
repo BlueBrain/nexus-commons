@@ -33,8 +33,7 @@ class ElasticClientSpec
   "An ElasticClient" should {
     implicit val ec: ExecutionContext          = system.dispatcher
     implicit val ul: UntypedHttpClient[Future] = akkaHttpClient
-    val queryCl: ElasticQueryClient[Future]    = ElasticQueryClient[Future](esUri)
-    val cl: ElasticClient[Future]              = ElasticClient[Future](esUri, queryCl)
+    val cl: ElasticClient[Future]              = ElasticClient[Future](esUri)
     val t                                      = "doc"
     def indexPayload                           = jsonContentOf("/index_payload.json")
     def genJson(k: String, k2: String): Json =
