@@ -18,7 +18,9 @@ import org.apache.jena.riot.{Lang, RDFDataMgr}
 /**
   * Base sparql client implementing basic SPARQL query execution logic
   */
-abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable]) {
+abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable],
+                                    rsJson: HttpClient[F, Json],
+                                    rsSet: HttpClient[F, ResultSet]) {
 
   /**
     * Drops the graph identified by the argument URI from the store.
@@ -120,15 +122,15 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable]) {
     * @param q the query to execute against the sparql endpoint
     * @return the unmarshalled result set of the provided query executed against the sparql endpoint
     */
-  def queryRs(q: String)(implicit rs: HttpClient[F, ResultSet]): F[ResultSet] =
-    query(q)(rs)
+  def queryRs(q: String): F[ResultSet] =
+    query(q)(rsSet)
 
   /**
     * @param q the query to execute against the sparql endpoint
     * @return the raw result of the provided query executed against the sparql endpoint
     */
-  def queryRaw(q: String)(implicit rs: HttpClient[F, Json]): F[Json] =
-    query(q)(rs)
+  def queryRaw(q: String): F[Json] =
+    query(q)(rsJson)
 
   /**
     *

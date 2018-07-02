@@ -187,13 +187,12 @@ object ElasticClient {
     * Construct a [[ElasticClient]] from the provided ''base'' uri and the provided query client
     *
     * @param base        the base uri of the ElasticSearch endpoint
-    * @param queryClient the query client
     * @tparam F the monadic effect type
     */
-  final def apply[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implicit
-                                                                       cl: UntypedHttpClient[F],
-                                                                       ec: ExecutionContext,
-                                                                       F: MonadError[F, Throwable]): ElasticClient[F] =
-    new ElasticClient(base, queryClient)
+  final def apply[F[_]](base: Uri)(implicit
+                                   cl: UntypedHttpClient[F],
+                                   ec: ExecutionContext,
+                                   F: MonadError[F, Throwable]): ElasticClient[F] =
+    new ElasticClient(base, ElasticQueryClient(base))
 
 }

@@ -79,7 +79,7 @@ class BlazegraphClientSpec
       val cl = client(namespace)
       cl.createNamespace(properties).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
-      cl.triples(graph) should have size 2
+      cl.copy(namespace = namespace).triples(graph) should have size 2
       cl.triples() should have size 2
     }
 
