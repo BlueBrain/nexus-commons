@@ -33,6 +33,17 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
   private val log = Logger[this.type]
 
   /**
+    * @param base        the base uri of the blazegraph endpoint
+    * @param namespace   the namespace that this client targets
+    * @param credentials the credentials to use when communicating with the sparql endpoint
+    * @return a new [[BlazegraphClient]] with the provided parameters
+    */
+  def copy(base: Uri = this.base,
+           namespace: String = this.namespace,
+           credentials: Option[HttpCredentials] = this.credentials): BlazegraphClient[F] =
+    new BlazegraphClient[F](base, namespace, credentials)
+
+  /**
     * Check whether the target namespace exists.
     */
   def namespaceExists: F[Boolean] = {
