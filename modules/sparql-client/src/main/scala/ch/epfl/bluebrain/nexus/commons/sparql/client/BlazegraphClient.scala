@@ -6,8 +6,11 @@ import akka.http.scaladsl.model.{HttpEntity, StatusCodes, Uri}
 import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
+import io.circe.Json
 import journal.Logger
+import org.apache.jena.query.ResultSet
 
 import scala.concurrent.ExecutionContext
 
@@ -22,6 +25,8 @@ import scala.concurrent.ExecutionContext
 class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
     implicit F: MonadError[F, Throwable],
     cl: UntypedHttpClient[F],
+    rsJson: HttpClient[F, Json],
+    rsSet: HttpClient[F, ResultSet],
     ec: ExecutionContext)
     extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
 
@@ -77,6 +82,8 @@ object BlazegraphClient {
   def apply[F[_]](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
       implicit F: MonadError[F, Throwable],
       cl: UntypedHttpClient[F],
+      rsJson: HttpClient[F, Json],
+      rsSet: HttpClient[F, ResultSet],
       ec: ExecutionContext): BlazegraphClient[F] =
     new BlazegraphClient[F](base, namespace, credentials)
 }
