@@ -4,9 +4,9 @@ import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.{ContentTypeRange, HttpEntity}
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
+import ch.epfl.bluebrain.nexus.commons.http.syntax.circe._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Encoder, Json, Printer}
-import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
 
 import scala.collection.immutable.Seq
 
