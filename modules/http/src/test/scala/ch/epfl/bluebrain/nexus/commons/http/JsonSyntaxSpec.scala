@@ -2,9 +2,10 @@ package ch.epfl.bluebrain.nexus.commons.http
 
 import akka.http.scaladsl.server.Directives.{complete, get}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
-import ch.epfl.bluebrain.nexus.commons.http.JsonOps._
-import ch.epfl.bluebrain.nexus.commons.http.JsonOpsSpec._
+import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
+import ch.epfl.bluebrain.nexus.commons.http.JsonSyntaxSpec._
+import ch.epfl.bluebrain.nexus.commons.http.syntax.circe._
+import ch.epfl.bluebrain.nexus.commons.http.syntax.circe.marshalling._
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import io.circe.Json
 import io.circe.generic.extras.Configuration
@@ -13,9 +14,9 @@ import org.scalatest.{Inspectors, Matchers, WordSpecLike}
 
 import scala.collection.mutable.LinkedHashSet
 
-class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
+class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
 
-  "A JsonOps" when {
+  "An enriched Json" when {
     implicit val config: Configuration = Configuration.default.withDiscriminator("@type")
     implicit val context: ContextUri   = ContextUri("https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0")
 
@@ -190,40 +191,11 @@ class JsonOpsSpec extends WordSpecLike with Matchers with Resources with Inspect
             in.addContext(context) shouldEqual in.addContext(context).addContext(context)
         }
       }
-
-      "extract context" in {
-        val context1          = jsonContentOf("/context/context1.json")
-        val context1Extracted = jsonContentOf("/context/context1_extracted.json")
-
-        context1.contextValue shouldEqual context1Extracted
-      }
-
-      "extract empty json when @context key missing" in {
-        Json.obj("one" -> Json.fromInt(1)).contextValue shouldEqual Json.obj()
-      }
-
-      "merge two contexts" in {
-        val context1 = jsonContentOf("/context/context1.json")
-        val context2 = jsonContentOf("/context/context2.json")
-
-        context1 mergeContext context2 shouldEqual jsonContentOf("/context/context_merged.json")
-      }
-
-      "append context" in {
-        val context1 = jsonContentOf("/context/context1.json")
-        val json     = context1 deepMerge Json.obj("one" -> Json.fromInt(1), "two" -> Json.fromInt(2))
-        val context2 = jsonContentOf("/context/context2.json")
-        val json2    = context2 deepMerge Json.obj("three" -> Json.fromInt(3), "four" -> Json.fromInt(4))
-
-        json appendContextOf json2 shouldEqual (jsonContentOf("/context/context_merged.json") deepMerge Json.obj(
-          "one" -> Json.fromInt(1),
-          "two" -> Json.fromInt(2)))
-      }
     }
   }
 }
 
-object JsonOpsSpec {
+object JsonSyntaxSpec {
   final case class KgResponse(c: String,
                               `nxv:published`: Boolean,
                               `nxv:rev`: Long,
