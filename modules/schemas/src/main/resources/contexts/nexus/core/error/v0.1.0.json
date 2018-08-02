@@ -3,7 +3,7 @@
     "{{base}}/contexts/nexus/core/standards/v0.1.0",
     {
       "code": {
-        "@code": "nxv:code"
+        "@id": "nxv:code"
       },
       "details": {
         "@id": "nxv:details"
