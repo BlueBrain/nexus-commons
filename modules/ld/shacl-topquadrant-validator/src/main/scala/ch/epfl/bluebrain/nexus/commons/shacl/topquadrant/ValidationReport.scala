@@ -22,14 +22,18 @@ import scala.util.{Success, Try}
   * Data type that represents the outcome of validating data against a shacl schema.
   *
   * @param conforms      true if the validation was successful and false otherwise
+  * @param targetedNodes the number of target nodes that were touched per shape
   * @param json          the detailed message of the validator
   */
 final case class ValidationReport(conforms: Boolean, targetedNodes: Int, json: Json) {
 
   /**
+    * @param ignoreTargetedNodes flag to decide whether or not ''targetedNodes''
+    *                         should be ignored from the validation logic
     * @return true if the validation report has been successful or false otherwise
     */
-  def isValid: Boolean = targetedNodes > 0 && conforms
+  def isValid(ignoreTargetedNodes: Boolean = false): Boolean =
+    (ignoreTargetedNodes && conforms) || (!ignoreTargetedNodes && targetedNodes > 0 && conforms)
 }
 
 object ValidationReport {
@@ -42,13 +46,12 @@ object ValidationReport {
           val report = for {
             conforms <- graph.cursor(iri).downField(sh.conforms).focus.as[Boolean].left.map(_.message)
             targeted <- graph.cursor(iri).downField(nxsh.targetedNodes).focus.as[Int].left.map(_.message)
-            json     <- graph.asJson(shaclCtx, Some(iri)).toEither.left.map(_.getMessage)
+            json     <- graph.asJson(shaclCtx, Some(iri)).toEither.left.map(e => Try(e.getMessage).getOrElse(""))
           } yield ValidationReport(conforms, targeted, json.removeKeys("@context", "@id").addContext(shaclCtxUri))
           report match {
-            case Left(err) if err != null =>
-              logger.error(s"The json could not be formed from the report due to '${err}'")
+            case Left(err) =>
+              logger.error(s"The json could not be formed from the report '$err'")
               None
-            case Left(_)  => None
             case Right(v) => Some(v)
           }
         }

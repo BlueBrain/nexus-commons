@@ -33,7 +33,7 @@ class ValidationReportSpec
       val report = ValidationReport(resource(failed deepMerge ctx)).value
       report.conforms shouldEqual false
       report.targetedNodes shouldEqual 1
-      report.isValid shouldEqual false
+      report.isValid() shouldEqual false
       val array = report.json.hcursor.downField("result").downField("detail").focus.flatMap(_.asArray).value
       array.map(_.hcursor.get[String]("resultMessage").right.value).sorted shouldEqual Vector(
         "Focus node has 2^^http://www.w3.org/2001/XMLSchema#integer of the shapes from the 'exactly one' list",

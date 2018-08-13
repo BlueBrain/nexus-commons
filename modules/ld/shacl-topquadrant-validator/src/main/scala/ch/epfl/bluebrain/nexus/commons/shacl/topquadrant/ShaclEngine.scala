@@ -6,8 +6,9 @@ import java.util.UUID
 
 import ch.epfl.bluebrain.nexus.commons.shacl.topquadrant.Vocabulary._
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
+import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
 import org.apache.jena.query.Dataset
-import org.apache.jena.rdf.model.{Model, ModelFactory, RDFNode}
+import org.apache.jena.rdf.model._
 import org.apache.jena.riot.system.StreamRDFLib
 import org.apache.jena.riot.{Lang, RDFParser}
 import org.topbraid.jenax.util.{ARQFactory, JenaDatatypes}
@@ -30,7 +31,6 @@ import scala.util.Try
 final class ShaclEngine private (dataset: Dataset, shapesGraphURI: URI, shapesGraph: ShapesGraph)
     extends ValidationEngine(dataset, shapesGraphURI, shapesGraph, null) {
   private var targetedNodes = 0
-  //FunctionRegistry.get.put("http://spinrdf.org/spif#isValidForDatatype", classOf[IsValidCastingForDatatypeFunction])
 
   override def validateNodesAgainstConstraint(focusNodes: util.List[RDFNode], constraint: Constraint): Unit = {
     super.validateNodesAgainstConstraint(focusNodes, constraint)
@@ -39,8 +39,11 @@ final class ShaclEngine private (dataset: Dataset, shapesGraphURI: URI, shapesGr
 
   override def validateAll() = {
     val r = super.validateAll()
-    if (r != null) r.addLiteral(nxsh.targetedNodes, JenaDatatypes.createInteger(targetedNodes)) else r
+    if (r != null) r.addLiteral(toProperty(nxsh.targetedNodes), JenaDatatypes.createInteger(targetedNodes)) else r
   }
+
+  private def toProperty(iriNode: IriNode): Property =
+    ResourceFactory.createProperty(iriNode.value.asString)
 }
 
 object ShaclEngine {

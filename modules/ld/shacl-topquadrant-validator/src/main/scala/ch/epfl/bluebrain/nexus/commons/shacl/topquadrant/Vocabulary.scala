@@ -1,8 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.shacl.topquadrant
 
-import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
 import ch.epfl.bluebrain.nexus.rdf.syntax.node.unsafe._
-import org.apache.jena.rdf.model.{Property, ResourceFactory}
 
 object Vocabulary {
 
@@ -22,8 +20,4 @@ object Vocabulary {
     val base          = "https://bluebrain.github.io/nexus/vocabulary/shacl/"
     val targetedNodes = url"${base}targetedNodes"
   }
-
-  private[topquadrant] implicit def toProperty(iriNode: IriNode): Property =
-    ResourceFactory.createProperty(iriNode.value.asString)
-
 }
