@@ -12,7 +12,7 @@ import ch.epfl.bluebrain.nexus.rdf.syntax.jena._
 import io.circe.Json
 import org.apache.jena.graph.Graph
 import org.apache.jena.query.ResultSet
-import org.apache.jena.rdf.model.{Model, ModelFactory}
+import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.{Lang, RDFDataMgr}
 
 /**
@@ -50,8 +50,7 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable],
     * @param data the new graph content
     */
   def replace(uri: Uri, data: rdf.Graph): F[Unit] = {
-    val model: Model = data
-    replace(uri, model.getGraph)
+    replace(uri, data.asJenaModel.getGraph)
   }
 
   private def replace(uri: Uri, graph: Graph): F[Unit] = {
@@ -76,8 +75,7 @@ abstract class SparqlClient[F[_]]()(implicit F: MonadError[F, Throwable],
     * @param strategy the patch strategy
     */
   def patch(uri: Uri, data: rdf.Graph, strategy: PatchStrategy): F[Unit] = {
-    val model: Model = data
-    patch(uri, model.getGraph, strategy)
+    patch(uri, data.asJenaModel.getGraph, strategy)
   }
 
   /**
