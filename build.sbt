@@ -13,7 +13,7 @@ val akkaHttpCirceVersion = "1.21.0"
 val elasticSearchVersion = "6.3.2"
 val log4jVersion         = "2.11.1"
 val commonsIOVersion     = "1.3.2"
-val rdfVersion           = "0.2.16"
+val rdfVersion           = "0.2.17"
 val monixVersion         = "3.0.0-RC1"
 val topQuadrantVersion   = "1.2.0-nexus2"
 

@@ -3,7 +3,6 @@ package ch.epfl.bluebrain.nexus.commons.shacl.topquadrant
 import ch.epfl.bluebrain.nexus.commons.http.syntax.circe._
 import ch.epfl.bluebrain.nexus.commons.shacl.topquadrant.Vocabulary._
 import ch.epfl.bluebrain.nexus.commons.test.Resources.jsonContentOf
-import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Graph._
 import ch.epfl.bluebrain.nexus.rdf.Iri.AbsoluteIri
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
@@ -40,7 +39,7 @@ object ValidationReport {
   private val logger = Logger[this.type]
 
   final def apply(report: Resource): Option[ValidationReport] =
-    Try((report.getModel: Graph)) match {
+    Try(report.getModel.asGraph) match {
       case Success(graph) =>
         graph.subjects(sh.conforms, _.isLiteral).headOption.flatMap { iri =>
           val report = for {
