@@ -72,20 +72,27 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     *
     * @param properties the properties to use for namespace creation
     */
-  def createNamespace(properties: Map[String, String]): F[Unit] = {
+  def createNamespaceIfNotExist(properties: Map[String, String]): F[Boolean] = {
     val updated = properties + ("com.bigdata.rdf.sail.namespace" -> namespace)
     val payload = updated.map { case (key, value) => s"$key=$value" }.mkString("\n")
     val req     = Post(s"$base/namespace", HttpEntity(payload))
-    cl(addCredentials(req)).discardOnCodesOr(Set(StatusCodes.Created)) { resp =>
-      SparqlFailure.fromResponse(resp).flatMap { f =>
-        log.error(s"""Unexpected Blazegraph response for create namespace:
-             |Request: '${req.method} ${req.uri}'
-             |Status: '${resp.status}'
-             |Response: '${f.body}'
+    namespaceExists flatMap {
+      case true => F.pure(false)
+      case false =>
+        cl(addCredentials(req))
+          .discardOnCodesOr(Set(StatusCodes.Created)) { resp =>
+            SparqlFailure.fromResponse(resp).flatMap { f =>
+              log.error(s"""Unexpected Blazegraph response for create namespace:
+                         |Request: '${req.method} ${req.uri}'
+                         |Status: '${resp.status}'
+                         |Response: '${f.body}'
            """.stripMargin)
-        F.raiseError(f)
-      }
+              F.raiseError(f)
+            }
+          }
+          .map(_ => true)
     }
+
   }
 }
 
