@@ -17,7 +17,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertions, CancelAfterFailure, Inspectors, Matchers}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class ElasticClientSpec
     extends ElasticServer
@@ -28,7 +28,7 @@ class ElasticClientSpec
     with CancelAfterFailure
     with Assertions {
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 300 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(15 seconds, 300 milliseconds)
 
   "An ElasticClient" should {
     implicit val ec: ExecutionContext          = system.dispatcher
@@ -38,7 +38,6 @@ class ElasticClientSpec
     def indexPayload                           = jsonContentOf("/index_payload.json")
     def genJson(k: String, k2: String): Json =
       Json.obj(k -> Json.fromString(genString()), k2 -> Json.fromString(genString()))
-    def createIndex(index: String): Unit          = Await.result(cl.createIndex(index, indexPayload), 15 seconds)
     def getValue(key: String, json: Json): String = json.hcursor.get[String](key).getOrElse("")
 
     val matchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()))
@@ -53,14 +52,21 @@ class ElasticClientSpec
 
       "create mappings when index does not exist" in {
         val index = genString()
-        cl.createIndexIfNotExist(index, indexPayload).futureValue shouldEqual true
-        cl.createIndexIfNotExist(index, indexPayload).futureValue shouldEqual false
+        cl.createIndex(index, indexPayload).futureValue shouldEqual true
+        cl.createIndex(index, indexPayload).futureValue shouldEqual false
       }
 
       "create mappings and index settings" in {
         val index = genString(length = 6)
-        cl.createIndex(index, indexPayload).futureValue shouldEqual (())
+        cl.createIndex(index, indexPayload).futureValue shouldEqual true
         cl.existsIndex(index).futureValue shouldEqual (())
+      }
+
+      "delete index" in {
+        val index = genString()
+        cl.createIndex(index, indexPayload).futureValue shouldEqual true
+        cl.deleteIndex(index).futureValue shouldEqual true
+        cl.deleteIndex(index).futureValue shouldEqual false
       }
     }
 
@@ -74,7 +80,7 @@ class ElasticClientSpec
       val list  = List.fill(10)(genString() -> genJson("key", "key2"))
 
       "add documents" in {
-        createIndex(index)
+        cl.createIndex(index, indexPayload).futureValue shouldEqual true
         forAll(list) {
           case (id, json) =>
             cl.create(index, t, id, json).futureValue shouldEqual (())
