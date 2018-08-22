@@ -62,6 +62,13 @@ class ElasticClientSpec
         cl.createIndex(index, indexPayload).futureValue shouldEqual (())
         cl.existsIndex(index).futureValue shouldEqual (())
       }
+
+      "delete index" in {
+        val index = genString()
+        cl.createIndexIfNotExist(index, indexPayload).futureValue shouldEqual true
+        cl.deleteIndexIfNotExist(index).futureValue shouldEqual true
+        cl.deleteIndexIfNotExist(index).futureValue shouldEqual false
+      }
     }
 
     "perform document operations" when {

@@ -54,15 +54,27 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     *
     * @param index   the index
     * @param payload the payload to attach to the index when it does not exist
-    * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped and ''F'' when it already existed
+    * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped in ''F'' when it already existed
     */
-  def createIndexIfNotExist(index: String, payload: Json): F[Boolean] = {
+  def createIndexIfNotExist(index: String, payload: Json): F[Boolean] =
     existsIndex(index).map(_ => false).recoverWith {
       case ElasticClientError(StatusCodes.NotFound, _) =>
         createIndex(index, payload).map(_ => true)
       case other => F.raiseError(other)
     }
-  }
+
+  /**
+    * Deletes an index when it does not exist on the ElasticSearch endpoint.
+    *
+    * @param index the index
+    * @return ''true'' when the index has been deleted and ''false'' when the index does not exist. The response is wrapped in an effect type ''F''
+    */
+  def deleteIndexIfNotExist(index: String): F[Boolean] =
+    execute(Delete(base.copy(path = base.path / index)), Set(OK)).map(_ => true).recoverWith {
+      case ElasticClientError(StatusCodes.NotFound, _) =>
+        F.pure(false)
+      case other => F.raiseError(other)
+    }
 
   /**
     * Creates a new document inside the ''index'' and ''`type`'' with the provided ''payload''
