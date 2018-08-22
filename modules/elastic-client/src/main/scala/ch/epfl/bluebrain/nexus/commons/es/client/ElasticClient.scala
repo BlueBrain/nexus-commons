@@ -33,15 +33,6 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     extends ElasticBaseClient[F] {
 
   /**
-    * Creates a new index with the provided configuration payload.
-    *
-    * @param index   the index to create
-    * @param payload the index configuration
-    */
-  def createIndex(index: String, payload: Json): F[Unit] =
-    execute(Put(base.copy(path = base.path / index), payload), Set(OK, Created), "create index")
-
-  /**
     * Verifies if an index exists, signaling an [[ElasticFailure]] error when it doesn't
     *
     * @param index   the index to verify
@@ -50,26 +41,26 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     execute(Get(base.copy(path = base.path / index)), Set(OK))
 
   /**
-    * Creates an index when it does not exist on the ElasticSearch endpoint
+    * Attempts to create an index recovering gracefully when the index already exists.
     *
     * @param index   the index
     * @param payload the payload to attach to the index when it does not exist
     * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped in ''F'' when it already existed
     */
-  def createIndexIfNotExist(index: String, payload: Json): F[Boolean] =
+  def createIndex(index: String, payload: Json): F[Boolean] =
     existsIndex(index).map(_ => false).recoverWith {
       case ElasticClientError(StatusCodes.NotFound, _) =>
-        createIndex(index, payload).map(_ => true)
+        execute(Put(base.copy(path = base.path / index), payload), Set(OK, Created), "create index").map(_ => true)
       case other => F.raiseError(other)
     }
 
   /**
-    * Deletes an index when it does not exist on the ElasticSearch endpoint.
+    * Attempts to delete an index recovering gracefully when the index is not found.
     *
     * @param index the index
     * @return ''true'' when the index has been deleted and ''false'' when the index does not exist. The response is wrapped in an effect type ''F''
     */
-  def deleteIndexIfNotExist(index: String): F[Boolean] =
+  def deleteIndex(index: String): F[Boolean] =
     execute(Delete(base.copy(path = base.path / index)), Set(OK)).map(_ => true).recoverWith {
       case ElasticClientError(StatusCodes.NotFound, _) =>
         F.pure(false)
