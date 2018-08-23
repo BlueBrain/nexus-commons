@@ -13,8 +13,4 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="akka.remote" level="WARN" />
-    <logger name="akka.cluster" level="WARN" />
-    <logger name="es.weso.shacl" level="WARN" />
-
 </configuration>
