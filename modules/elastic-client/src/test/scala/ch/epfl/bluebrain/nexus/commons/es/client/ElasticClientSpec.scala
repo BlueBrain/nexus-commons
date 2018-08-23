@@ -35,7 +35,8 @@ class ElasticClientSpec
     implicit val ul: UntypedHttpClient[Future] = akkaHttpClient
     val cl: ElasticClient[Future]              = ElasticClient[Future](esUri)
     val t                                      = "doc"
-    def indexPayload                           = jsonContentOf("/index_payload.json")
+    val indexPayload                           = jsonContentOf("/index_payload.json")
+    val mappingPayload                         = jsonContentOf("/mapping_payload.json")
     def genJson(k: String, k2: String): Json =
       Json.obj(k -> Json.fromString(genString()), k2 -> Json.fromString(genString()))
     def getValue(key: String, json: Json): String = json.hcursor.get[String](key).getOrElse("")
@@ -60,6 +61,14 @@ class ElasticClientSpec
         val index = genString(length = 6)
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
         cl.existsIndex(index).futureValue shouldEqual (())
+      }
+
+      "create mappings" in {
+        val index = genString(length = 6)
+        cl.createIndex(index).futureValue shouldEqual true
+        cl.updateMapping(index, "doc", mappingPayload).futureValue shouldEqual true
+        cl.updateMapping(genString(length = 6), "doc", mappingPayload).futureValue shouldEqual false
+        whenReady(cl.updateMapping(index, "doc", indexPayload).failed)(_ shouldBe a[ElasticClientError])
       }
 
       "delete index" in {
