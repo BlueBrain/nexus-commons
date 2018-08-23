@@ -1,14 +1,20 @@
 package ch.epfl.bluebrain.nexus.commons.shacl.validator
 
+import java.io.ByteArrayInputStream
+
 import cats.instances.try_._
+import es.weso.rdf.jena.RDFAsJenaModel
+import es.weso.schema.{Schemas, ShaclexSchema}
 import io.circe.Json
 import io.circe.parser._
-import org.scalatest.{Matchers, TryValues, WordSpecLike}
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.riot.{Lang, RDFDataMgr, RDFFormat}
+import org.scalatest.{EitherValues, Matchers, TryValues, WordSpecLike}
 
 import scala.io.Source
 import scala.util.Try
 
-class ShaclValidatorSpec extends WordSpecLike with Matchers with TryValues {
+class ShaclValidatorSpec extends WordSpecLike with Matchers with TryValues with EitherValues {
 
   private def contentOf(file: String): String =
     Source.fromInputStream(getClass.getResourceAsStream(file)).mkString
@@ -48,6 +54,19 @@ class ShaclValidatorSpec extends WordSpecLike with Matchers with TryValues {
 
     "fail to validate invalid schema" in {
       validator(ShaclSchema(jsonContentOf("/invalid-subject-schema.json"))).success.value.conforms shouldEqual false
+    }
+
+    "validate data against a schema and data in as Jena model" in {
+      val data = RDFAsJenaModel
+        .fromChars(jsonContentOf("/subject-data.json").noSpaces, RDFFormat.JSONLD.getLang.getName)
+        .right
+        .value
+      val jsonSchema = jsonContentOf("/subject-schema.json")
+      val model      = ModelFactory.createDefaultModel()
+      RDFDataMgr.read(model, new ByteArrayInputStream(jsonSchema.noSpaces.getBytes), Lang.JSONLD)
+      val schema = Schemas.fromRDF(RDFAsJenaModel(model), ShaclexSchema.empty.name).right.value
+
+      validator(schema, data).success.value.conforms shouldEqual true
     }
 
 //    "validate the subject schema against the shacl schema" in {

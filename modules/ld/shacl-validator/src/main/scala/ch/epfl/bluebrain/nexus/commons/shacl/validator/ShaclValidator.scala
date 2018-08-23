@@ -36,6 +36,27 @@ final class ShaclValidator[F[_]](importResolver: ImportResolver[F])(implicit F: 
   private val triggerMode      = TargetDeclarations.name
 
   /**
+    * Validates ''data'' in its Jena model representation against the specified ''schema''.  It produces a
+    * ''ValidationReport'' in the ''F[_]'' context.
+    *
+    * @param schema the shacl schema instance against which data is validated
+    * @param data   the data to be validated
+    * @return a ''ValidationReport'' in the ''F[_]'' context
+    */
+  def apply(schema: Schema, data: RDFAsJenaModel): F[ValidationReport] =
+    validate(data, schema)
+      .recoverWith {
+        // $COVERAGE-OFF$
+        case CouldNotFindImports(missing) =>
+          F.pure(ValidationReport(missing.toList.map(imp => ValidationResult(s"Could not load import '$imp'"))))
+        case IllegalImportDefinition(values) =>
+          F.pure(ValidationReport(values.toList.map(imp => ValidationResult(s"The provided import '$imp' is invalid"))))
+        case _: FailedToLoadData =>
+          F.pure(ValidationReport(List(ValidationResult("The data format is invalid"))))
+        // $COVERAGE-ON$
+      }
+
+  /**
     * Validates ''data'' in its json representation against the specified ''schema''.  It produces a
     * ''ValidationReport'' in the ''F[_]'' context.
     *
