@@ -11,7 +11,7 @@ import ch.epfl.bluebrain.nexus.rdf.syntax.circe.context._
 import ch.epfl.bluebrain.nexus.rdf.syntax.jena._
 import ch.epfl.bluebrain.nexus.rdf.syntax.node.encoder._
 import ch.epfl.bluebrain.nexus.rdf.syntax.node.unsafe._
-import io.circe.Json
+import io.circe.{Encoder, Json}
 import journal.Logger
 import org.apache.jena.rdf.model.Resource
 
@@ -59,4 +59,6 @@ object ValidationReport {
 
   private val shaclCtxUri: AbsoluteIri = url"https://bluebrain.github.io/nexus/contexts/shacl"
   private val shaclCtx: Json           = jsonContentOf("/shacl-context-resp.json")
+
+  implicit val reportEncoder: Encoder[ValidationReport] = Encoder.instance(_.json)
 }

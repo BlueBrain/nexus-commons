@@ -6,6 +6,7 @@ import org.apache.jena.rdf.model.{ModelFactory, Resource}
 import org.apache.jena.riot.system.StreamRDFLib
 import org.apache.jena.riot.{Lang, RDFParser}
 import org.scalatest._
+import io.circe.syntax._
 
 class ValidationReportSpec
     extends WordSpecLike
@@ -39,6 +40,11 @@ class ValidationReportSpec
         "Focus node has 2^^http://www.w3.org/2001/XMLSchema#integer of the shapes from the 'exactly one' list",
         "Value does not have shape http://localhost/v0/schemas/nexus/schemaorg/quantitativevalue/v0.1.0/shapes/QuantitativeValueShape"
       ).sorted
+    }
+
+    "be encoded as json" in {
+      val report = ValidationReport(resource(failed deepMerge ctx)).value
+      report.asJson shouldEqual report.json
     }
   }
 }
