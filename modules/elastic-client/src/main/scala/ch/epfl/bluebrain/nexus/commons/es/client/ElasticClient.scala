@@ -47,11 +47,26 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param payload the payload to attach to the index when it does not exist
     * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped in ''F'' when it already existed
     */
-  def createIndex(index: String, payload: Json): F[Boolean] =
+  def createIndex(index: String, payload: Json = Json.obj()): F[Boolean] =
     existsIndex(index).map(_ => false).recoverWith {
       case ElasticClientError(StatusCodes.NotFound, _) =>
         execute(Put(base.copy(path = base.path / index), payload), Set(OK, Created), "create index").map(_ => true)
       case other => F.raiseError(other)
+    }
+
+  /**
+    * Attempts to update the mappings of a given index recovering gracefully when the index does not exists.
+    * @param index   the index
+    * @param `type`  the type to use
+    * @param payload the payload to attach to the index mappings when it exists
+    * @return ''true'' wrapped in ''F'' when the mappings have been updated and ''false'' wrapped in ''F'' when the index does not exist
+    */
+  def updateMapping(index: String, `type`: String, payload: Json): F[Boolean] =
+    execute(Put(base.copy(path = base.path / index / "_mapping" / `type`), payload),
+            Set(OK, Created),
+            "update index mappings").map(_ => true).recoverWith {
+      case ElasticClientError(StatusCodes.NotFound, _) => F.pure(false)
+      case other                                       => F.raiseError(other)
     }
 
   /**
