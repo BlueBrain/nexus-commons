@@ -2,8 +2,8 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.model.{StatusCodes, Uri}
 import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
@@ -177,7 +177,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     *
     * @param query   the initial search query
     * @param indices the indices to use on search (if empty, searches in all the indices)
-    * @param page    the paginatoin information
+    * @param page    the pagination information
     * @param fields  the fields to be returned
     * @param sort    the sorting criteria
     * @param qp      the optional query parameters
@@ -191,6 +191,21 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
       sort: SortList = SortList.Empty)(implicit
                                        rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
     queryClient(query, indices, qp)(page, fields, sort)
+
+  /**
+    * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
+    *
+    * @param query search query
+    * @param indices indices to search
+    * @param qp the optional query parameters
+    * @return ES response JSON
+    */
+  def searchRaw(query: Json,
+                indices: Set[String] = Set.empty,
+                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
+      implicit
+      rs: HttpClient[F, Json]): F[Json] =
+    queryClient.searchRaw(query, indices, qp)
 }
 
 object ElasticClient {

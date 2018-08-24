@@ -4,6 +4,7 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import cats.MonadError
+import cats.syntax.functor._
 import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticQueryClient._
@@ -30,12 +31,19 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
 
   private[client] val searchPath = "_search"
 
+  private[client] val shards = Json.obj(
+    "total"      -> Json.fromInt(0),
+    "successful" -> Json.fromInt(0),
+    "skipped"    -> Json.fromInt(0),
+    "failed"     -> Json.fromInt(0)
+  )
+
   /**
     * Search for the provided ''query'' inside the ''indices'' and ''types''
     *
     * @param query   the initial search query
     * @param indices the indices to use on search (if empty, searches in all the indices)
-    * @param page    the paginatoin information
+    * @param page    the pagination information
     * @param fields  the fields to be returned
     * @param sort    the sorting criteria
     * @param qp      the optional query parameters
@@ -50,6 +58,25 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
                                        rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] = {
     val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
     rs(Post(uri.withQuery(qp), query.addPage(page).addSources(fields).addSort(sort)))
+  }
+
+  /**
+    * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
+    *
+    * @param query search query
+    * @param indices indices to search
+    * @param qp the optional query parameters
+    * @return ES response JSON
+    */
+  def searchRaw(query: Json,
+                indices: Set[String] = Set.empty,
+                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
+      implicit
+      rs: HttpClient[F, Json]): F[Json] = {
+    val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
+    rs(Post(uri.withQuery(qp), query)).map { esResponse =>
+      esResponse.mapObject(_.add("_shards", shards))
+    }
   }
 }
 object ElasticQueryClient {
