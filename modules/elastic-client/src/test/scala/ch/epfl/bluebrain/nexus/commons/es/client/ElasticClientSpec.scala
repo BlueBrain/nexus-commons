@@ -2,6 +2,8 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 
 import java.util.regex.Pattern
 
+import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
@@ -13,8 +15,8 @@ import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults._
 import ch.epfl.bluebrain.nexus.commons.types.search.{Pagination, QueryResults, Sort, SortList}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.{Decoder, Json}
+import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Assertions, CancelAfterFailure, Inspectors, Matchers}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -26,7 +28,8 @@ class ElasticClientSpec
     with Resources
     with Inspectors
     with CancelAfterFailure
-    with Assertions {
+    with Assertions
+    with OptionValues {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(15 seconds, 300 milliseconds)
 
@@ -158,6 +161,84 @@ class ElasticClientSpec
 
       }
 
+      "search raw all elements sorted in order ascending" in {
+
+        val sortedMatchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()),
+                                      "sort" -> Json.arr(
+                                        Json.obj(
+                                          "key" -> Json.obj(
+                                            "order" -> Json.fromString("asc")
+                                          ))
+                                      ))
+        val elems =
+          list.sortWith((e1, e2) => getValue("key", e1._2) < getValue("key", e2._2))
+
+        val json = cl.searchRaw(sortedMatchAll, Set(index)).futureValue
+        val expectedResponse = jsonContentOf("/elastic_search_response.json").mapObject { obj =>
+          obj
+            .add("took", json.asObject.value("took").value)
+            .add(
+              "hits",
+              Json.obj(
+                "total"     -> Json.fromInt(10),
+                "max_score" -> Json.Null,
+                "hits" -> Json.arr(
+                  elems.map { e =>
+                    Json.obj(
+                      "_index"  -> Json.fromString(index),
+                      "_type"   -> Json.fromString("doc"),
+                      "_id"     -> Json.fromString(e._1),
+                      "_score"  -> Json.Null,
+                      "_source" -> e._2,
+                      "sort"    -> Json.arr(Json.fromString(getValue("key", e._2)))
+                    )
+                  }: _*
+                )
+              )
+            )
+        }
+        json shouldEqual expectedResponse
+      }
+
+      "search raw all elements sorted in order descending" in {
+        val sortedMatchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()),
+                                      "sort" -> Json.arr(
+                                        Json.obj(
+                                          "key" -> Json.obj(
+                                            "order" -> Json.fromString("desc")
+                                          ))
+                                      ))
+        val elems =
+          list.sortWith((e1, e2) => getValue("key", e1._2) > getValue("key", e2._2))
+
+        val json = cl.searchRaw(sortedMatchAll, Set(index)).futureValue
+        val expectedResponse = jsonContentOf("/elastic_search_response.json").mapObject { obj =>
+          obj
+            .add("took", json.asObject.value("took").value)
+            .add(
+              "hits",
+              Json.obj(
+                "total"     -> Json.fromInt(10),
+                "max_score" -> Json.Null,
+                "hits" -> Json.arr(
+                  elems.map { e =>
+                    Json.obj(
+                      "_index"  -> Json.fromString(index),
+                      "_type"   -> Json.fromString("doc"),
+                      "_id"     -> Json.fromString(e._1),
+                      "_score"  -> Json.Null,
+                      "_source" -> e._2,
+                      "sort"    -> Json.arr(Json.fromString(getValue("key", e._2)))
+                    )
+                  }: _*
+                )
+              )
+            )
+        }
+        json shouldEqual expectedResponse
+
+      }
+
       val listModified = list.map {
         case (id, json) => id -> (json deepMerge Json.obj("key" -> Json.fromString(genString())))
       }
@@ -216,5 +297,12 @@ class ElasticClientSpec
         }
       }
     }
+  }
+
+  implicit class HttpResponseSyntax(value: Future[HttpResponse]) {
+
+    def mapJson(body: (Json, HttpResponse) => Assertion)(implicit um: FromEntityUnmarshaller[Json]): Assertion =
+      whenReady(value)(res => um(res.entity).map(json => body(json, res)).futureValue)
+
   }
 }
