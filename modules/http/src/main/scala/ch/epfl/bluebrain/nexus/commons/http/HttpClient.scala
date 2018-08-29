@@ -82,22 +82,6 @@ object HttpClient {
         else onFailure(r)
       }
     }
-
-    /**
-      * Unmarshalls the entity of the response into [[A]] if the status matches some of ''expectedCodes''
-      * or triggers ''onFailure'' otherwise
-      *
-      * @param expectedCodes  the codes to verify against the response code
-      * @param unmarshall     the function to unmarshall the entity into [[A]]
-      * @param onFailure      the function to run when the response code does not match ''expectedCodes''
-      */
-    def resultOnCodesOr[A](expectedCodes: Set[StatusCode])(unmarshall: HttpEntity => F[A])(
-        onFailure: => HttpResponse => F[A]): F[A] = {
-      resp.flatMap { r =>
-        if (expectedCodes.contains(r.status)) unmarshall(r.entity)
-        else onFailure(r)
-      }
-    }
   }
 
   /**

@@ -7,8 +7,8 @@ import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, akkaHttpClient, withAkkaUnmarshaller}
-import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, JsonLdCirceSupport}
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult._
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults._
@@ -174,7 +174,7 @@ class ElasticClientSpec
         val elems =
           list.sortWith((e1, e2) => getValue("key", e1._2) < getValue("key", e2._2))
 
-        val json = cl.searchRaw(sortedMatchAll, Set(index))(JsonLdCirceSupport.jsonUnmarshaller(_)).futureValue
+        val json = cl.searchRaw(sortedMatchAll, Set(index)).futureValue
         val expectedResponse = jsonContentOf("/elastic_search_response.json").mapObject { obj =>
           obj
             .add("took", json.asObject.value("took").value)
@@ -212,7 +212,7 @@ class ElasticClientSpec
         val elems =
           list.sortWith((e1, e2) => getValue("key", e1._2) > getValue("key", e2._2))
 
-        val json = cl.searchRaw(sortedMatchAll, Set(index))(JsonLdCirceSupport.jsonUnmarshaller(_)).futureValue
+        val json = cl.searchRaw(sortedMatchAll, Set(index)).futureValue
         val expectedResponse = jsonContentOf("/elastic_search_response.json").mapObject { obj =>
           obj
             .add("took", json.asObject.value("took").value)
@@ -244,7 +244,7 @@ class ElasticClientSpec
 
         val query = Json.obj("query" -> Json.obj("other" -> Json.obj()))
         val result: ElasticClientError =
-          cl.searchRaw(query, Set(index))(JsonLdCirceSupport.jsonUnmarshaller(_))
+          cl.searchRaw(query, Set(index))
             .failed
             .futureValue
             .asInstanceOf[ElasticClientError]
