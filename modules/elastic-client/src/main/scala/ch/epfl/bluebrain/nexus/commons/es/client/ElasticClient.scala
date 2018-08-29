@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri.Query
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model.{HttpEntity, StatusCodes, Uri}
 import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
@@ -198,14 +198,14 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param query search query
     * @param indices indices to search
     * @param qp the optional query parameters
+    * @param unmarshall the function to unmarshall HTTP response entity into JSON
     * @return ES response JSON
     */
   def searchRaw(query: Json,
                 indices: Set[String] = Set.empty,
                 qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
-      implicit
-      rs: HttpClient[F, Json]): F[Json] =
-    queryClient.searchRaw(query, indices, qp)
+      unmarshall: HttpEntity => F[Json]): F[Json] =
+    queryClient.searchRaw(query, indices, qp)(unmarshall)
 }
 
 object ElasticClient {
