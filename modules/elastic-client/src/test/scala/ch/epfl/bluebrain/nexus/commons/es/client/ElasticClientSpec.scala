@@ -2,7 +2,7 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 
 import java.util.regex.Pattern
 
-import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
@@ -14,6 +14,7 @@ import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult._
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults._
 import ch.epfl.bluebrain.nexus.commons.types.search.{Pagination, QueryResults, Sort, SortList}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+import io.circe.parser.parse
 import io.circe.{Decoder, Json}
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -236,6 +237,19 @@ class ElasticClientSpec
             )
         }
         json shouldEqual expectedResponse
+
+      }
+
+      "return ElasticClientError when query is wrong" in {
+
+        val query = Json.obj("query" -> Json.obj("other" -> Json.obj()))
+        val result: ElasticClientError =
+          cl.searchRaw(query, Set(index))
+            .failed
+            .futureValue
+            .asInstanceOf[ElasticClientError]
+        result.status shouldEqual StatusCodes.BadRequest
+        parse(result.body).toOption.value shouldEqual jsonContentOf("/elastic_client_error.json")
 
       }
 

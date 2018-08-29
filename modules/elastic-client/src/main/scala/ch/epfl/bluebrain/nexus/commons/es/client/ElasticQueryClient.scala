@@ -4,11 +4,13 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import cats.MonadError
+import cats.syntax.applicativeError._
+import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticQueryClient._
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient
+import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.types.search._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -74,9 +76,14 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
       implicit
       rs: HttpClient[F, Json]): F[Json] = {
     val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
-    rs(Post(uri.withQuery(qp), query)).map { esResponse =>
-      esResponse.mapObject(_.add("_shards", shards))
-    }
+    rs(Post(uri.withQuery(qp), query))
+      .map { esResponse =>
+        esResponse.mapObject(_.add("_shards", shards))
+      }
+      .recoverWith {
+        case UnexpectedUnsuccessfulHttpResponse(r) => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
+        case other                                 => F.raiseError(other)
+      }
   }
 }
 object ElasticQueryClient {
