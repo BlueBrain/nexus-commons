@@ -57,10 +57,10 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
       page: Pagination,
       fields: Set[String] = Set.empty,
       sort: SortList = SortList.Empty)(implicit
-                                       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] = {
-    val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
-    rs(Post(uri.withQuery(qp), query.addPage(page).addSources(fields).addSort(sort)))
-  }
+                                       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
+    rs(
+      Post((base / indexPath(indices) / searchPath).withQuery(qp),
+           query.addPage(page).addSources(fields).addSort(sort)))
 
   /**
     * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
@@ -74,9 +74,8 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
                 indices: Set[String] = Set.empty,
                 qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
       implicit
-      rs: HttpClient[F, Json]): F[Json] = {
-    val uri = base.copy(path = base.path / indexPath(indices) / searchPath)
-    rs(Post(uri.withQuery(qp), query))
+      rs: HttpClient[F, Json]): F[Json] =
+    rs(Post((base / indexPath(indices) / searchPath).withQuery(qp), query))
       .map { esResponse =>
         esResponse.mapObject(_.add("_shards", shards))
       }
@@ -84,7 +83,6 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
         case UnexpectedUnsuccessfulHttpResponse(r) => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
         case other                                 => F.raiseError(other)
       }
-  }
 }
 object ElasticQueryClient {
 

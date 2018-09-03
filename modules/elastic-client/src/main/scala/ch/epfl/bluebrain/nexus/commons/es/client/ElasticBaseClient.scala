@@ -18,21 +18,20 @@ abstract class ElasticBaseClient[F[_]](implicit
                                        F: MonadError[F, Throwable]) {
   private[client] val log = Logger[this.type]
 
-  private[client] def execute(req: HttpRequest, expectedCodes: Set[StatusCode]): F[Unit] =
-    executeWith(req, expectedCodes, None)
+  private[client] def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: String): F[Unit] =
+    execute(req, expectedCodes, Set.empty, intent).map(_ => ())
 
-  private[client] def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: => String): F[Unit] =
-    executeWith(req, expectedCodes, Some(intent))
-
-  private def executeWith(req: HttpRequest, expectedCodes: Set[StatusCode], intent: => Option[String]): F[Unit] =
+  private[client] def execute(req: HttpRequest,
+                              expectedCodes: Set[StatusCode],
+                              ignoredCodes: Set[StatusCode],
+                              intent: String): F[Boolean] =
     cl(req).flatMap { resp =>
-      if (expectedCodes.contains(resp.status))
-        cl.discardBytes(resp.entity).map(_ => ())
+      if (expectedCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => true)
+      else if (ignoredCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => false)
       else
         ElasticFailure.fromResponse(resp).flatMap { f =>
-          val _ = intent.map(msg =>
-            log.error(
-              s"Unexpected ElasticSearch response for intent '$msg':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '${f.body}'"))
+          log.error(
+            s"Unexpected ElasticSearch response for intent '$intent':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
           F.raiseError(f)
         }
     }

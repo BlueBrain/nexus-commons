@@ -49,10 +49,8 @@ class ElasticClientSpec
 
     "perform index operations" when {
 
-      "fail when index does not exist" in {
-        whenReady(cl.existsIndex("some").failed) { e =>
-          e shouldBe a[ElasticClientError]
-        }
+      "return false when index does not exist" in {
+        cl.existsIndex("some").futureValue shouldEqual false
       }
 
       "create mappings when index does not exist" in {
@@ -64,7 +62,7 @@ class ElasticClientSpec
       "create mappings and index settings" in {
         val index = genString(length = 6)
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
-        cl.existsIndex(index).futureValue shouldEqual (())
+        cl.existsIndex(index).futureValue shouldEqual true
       }
 
       "create mappings" in {
@@ -104,14 +102,12 @@ class ElasticClientSpec
       "fetch documents" in {
         forAll(list) {
           case (id, json) =>
-            cl.get[Json](index, t, id).futureValue shouldEqual json
+            cl.get[Json](index, t, id).futureValue.value shouldEqual json
         }
       }
 
-      "fail when fetch documents that do not exist" in {
-        whenReady(cl.get[Json](index, t, genString()).failed) { e =>
-          e shouldBe a[ElasticClientError]
-        }
+      "return none when fetch documents that do not exist" in {
+        cl.get[Json](index, t, genString()).futureValue shouldEqual None
       }
 
       "search for some specific keys and values" in {
@@ -262,11 +258,13 @@ class ElasticClientSpec
           case (id, json) =>
             val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
             cl.update(index, t, id, updateScript).futureValue shouldEqual (())
-            cl.get[Json](index, t, id).futureValue shouldEqual json
+            cl.get[Json](index, t, id).futureValue.value shouldEqual json
             val jsonWithKey = Json.obj("key" -> Json.fromString(getValue("key", json)))
-            cl.get[Json](index, t, id, include = Set("key")).futureValue shouldEqual jsonWithKey
-            cl.get[Json](index, t, id, exclude = Set("key2")).futureValue shouldEqual jsonWithKey
-            cl.get[Json](index, t, id, include = Set("key"), exclude = Set("key2")).futureValue shouldEqual jsonWithKey
+            cl.get[Json](index, t, id, include = Set("key")).futureValue.value shouldEqual jsonWithKey
+            cl.get[Json](index, t, id, exclude = Set("key2")).futureValue.value shouldEqual jsonWithKey
+            cl.get[Json](index, t, id, include = Set("key"), exclude = Set("key2"))
+              .futureValue
+              .value shouldEqual jsonWithKey
         }
       }
 
@@ -284,7 +282,7 @@ class ElasticClientSpec
               jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", mapModified(id))))
 
             cl.updateDocuments(Set(index), query, updateScript).futureValue shouldEqual (())
-            cl.get[Json](index, t, id).futureValue shouldEqual mapModified(id)
+            cl.get[Json](index, t, id).futureValue.value shouldEqual mapModified(id)
         }
       }
 
@@ -292,9 +290,7 @@ class ElasticClientSpec
         forAll(mapModified.toList.take(3)) {
           case (id, _) =>
             cl.delete(index, t, id).futureValue shouldEqual (())
-            whenReady(cl.get[Json](index, t, id).failed) { e =>
-              e shouldBe a[ElasticClientError]
-            }
+            cl.get[Json](index, t, id).futureValue shouldEqual None
         }
       }
 
@@ -305,9 +301,7 @@ class ElasticClientSpec
               jsonContentOf("/simple_query.json",
                             Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
             cl.deleteDocuments(Set(index), query).futureValue shouldEqual (())
-            whenReady(cl.get[Json](index, t, id).failed) { e =>
-              e shouldBe a[ElasticClientError]
-            }
+            cl.get[Json](index, t, id).futureValue shouldEqual None
         }
       }
     }

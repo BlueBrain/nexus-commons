@@ -3,10 +3,14 @@ package ch.epfl.bluebrain.nexus.commons.http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMessage.DiscardedEntity
-import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.StatusCodes.ServerError
+import akka.http.scaladsl.model.{HttpEntity, HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import akka.stream.Materializer
 import akka.util.ByteString
+import cats.MonadError
+import cats.instances.future._
+import cats.syntax.flatMap._
 import journal.Logger
 import monix.eval.Task
 
@@ -45,6 +49,22 @@ trait HttpClient[F[_], A] {
     * @return the entity bytes (if any) into an UTF-8 string representation
     */
   def toString(entity: HttpEntity): F[String]
+
+  private[http] def handleError(req: HttpRequest, resp: HttpResponse)(implicit F: MonadError[F, Throwable],
+                                                                      log: Logger): F[A] =
+    discardBytes(resp.entity).flatMap { _ =>
+      resp.status match {
+        case _: ServerError =>
+          log.error(s"Server Error HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+        case StatusCodes.BadRequest =>
+          log.warn(s"BadRequest HTTP response for '${req.uri}', discarding bytes")
+          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+        case _ =>
+          log.debug(s"HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+      }
+    }
 
 }
 
@@ -125,18 +145,12 @@ object HttpClient {
                                                        um: FromEntityUnmarshaller[A]): HttpClient[Future, A] =
     new HttpClient[Future, A] {
 
-      private val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
+      private implicit val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
 
       override def apply(req: HttpRequest): Future[A] =
         cl(req).flatMap { resp =>
           if (resp.status.isSuccess()) um(resp.entity)
-          else {
-            log.error(s"Unsuccessful HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
-            discardBytes(resp.entity).flatMap { _ =>
-              log.debug(s"Discarded response bytes for request '${req.uri}'")
-              Future.failed(UnexpectedUnsuccessfulHttpResponse(resp))
-            }
-          }
+          else handleError(req, resp)
         }
 
       override def discardBytes(entity: HttpEntity): Future[DiscardedEntity] =
@@ -163,18 +177,12 @@ object HttpClient {
                                                        um: FromEntityUnmarshaller[A]): HttpClient[Task, A] = {
     new HttpClient[Task, A] {
 
-      private val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
+      private implicit val log = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")
 
       override def apply(req: HttpRequest): Task[A] =
         cl(req).flatMap { resp =>
           if (resp.status.isSuccess()) Task.deferFuture(um(resp.entity))
-          else {
-            log.error(s"Unsuccessful HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
-            discardBytes(resp.entity).flatMap { _ =>
-              log.debug(s"Discarded response bytes for request '${req.uri}'")
-              Task.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
-            }
-          }
+          else handleError(req, resp)
         }
 
       override def discardBytes(entity: HttpEntity): Task[DiscardedEntity] =

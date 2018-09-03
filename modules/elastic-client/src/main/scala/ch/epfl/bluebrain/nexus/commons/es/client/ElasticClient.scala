@@ -10,7 +10,6 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.types.search._
@@ -33,12 +32,13 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     extends ElasticBaseClient[F] {
 
   /**
-    * Verifies if an index exists, signaling an [[ElasticFailure]] error when it doesn't
+    * Verifies if an index exists, recovering gracefully when the index does not exists.
     *
     * @param index   the index to verify
+    * @return ''true'' wrapped in ''F'' when the index exists and ''false'' wrapped in ''F'' when the index does not exist
     */
-  def existsIndex(index: String): F[Unit] =
-    execute(Get(base.copy(path = base.path / index)), Set(OK))
+  def existsIndex(index: String): F[Boolean] =
+    execute(Get(base / index), Set(OK), Set(NotFound), "get index")
 
   /**
     * Attempts to create an index recovering gracefully when the index already exists.
@@ -48,10 +48,10 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped in ''F'' when it already existed
     */
   def createIndex(index: String, payload: Json = Json.obj()): F[Boolean] =
-    existsIndex(index).map(_ => false).recoverWith {
-      case ElasticClientError(StatusCodes.NotFound, _) =>
-        execute(Put(base.copy(path = base.path / index), payload), Set(OK, Created), "create index").map(_ => true)
-      case other => F.raiseError(other)
+    existsIndex(index) flatMap {
+      case false =>
+        execute(Put(base / index, payload), Set(OK, Created), Set.empty, "create index")
+      case true => F.pure(false)
     }
 
   /**
@@ -62,12 +62,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @return ''true'' wrapped in ''F'' when the mappings have been updated and ''false'' wrapped in ''F'' when the index does not exist
     */
   def updateMapping(index: String, `type`: String, payload: Json): F[Boolean] =
-    execute(Put(base.copy(path = base.path / index / "_mapping" / `type`), payload),
-            Set(OK, Created),
-            "update index mappings").map(_ => true).recoverWith {
-      case ElasticClientError(StatusCodes.NotFound, _) => F.pure(false)
-      case other                                       => F.raiseError(other)
-    }
+    execute(Put(base / index / "_mapping" / `type`, payload), Set(OK, Created), Set(NotFound), "update index mappings")
 
   /**
     * Attempts to delete an index recovering gracefully when the index is not found.
@@ -76,11 +71,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @return ''true'' when the index has been deleted and ''false'' when the index does not exist. The response is wrapped in an effect type ''F''
     */
   def deleteIndex(index: String): F[Boolean] =
-    execute(Delete(base.copy(path = base.path / index)), Set(OK)).map(_ => true).recoverWith {
-      case ElasticClientError(StatusCodes.NotFound, _) =>
-        F.pure(false)
-      case other => F.raiseError(other)
-    }
+    execute(Delete(base / index), Set(OK), Set(NotFound), "delete index")
 
   /**
     * Creates a new document inside the ''index'' and ''`type`'' with the provided ''payload''
@@ -90,10 +81,8 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param id      the id of the document to update
     * @param payload the document's payload
     */
-  def create(index: String, `type`: String, id: String, payload: Json): F[Unit] = {
-    val uri = base.copy(path = base.path / index / `type` / id)
-    execute(Put(uri, payload), Set(OK, Created), "create document")
-  }
+  def create(index: String, `type`: String, id: String, payload: Json): F[Unit] =
+    execute(Put(base / index / `type` / id, payload), Set(OK, Created), "create document")
 
   /**
     * Updates an existing document with the provided payload.
@@ -104,10 +93,8 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param payload the document's payload
     * @param qp      the optional query parameters
     */
-  def update(index: String, `type`: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] = {
-    val uri = base.copy(path = base.path / index / `type` / id / updatePath).withQuery(qp)
-    execute(Post(uri, payload), Set(OK, Created), "update index")
-  }
+  def update(index: String, `type`: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] =
+    execute(Post((base / index / `type` / id / updatePath).withQuery(qp), payload), Set(OK, Created), "update index")
 
   /**
     * Updates every document with ''payload'' found when searching for ''query''
@@ -121,7 +108,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
                       query: Json,
                       payload: Json,
                       qp: Query = Query.Empty): F[Unit] = {
-    val uri = base.copy(path = base.path / indexPath(indices) / updateByQueryPath).withQuery(qp)
+    val uri = (base / indexPath(indices) / updateByQueryPath).withQuery(qp)
     execute(Post(uri, payload deepMerge query), Set(OK, Created), "update index from query")
   }
 
@@ -133,7 +120,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param id     the id to delete
     */
   def delete(index: String, `type`: String, id: String): F[Unit] =
-    execute(Delete(base.copy(path = base.path / index / `type` / id)), Set(OK), "delete index")
+    execute(Delete(base / index / `type` / id), Set(OK), "delete index")
 
   /**
     * Updates every document with that matches the provided ''query''
@@ -141,11 +128,8 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param indices the indices to use on search (if empty, searches in all the indices)
     * @param query   the query to filter which documents are going to be deleted
     */
-  def deleteDocuments(indices: Set[String] = Set.empty, query: Json): F[Unit] = {
-    val uri = base.copy(path = base.path / indexPath(indices) / deleteByQueryPath)
-    execute(Post(uri, query), Set(OK), "delete index from query")
-
-  }
+  def deleteDocuments(indices: Set[String] = Set.empty, query: Json): F[Unit] =
+    execute(Post(base / indexPath(indices) / deleteByQueryPath, query), Set(OK), "delete index from query")
 
   /**
     * Fetch a document inside the ''index'' and ''`type`'' with the provided ''id''
@@ -160,15 +144,16 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
              `type`: String,
              id: String,
              include: Set[String] = Set.empty,
-             exclude: Set[String] = Set.empty)(implicit rs: HttpClient[F, A]): F[A] = {
-    val uri = base.copy(path = base.path / index / `type` / id / source)
+             exclude: Set[String] = Set.empty)(implicit rs: HttpClient[F, A]): F[Option[A]] = {
     val includeMap: Map[String, String] =
       if (include.isEmpty) Map.empty else Map(includeFieldsQueryParam -> include.mkString(","))
     val excludeMap: Map[String, String] =
       if (exclude.isEmpty) Map.empty else Map(excludeFieldsQueryParam -> exclude.mkString(","))
-    rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).recoverWith {
-      case UnexpectedUnsuccessfulHttpResponse(r) => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
-      case other                                 => F.raiseError(other)
+    val uri = base / index / `type` / id / source
+    rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).recoverWith {
+      case UnexpectedUnsuccessfulHttpResponse(r) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
+      case UnexpectedUnsuccessfulHttpResponse(r)                                     => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
+      case other                                                                     => F.raiseError(other)
     }
   }
 
