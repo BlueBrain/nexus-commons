@@ -71,14 +71,21 @@ class BlazegraphClientSpec
 
     "create an index" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue shouldEqual true
+      cl.createNamespace(properties).futureValue shouldEqual true
       cl.namespaceExists.futureValue shouldEqual true
-      cl.createNamespaceIfNotExist(properties).futureValue shouldEqual false
+      cl.createNamespace(properties).futureValue shouldEqual false
+    }
+
+    "delete an index" in new BlazegraphClientFixture {
+      val cl = client(namespace)
+      cl.deleteNamespace.futureValue shouldEqual false
+      cl.createNamespace(properties).futureValue shouldEqual true
+      cl.deleteNamespace.futureValue shouldEqual true
     }
 
     "create a new named graph" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue
+      cl.createNamespace(properties).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
       cl.copy(namespace = namespace).triples(graph) should have size 2
       cl.triples() should have size 2
@@ -86,7 +93,7 @@ class BlazegraphClientSpec
 
     "drop a named graph" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue
+      cl.createNamespace(properties).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
       cl.drop(graph).futureValue
       cl.triples() shouldBe empty
@@ -94,7 +101,7 @@ class BlazegraphClientSpec
 
     "replace a named graph" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue
+      cl.createNamespace(properties).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
       cl.replace(graph, load(id, label, value + "-updated")).futureValue
       cl.triples(graph).map(_._3) should contain theSameElementsAs Set(label, value + "-updated")
@@ -103,7 +110,7 @@ class BlazegraphClientSpec
 
     "return the JSON response from query" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue
+      cl.createNamespace(properties).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
       val expected = jsonContentOf("/sparql-json.json",
                                    Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
@@ -112,7 +119,7 @@ class BlazegraphClientSpec
 
     "patch a named graph removing matching predicates" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue
+      cl.createNamespace(properties).futureValue
       val json = parse(
         s"""
            |{
@@ -150,7 +157,7 @@ class BlazegraphClientSpec
 
     "patch a named graph retaining matching predicates" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespaceIfNotExist(properties).futureValue
+      cl.createNamespace(properties).futureValue
       val json = parse(
         s"""
            |{
