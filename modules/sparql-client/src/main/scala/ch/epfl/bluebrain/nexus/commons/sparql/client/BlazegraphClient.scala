@@ -9,7 +9,6 @@ import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import io.circe.Json
-import journal.Logger
 import org.apache.jena.query.ResultSet
 
 import scala.concurrent.ExecutionContext
@@ -29,8 +28,6 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     rsSet: HttpClient[F, ResultSet],
     ec: ExecutionContext)
     extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
-
-  private val log = Logger[this.type]
 
   /**
     * @param base        the base uri of the blazegraph endpoint
@@ -91,16 +88,6 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
       }
     }
   }
-
-  private def error[A](req: HttpRequest, resp: HttpResponse, op: String): F[A] =
-    cl.toString(resp.entity).flatMap { body =>
-      log.error(s"""Unexpected Blazegraph response for '$op':
-                   |Request: '${req.method} ${req.uri}'
-                   |Status: '${resp.status}'
-                   |Response: '$body'
-           """.stripMargin)
-      F.raiseError(SparqlFailure.fromStatusCode(resp.status, body))
-    }
 }
 
 object BlazegraphClient {
