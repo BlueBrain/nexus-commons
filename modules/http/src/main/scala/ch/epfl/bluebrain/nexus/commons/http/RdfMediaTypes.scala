@@ -18,4 +18,7 @@ object RdfMediaTypes {
 
   final val `application/sparql-results+json`: MediaType.WithFixedCharset =
     MediaType.applicationWithFixedCharset("sparql-results+json", HttpCharsets.`UTF-8`, "json")
+
+  final val `application/sparql-query`: MediaType.WithFixedCharset =
+    MediaType.applicationWithFixedCharset("sparql-query", HttpCharsets.`UTF-8`)
 }
