@@ -3,8 +3,9 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 import akka.http.scaladsl.model.{HttpRequest, StatusCode}
 import cats.MonadError
 import cats.syntax.flatMap._
+import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import journal.Logger
 
 /**
@@ -24,13 +25,16 @@ abstract class ElasticBaseClient[F[_]](implicit
     executeWith(req, expectedCodes, Some(intent))
 
   private def executeWith(req: HttpRequest, expectedCodes: Set[StatusCode], intent: => Option[String]): F[Unit] =
-    cl(req).discardOnCodesOr(expectedCodes) { resp =>
-      ElasticFailure.fromResponse(resp).flatMap { f =>
-        val _ = intent.map(msg =>
-          log.error(
-            s"Unexpected ElasticSearch response for intent '$msg':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '${f.body}'"))
-        F.raiseError(f)
-      }
+    cl(req).flatMap { resp =>
+      if (expectedCodes.contains(resp.status))
+        cl.discardBytes(resp.entity).map(_ => ())
+      else
+        ElasticFailure.fromResponse(resp).flatMap { f =>
+          val _ = intent.map(msg =>
+            log.error(
+              s"Unexpected ElasticSearch response for intent '$msg':\nRequest: '${req.method} ${req.uri}'\nStatus: '${resp.status}'\nResponse: '${f.body}'"))
+          F.raiseError(f)
+        }
     }
 
   private[client] def indexPath(indices: Set[String]) =

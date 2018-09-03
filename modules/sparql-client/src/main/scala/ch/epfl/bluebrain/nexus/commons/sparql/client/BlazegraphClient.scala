@@ -1,15 +1,14 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
-import akka.http.scaladsl.client.RequestBuilding.{Get, Post}
+import akka.http.scaladsl.client.RequestBuilding._
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{HttpEntity, StatusCodes, Uri}
 import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{HttpResponseSyntax, UntypedHttpClient}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import io.circe.Json
-import journal.Logger
 import org.apache.jena.query.ResultSet
 
 import scala.concurrent.ExecutionContext
@@ -30,8 +29,6 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     ec: ExecutionContext)
     extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
 
-  private val log = Logger[this.type]
-
   /**
     * @param base        the base uri of the blazegraph endpoint
     * @param namespace   the namespace that this client targets
@@ -50,49 +47,46 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     val req = Get(s"$base/namespace/$namespace")
     cl(addCredentials(req)).flatMap { resp =>
       resp.status match {
-        case StatusCodes.OK =>
-          cl.discardBytes(resp.entity).map(_ => true)
-        case StatusCodes.NotFound =>
-          cl.discardBytes(resp.entity).map(_ => false)
-        case _ =>
-          cl.toString(resp.entity).flatMap { body =>
-            log.error(s"""Unexpected Blazegraph response for get namespace:
-                 |Request: '${req.method} ${req.uri}'
-                 |Status: '${resp.status}'
-                 |Response: '$body'
-           """.stripMargin)
-            F.raiseError(SparqlFailure.fromStatusCode(resp.status, body))
-          }
+        case StatusCodes.OK       => cl.discardBytes(resp.entity).map(_ => true)
+        case StatusCodes.NotFound => cl.discardBytes(resp.entity).map(_ => false)
+        case _                    => error(req, resp, "get namespace")
       }
     }
   }
 
   /**
-    * Creates the target namespace using the provided properties.
+    * Attempts to create a namespace recovering gracefully when the namespace already exists.
     *
     * @param properties the properties to use for namespace creation
+    * @return ''true'' wrapped in ''F'' when namespace has been created and ''false'' wrapped in ''F'' when it already existed
     */
-  def createNamespaceIfNotExist(properties: Map[String, String]): F[Boolean] = {
+  def createNamespace(properties: Map[String, String]): F[Boolean] = {
     val updated = properties + ("com.bigdata.rdf.sail.namespace" -> namespace)
     val payload = updated.map { case (key, value) => s"$key=$value" }.mkString("\n")
     val req     = Post(s"$base/namespace", HttpEntity(payload))
-    namespaceExists flatMap {
-      case true => F.pure(false)
-      case false =>
-        cl(addCredentials(req))
-          .discardOnCodesOr(Set(StatusCodes.Created)) { resp =>
-            SparqlFailure.fromResponse(resp).flatMap { f =>
-              log.error(s"""Unexpected Blazegraph response for create namespace:
-                         |Request: '${req.method} ${req.uri}'
-                         |Status: '${resp.status}'
-                         |Response: '${f.body}'
-           """.stripMargin)
-              F.raiseError(f)
-            }
-          }
-          .map(_ => true)
+    cl(addCredentials(req)).flatMap { resp =>
+      resp.status match {
+        case StatusCodes.Created  => cl.discardBytes(resp.entity).map(_ => true)
+        case StatusCodes.Conflict => cl.discardBytes(resp.entity).map(_ => false)
+        case _                    => error(req, resp, "create namespace")
+      }
     }
+  }
 
+  /**
+    * Attempts to delete a namespace recovering gracefully when the namespace does not exists.
+    *
+    * @return ''true'' wrapped in ''F'' when namespace has been deleted and ''false'' wrapped in ''F'' when it does not existe
+    */
+  def deleteNamespace: F[Boolean] = {
+    val req = Delete(s"$base/namespace/$namespace")
+    cl(addCredentials(req)).flatMap { resp =>
+      resp.status match {
+        case StatusCodes.OK       => cl.discardBytes(resp.entity).map(_ => true)
+        case StatusCodes.NotFound => cl.discardBytes(resp.entity).map(_ => false)
+        case _                    => error(req, resp, "delete namespace")
+      }
+    }
   }
 }
 
