@@ -1,4 +1,5 @@
 package ch.epfl.bluebrain.nexus.commons.kamon.directives
+
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.headers.Host
 import kamon.akka.http.AkkaHttp
