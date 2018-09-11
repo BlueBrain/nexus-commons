@@ -85,14 +85,14 @@ lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearc
 lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
 lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
 
-lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.0.1"
-lazy val kamonPrometheus = "io.kamon" %% "kamon-prometheus"      % "1.0.0"
-lazy val kamonJaeger     = "io.kamon" %% "kamon-jaeger"          % "1.0.1"
-lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.0"
+lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.1.3"
+lazy val kamonPrometheus = "io.kamon" %% "kamon-prometheus"      % "1.1.1"
+lazy val kamonJaeger     = "io.kamon" %% "kamon-jaeger"          % "1.0.2"
+lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.3"
 lazy val kamonMetrics    = "io.kamon" %% "kamon-system-metrics"  % "1.0.0"
-lazy val kamonAkka       = "io.kamon" %% "kamon-akka-2.5"        % "1.0.1"
+lazy val kamonAkka       = "io.kamon" %% "kamon-akka-2.5"        % "1.1.2"
 lazy val kamonAkkaHttp   = "io.kamon" %% "kamon-akka-http-2.5"   % "1.1.0"
-lazy val kamonAkkaRemote = "io.kamon" %% "kamon-akka-remote-2.5" % "1.0.0"
+lazy val kamonAkkaRemote = "io.kamon" %% "kamon-akka-remote-2.5" % "1.1.0"
 
 lazy val types = project
   .in(file("modules/types"))
