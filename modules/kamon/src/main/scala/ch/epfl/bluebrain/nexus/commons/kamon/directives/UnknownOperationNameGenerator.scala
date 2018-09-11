@@ -13,6 +13,7 @@ import kamon.akka.http.AkkaHttp
   */
 // $COVERAGE-OFF$
 class UnknownOperationNameGenerator extends AkkaHttp.OperationNameGenerator {
+
   override def clientOperationName(request: HttpRequest): String = {
     val uriAddress = request.uri.authority.host.address
     if (uriAddress.isEmpty) hostFromHeaders(request).getOrElse("unknown-host") else uriAddress
