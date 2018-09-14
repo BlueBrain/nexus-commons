@@ -34,6 +34,9 @@ class ElasticClientSpec
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(15 seconds, 300 milliseconds)
 
+  private def genIndexString(): String =
+    genString(length = 10, pool = Vector.range('a', 'f') ++ """ "*\<>|,/?""")
+
   "An ElasticClient" should {
     implicit val ec: ExecutionContext          = system.dispatcher
     implicit val ul: UntypedHttpClient[Future] = akkaHttpClient
@@ -47,6 +50,12 @@ class ElasticClientSpec
 
     val matchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()))
 
+    "sanitize index names" in {
+      forAll(""" "*\<>|,/?""") { ch =>
+        cl.sanitize(s"a${ch}a") shouldEqual "a_a"
+      }
+    }
+
     "perform index operations" when {
 
       "return false when index does not exist" in {
@@ -54,27 +63,27 @@ class ElasticClientSpec
       }
 
       "create mappings when index does not exist" in {
-        val index = genString()
+        val index = genIndexString()
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
         cl.createIndex(index, indexPayload).futureValue shouldEqual false
       }
 
       "create mappings and index settings" in {
-        val index = genString(length = 6)
+        val index = genIndexString()
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
         cl.existsIndex(index).futureValue shouldEqual true
       }
 
       "create mappings" in {
-        val index = genString(length = 6)
+        val index = genIndexString()
         cl.createIndex(index).futureValue shouldEqual true
         cl.updateMapping(index, "doc", mappingPayload).futureValue shouldEqual true
-        cl.updateMapping(genString(length = 6), "doc", mappingPayload).futureValue shouldEqual false
+        cl.updateMapping(genIndexString(), "doc", mappingPayload).futureValue shouldEqual false
         whenReady(cl.updateMapping(index, "doc", indexPayload).failed)(_ shouldBe a[ElasticClientError])
       }
 
       "delete index" in {
-        val index = genString()
+        val index = genIndexString()
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
         cl.deleteIndex(index).futureValue shouldEqual true
         cl.deleteIndex(index).futureValue shouldEqual false
@@ -87,7 +96,7 @@ class ElasticClientSpec
       implicit val rsSearch: HttpClient[Future, QueryResults[Json]] = withAkkaUnmarshaller[QueryResults[Json]]
       implicit val rsGet: HttpClient[Future, Json]                  = withAkkaUnmarshaller[Json]
 
-      val index = genString(length = 6)
+      val index = genIndexString()
       val list  = List.fill(10)(genString() -> genJson("key", "key2"))
 
       "add documents" in {
@@ -122,7 +131,7 @@ class ElasticClientSpec
       "search on an index which does not exist" in {
         val qrs = ScoredQueryResults(0L, 0F, List.empty)
 
-        cl.search[Json](matchAll, Set(genString()))(p).futureValue shouldEqual qrs
+        cl.search[Json](matchAll, Set(genIndexString()))(p).futureValue shouldEqual qrs
       }
 
       "search which returns only specified fields" in {
@@ -182,7 +191,7 @@ class ElasticClientSpec
                 "hits" -> Json.arr(
                   elems.map { e =>
                     Json.obj(
-                      "_index"  -> Json.fromString(index),
+                      "_index"  -> Json.fromString(cl.sanitize(index)),
                       "_type"   -> Json.fromString("doc"),
                       "_id"     -> Json.fromString(e._1),
                       "_score"  -> Json.Null,
@@ -220,7 +229,7 @@ class ElasticClientSpec
                 "hits" -> Json.arr(
                   elems.map { e =>
                     Json.obj(
-                      "_index"  -> Json.fromString(index),
+                      "_index"  -> Json.fromString(cl.sanitize(index)),
                       "_type"   -> Json.fromString("doc"),
                       "_id"     -> Json.fromString(e._1),
                       "_score"  -> Json.Null,

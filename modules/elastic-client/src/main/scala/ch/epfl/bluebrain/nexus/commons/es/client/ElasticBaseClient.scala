@@ -36,9 +36,17 @@ abstract class ElasticBaseClient[F[_]](implicit
         }
     }
 
-  private[client] def indexPath(indices: Set[String]) =
+  private[client] def indexPath(indices: Set[String]): String =
     if (indices.isEmpty) anyIndexPath
-    else indices.mkString(",")
+    else indices.map(sanitize).mkString(",")
+
+  /**
+    * Replaces the characters ' "*\<>|,/?' in the provided index with '_' and drops all '_' prefixes.
+    *
+    * @param index the index name to sanitize
+    */
+  private[client] def sanitize(index: String): String =
+    index.replaceAll("""[\s|"|*|\\|<|>|\||,|/|?]""", "_").dropWhile(_ == '_')
 }
 
 object ElasticBaseClient {
