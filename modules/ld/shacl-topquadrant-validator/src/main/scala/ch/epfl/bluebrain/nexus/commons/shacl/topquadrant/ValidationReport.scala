@@ -42,9 +42,10 @@ object ValidationReport {
     Try(report.getModel.asGraph) match {
       case Success(graph) =>
         graph.subjects(sh.conforms, _.isLiteral).headOption.flatMap { iri =>
+          val cursor = graph.cursor(iri)
           val report = for {
-            conforms <- graph.cursor(iri).downField(sh.conforms).focus.as[Boolean].left.map(_.message)
-            targeted <- graph.cursor(iri).downField(nxsh.targetedNodes).focus.as[Int].left.map(_.message)
+            conforms <- cursor.downField(sh.conforms).focus.as[Boolean].left.map(_.message)
+            targeted <- cursor.downField(nxsh.targetedNodes).focus.as[Int].left.map(_.message)
             json     <- graph.asJson(shaclCtx, Some(iri)).toEither.left.map(e => Try(e.getMessage).getOrElse(""))
           } yield ValidationReport(conforms, targeted, json.removeKeys("@context", "@id").addContext(shaclCtxUri))
           report match {
