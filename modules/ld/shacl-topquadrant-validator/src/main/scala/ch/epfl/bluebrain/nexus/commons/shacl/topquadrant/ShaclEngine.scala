@@ -52,6 +52,8 @@ object ShaclEngine {
     val m      = ModelFactory.createDefaultModel
     val stream = StreamRDFLib.graph(m.getGraph)
     RDFParser.create.fromString(contentOf("/shacl-shacl.ttl")).base("").lang(Lang.TTL).parse(stream)
+    ValidationUtil.ensureToshTriplesExist(m)
+    SHACLFunctions.registerFunctions(m)
     m
   }
 
@@ -63,7 +65,7 @@ object ShaclEngine {
     * @return an option of [[ValidationReport]] with the validation results
     */
   def apply(shapesModel: Model, reportDetails: Boolean): Option[ValidationReport] =
-    apply(shapesModel, shaclModel, validateShapes = true, reportDetails = reportDetails)
+    applySkipShapesCheck(shapesModel, shaclModel, validateShapes = true, reportDetails = reportDetails)
 
   /**
     * Validates a given data Model against all shapes from a given shapes Model.
@@ -82,6 +84,13 @@ object ShaclEngine {
     val finalShapesModel = ValidationUtil.ensureToshTriplesExist(shapesModel)
     // Make sure all sh:Functions are registered
     SHACLFunctions.registerFunctions(finalShapesModel)
+    applySkipShapesCheck(dataModel, finalShapesModel, validateShapes, reportDetails)
+  }
+
+  private def applySkipShapesCheck(dataModel: Model,
+                                   finalShapesModel: Model,
+                                   validateShapes: Boolean,
+                                   reportDetails: Boolean): Option[ValidationReport] = {
     // Create Dataset that contains both the data model and the shapes model
     // (here, using a temporary URI for the shapes graph)
     val shapesGraphURI = URI.create("urn:x-shacl-shapes-graph:" + UUID.randomUUID.toString)
