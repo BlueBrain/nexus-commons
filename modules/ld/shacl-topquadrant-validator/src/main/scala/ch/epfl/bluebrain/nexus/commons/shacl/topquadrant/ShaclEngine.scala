@@ -52,9 +52,9 @@ object ShaclEngine {
     val m      = ModelFactory.createDefaultModel
     val stream = StreamRDFLib.graph(m.getGraph)
     RDFParser.create.fromString(contentOf("/shacl-shacl.ttl")).base("").lang(Lang.TTL).parse(stream)
-    ValidationUtil.ensureToshTriplesExist(m)
-    SHACLFunctions.registerFunctions(m)
-    m
+    val finalModel = ValidationUtil.ensureToshTriplesExist(m)
+    SHACLFunctions.registerFunctions(finalModel)
+    finalModel
   }
 
   /**
