@@ -128,7 +128,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     execute(Delete(base / sanitize(index) / `type` / id), Set(OK), "delete index")
 
   /**
-    * Updates every document with that matches the provided ''query''
+    * Deletes every document with that matches the provided ''query''
     *
     * @param indices the indices to use on search (if empty, searches in all the indices)
     * @param query   the query to filter which documents are going to be deleted
