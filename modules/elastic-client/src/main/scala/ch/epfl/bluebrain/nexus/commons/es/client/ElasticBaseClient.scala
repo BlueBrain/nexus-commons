@@ -38,15 +38,19 @@ abstract class ElasticBaseClient[F[_]](implicit
 
   private[client] def indexPath(indices: Set[String]): String =
     if (indices.isEmpty) anyIndexPath
-    else indices.map(sanitize).mkString(",")
+    else indices.map(sanitize(_, allowWildCard = true)).mkString(",")
 
   /**
-    * Replaces the characters ' "*\<>|,/?' in the provided index with '_' and drops all '_' prefixes.
+    * Replaces the characters ' "\<>|,/?' in the provided index with '_' and drops all '_' prefixes.
+    * The wildcard (*) character will be only dropped when ''allowWildCard'' is set to false.
     *
     * @param index the index name to sanitize
+    * @param allowWildCard flag to allow wildcard (*) or not.
     */
-  private[client] def sanitize(index: String): String =
-    index.replaceAll("""[\s|"|*|\\|<|>|\||,|/|?]""", "_").dropWhile(_ == '_')
+  private[client] def sanitize(index: String, allowWildCard: Boolean = false): String = {
+    val regex = if (allowWildCard) """[\s|"|\\|<|>|\||,|/|?]""" else """[\s|"|*|\\|<|>|\||,|/|?]"""
+    index.replaceAll(regex, "_").dropWhile(_ == '_')
+  }
 }
 
 object ElasticBaseClient {
