@@ -40,7 +40,7 @@ object ValidationReport {
 
   final def apply(report: Resource): Option[ValidationReport] =
     Try(report.getModel.asGraph) match {
-      case Success(graph) =>
+      case Success(Right(graph)) =>
         graph.subjects(sh.conforms, _.isLiteral).headOption.flatMap { iri =>
           val cursor = graph.cursor(iri)
           val report = for {
