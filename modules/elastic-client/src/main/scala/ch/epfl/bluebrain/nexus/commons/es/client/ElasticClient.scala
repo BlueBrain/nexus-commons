@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri.Query
-import akka.http.scaladsl.model.{StatusCodes, Uri}
+import akka.http.scaladsl.model._
 import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
@@ -86,6 +86,16 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     */
   def create(index: String, `type`: String, id: String, payload: Json): F[Unit] =
     execute(Put(base / sanitize(index) / `type` / id, payload), Set(OK, Created), "create document")
+
+  /**
+    * Creates a bulk update with the operations defined on the provided ''ops'' argument.
+    *
+    * @param ops the list of operations to be included in the bulk update
+    */
+  def bulk(ops: List[BulkOp]): F[Unit] = {
+    val entity = HttpEntity(`application/x-ndjson`, ops.map(_.payload).mkString("", newLine, newLine))
+    execute(Post(base / "_bulk", entity), Set(OK), "bulk update")
+  }
 
   /**
     * Updates an existing document with the provided payload.
@@ -200,11 +210,59 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
 
 object ElasticClient {
 
+  /**
+    * Enumeration type for all possible bulk operations
+    */
+  sealed trait BulkOp extends Product with Serializable {
+
+    /**
+      * @return the index to use for the current bulk operation
+      */
+    def index: String
+
+    /**
+      * @return the type to use for the current bulk operation
+      */
+    def tpe: String
+
+    /**
+      * @return the id of the document for the current bulk operation
+      */
+    def id: String
+
+    /**
+      * @return the payload for the current bulk operation
+      */
+    def payload: String
+
+    private[ElasticClient] def json: Json =
+      Json.obj("_index" -> Json.fromString(index), "_type" -> Json.fromString(tpe), "_id" -> Json.fromString(id))
+  }
+
+  object BulkOp {
+    final case class Index(index: String, tpe: String, id: String, content: Json) extends BulkOp {
+      lazy val payload: String = Json.obj("index" -> json).noSpaces + newLine + content.noSpaces
+    }
+    final case class Create(index: String, tpe: String, id: String, content: Json) extends BulkOp {
+      lazy val payload: String = Json.obj("create" -> json).noSpaces + newLine + content.noSpaces
+    }
+    final case class Update(index: String, tpe: String, id: String, content: Json, retry: Int = 0) extends BulkOp {
+      val modified             = if (retry > 0) super.json deepMerge Json.obj("retry_on_conflict" -> Json.fromInt(retry)) else json
+      lazy val payload: String = Json.obj("update"                                                -> modified).noSpaces + newLine + content.noSpaces
+    }
+    final case class Delete(index: String, tpe: String, id: String) extends BulkOp {
+      lazy val payload: String = Json.obj("delete" -> json).noSpaces + newLine
+    }
+  }
+
   private[client] val updatePath              = "_update"
   private[client] val updateByQueryPath       = "_update_by_query"
   private[client] val deleteByQueryPath       = "_delete_by_query"
   private[client] val includeFieldsQueryParam = "_source_include"
   private[client] val excludeFieldsQueryParam = "_source_exclude"
+  private[client] val newLine                 = System.lineSeparator()
+  private[client] val `application/x-ndjson`: MediaType.WithFixedCharset =
+    MediaType.applicationWithFixedCharset("x-ndjson", HttpCharsets.`UTF-8`, "json")
 
   /**
     * Construct a [[ElasticClient]] from the provided ''base'' uri and the provided query client
