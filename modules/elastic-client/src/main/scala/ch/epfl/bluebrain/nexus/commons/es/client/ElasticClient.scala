@@ -241,17 +241,17 @@ object ElasticClient {
 
   object BulkOp {
     final case class Index(index: String, tpe: String, id: String, content: Json) extends BulkOp {
-      lazy val payload: String = Json.obj("index" -> json).noSpaces + newLine + content.noSpaces
+      def payload: String = Json.obj("index" -> json).noSpaces + newLine + content.noSpaces
     }
     final case class Create(index: String, tpe: String, id: String, content: Json) extends BulkOp {
-      lazy val payload: String = Json.obj("create" -> json).noSpaces + newLine + content.noSpaces
+      def payload: String = Json.obj("create" -> json).noSpaces + newLine + content.noSpaces
     }
     final case class Update(index: String, tpe: String, id: String, content: Json, retry: Int = 0) extends BulkOp {
-      val modified             = if (retry > 0) super.json deepMerge Json.obj("retry_on_conflict" -> Json.fromInt(retry)) else json
-      lazy val payload: String = Json.obj("update"                                                -> modified).noSpaces + newLine + content.noSpaces
+      val modified        = if (retry > 0) json deepMerge Json.obj("retry_on_conflict" -> Json.fromInt(retry)) else json
+      def payload: String = Json.obj("update"                                          -> modified).noSpaces + newLine + content.noSpaces
     }
     final case class Delete(index: String, tpe: String, id: String) extends BulkOp {
-      lazy val payload: String = Json.obj("delete" -> json).noSpaces + newLine
+      def payload: String = Json.obj("delete" -> json).noSpaces + newLine
     }
   }
 
