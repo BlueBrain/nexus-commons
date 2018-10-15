@@ -5,6 +5,7 @@ import java.util.regex.Pattern
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
@@ -17,7 +18,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.parser.parse
 import io.circe.{Decoder, Json}
 import org.scalatest._
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,7 +31,8 @@ class ElasticClientSpec
     with Inspectors
     with CancelAfterFailure
     with Assertions
-    with OptionValues {
+    with OptionValues
+    with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(15 seconds, 300 milliseconds)
 
@@ -103,17 +105,16 @@ class ElasticClientSpec
 
       "add documents" in {
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
-        forAll(list) {
-          case (id, json) =>
-            cl.create(index, t, id, json).futureValue shouldEqual (())
-
-        }
+        val ops = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        cl.bulk(ops).futureValue shouldEqual (())
       }
 
       "fetch documents" in {
         forAll(list) {
           case (id, json) =>
-            cl.get[Json](index, t, id).futureValue.value shouldEqual json
+            eventually {
+              cl.get[Json](index, t, id).futureValue.value shouldEqual json
+            }
         }
       }
 
@@ -275,7 +276,7 @@ class ElasticClientSpec
         case (id, json) => id -> (json deepMerge Json.obj("key" -> Json.fromString(genString())))
       }
 
-      "update key field on documents documents" in {
+      "update key field on documents" in {
         forAll(listModified) {
           case (id, json) =>
             val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
@@ -294,7 +295,7 @@ class ElasticClientSpec
         case (id, json) => id -> (json deepMerge Json.obj("key" -> Json.fromString(genString())))
       }.toMap
 
-      "update key field on documents documents from query" in {
+      "update key field on documents from query" in {
         forAll(listModified) {
           case (id, json) =>
             val query =
@@ -324,6 +325,32 @@ class ElasticClientSpec
                             Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
             cl.deleteDocuments(Set(indexSanitized), query).futureValue shouldEqual (())
             cl.get[Json](index, t, id).futureValue shouldEqual None
+        }
+      }
+
+      "add several bulk operations" in {
+        val toUpdate   = genString() -> genJson("key", "key1")
+        val toOverride = genString() -> genJson("key", "key2")
+        val toDelete   = genString() -> genJson("key", "key3")
+        val list       = List(toUpdate, toOverride, toDelete)
+        val ops        = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        cl.bulk(ops).futureValue shouldEqual (())
+
+        val updated = Json.obj("key1" -> Json.fromString("updated"))
+        cl.bulk(List(
+            BulkOp.Delete(indexSanitized, t, toDelete._1),
+            BulkOp.Index(indexSanitized, t, toOverride._1, updated),
+            BulkOp.Update(indexSanitized, t, toUpdate._1, Json.obj("doc" -> updated))
+          ))
+          .futureValue shouldEqual (())
+        eventually {
+          cl.get[Json](index, t, toUpdate._1).futureValue.value shouldEqual toUpdate._2.deepMerge(updated)
+        }
+        eventually {
+          cl.get[Json](index, t, toOverride._1).futureValue.value shouldEqual updated
+        }
+        eventually {
+          cl.get[Json](index, t, toDelete._1).futureValue shouldEqual None
         }
       }
     }
