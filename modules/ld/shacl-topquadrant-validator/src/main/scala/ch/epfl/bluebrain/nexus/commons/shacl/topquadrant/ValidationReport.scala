@@ -58,7 +58,7 @@ object ValidationReport {
       case _ => None
     }
 
-  private val shaclCtxUri: AbsoluteIri = url"https://bluebrain.github.io/nexus/contexts/shacl"
+  private val shaclCtxUri: AbsoluteIri = url"https://bluebrain.github.io/nexus/contexts/shacl-20170720.json"
   private val shaclCtx: Json           = jsonContentOf("/shacl-context-resp.json")
 
   implicit val reportEncoder: Encoder[ValidationReport] = Encoder.instance(_.json)
