@@ -353,6 +353,35 @@ class ElasticClientSpec
           cl.get[Json](index, t, toDelete._1).futureValue shouldEqual None
         }
       }
+
+      "add and fetch ids with non UTF-8 characters" in {
+        val list = List.fill(5)(genIndexString() -> genJson("key", "key1"))
+        val ops  = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        cl.bulk(ops).futureValue shouldEqual (())
+
+        forAll(list) {
+          case (id, json) =>
+            eventually {
+              cl.get[Json](index, t, id).futureValue.value shouldEqual json
+            }
+        }
+
+        forAll(list) {
+          case (id, json) => cl.update(index, t, id, json deepMerge Json.obj("id" -> Json.fromString(id))).futureValue
+        }
+
+        forAll(list) {
+          case (id, json) =>
+            eventually {
+              cl.get[Json](index, t, id).futureValue.value shouldEqual json.deepMerge(
+                Json.obj("id" -> Json.fromString(id)))
+            }
+        }
+
+        forAll(list) {
+          case (id, _) => cl.delete(index, t, id).futureValue
+        }
+      }
     }
   }
 

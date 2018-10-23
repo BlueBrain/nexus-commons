@@ -1,5 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
+import java.net.URLEncoder
+
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri.Query
@@ -17,6 +19,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
   * ElasticSearch client implementation that uses a RESTful API endpoint for interacting with a ElasticSearch deployment.
@@ -85,7 +88,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param payload the document's payload
     */
   def create(index: String, `type`: String, id: String, payload: Json): F[Unit] =
-    execute(Put(base / sanitize(index) / `type` / id, payload), Set(OK, Created), "create document")
+    execute(Put(base / sanitize(index) / `type` / urlEncode(id), payload), Set(OK, Created), "create document")
 
   /**
     * Creates a bulk update with the operations defined on the provided ''ops'' argument.
@@ -107,7 +110,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param qp      the optional query parameters
     */
   def update(index: String, `type`: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] =
-    execute(Post((base / sanitize(index) / `type` / id / updatePath).withQuery(qp), payload),
+    execute(Post((base / sanitize(index) / `type` / urlEncode(id) / updatePath).withQuery(qp), payload),
             Set(OK, Created),
             "update index")
 
@@ -135,7 +138,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     * @param id     the id to delete
     */
   def delete(index: String, `type`: String, id: String): F[Unit] =
-    execute(Delete(base / sanitize(index) / `type` / id), Set(OK), "delete index")
+    execute(Delete(base / sanitize(index) / `type` / urlEncode(id)), Set(OK), "delete index")
 
   /**
     * Deletes every document with that matches the provided ''query''
@@ -164,7 +167,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
       if (include.isEmpty) Map.empty else Map(includeFieldsQueryParam -> include.mkString(","))
     val excludeMap: Map[String, String] =
       if (exclude.isEmpty) Map.empty else Map(excludeFieldsQueryParam -> exclude.mkString(","))
-    val uri = base / sanitize(index) / `type` / id / source
+    val uri = base / sanitize(index) / `type` / urlEncode(id) / source
     rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).recoverWith {
       case UnexpectedUnsuccessfulHttpResponse(r) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
       case UnexpectedUnsuccessfulHttpResponse(r)                                     => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
@@ -206,6 +209,9 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
       implicit
       rs: HttpClient[F, Json]): F[Json] =
     queryClient.searchRaw(query, indices, qp)
+
+  private def urlEncode(value: String): String =
+    Try(URLEncoder.encode(value, "UTF-8")).getOrElse(value)
 }
 
 object ElasticClient {
