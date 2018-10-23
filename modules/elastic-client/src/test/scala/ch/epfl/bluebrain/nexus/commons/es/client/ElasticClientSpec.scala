@@ -367,7 +367,8 @@ class ElasticClientSpec
         }
 
         forAll(list) {
-          case (id, json) => cl.update(index, t, id, json deepMerge Json.obj("id" -> Json.fromString(id))).futureValue
+          case (id, _) =>
+            cl.update(index, t, id, Json.obj("doc" -> Json.obj("id" -> Json.fromString(id)))).futureValue
         }
 
         forAll(list) {
