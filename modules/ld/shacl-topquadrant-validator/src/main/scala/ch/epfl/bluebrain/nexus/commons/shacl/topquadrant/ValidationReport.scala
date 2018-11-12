@@ -46,7 +46,7 @@ object ValidationReport {
           val report = for {
             conforms <- cursor.downField(sh.conforms).focus.as[Boolean].left.map(_.message)
             targeted <- cursor.downField(nxsh.targetedNodes).focus.as[Int].left.map(_.message)
-            json     <- graph.asJson(shaclCtx, Some(iri)).toEither.left.map(e => Try(e.getMessage).getOrElse(""))
+            json     <- graph.asJson(shaclCtx, iri).toEither.left.map(e => Try(e.getMessage).getOrElse(""))
           } yield ValidationReport(conforms, targeted, json.removeKeys("@context", "@id").addContext(shaclCtxUri))
           report match {
             case Left(err) =>
