@@ -95,9 +95,11 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     *
     * @param ops the list of operations to be included in the bulk update
     */
-  def bulk(ops: List[BulkOp]): F[Unit] = {
-    val entity = HttpEntity(`application/x-ndjson`, ops.map(_.payload).mkString("", newLine, newLine))
-    execute(Post(base / "_bulk", entity), Set(OK), "bulk update")
+  def bulk(ops: List[BulkOp]): F[Unit] = ops match {
+    case Nil => F.unit
+    case _ =>
+      val entity = HttpEntity(`application/x-ndjson`, ops.map(_.payload).mkString("", newLine, newLine))
+      execute(Post(base / "_bulk", entity), Set(OK), "bulk update")
   }
 
   /**
