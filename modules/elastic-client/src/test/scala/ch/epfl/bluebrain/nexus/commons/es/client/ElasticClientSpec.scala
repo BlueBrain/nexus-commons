@@ -354,6 +354,10 @@ class ElasticClientSpec
         }
       }
 
+      "do nothing when BulkOp list is empty" in {
+        cl.bulk(List.empty).futureValue shouldEqual (())
+      }
+
       "add and fetch ids with non UTF-8 characters" in {
         val list = List.fill(5)(genIndexString() -> genJson("key", "key1"))
         val ops  = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
