@@ -3,6 +3,7 @@ val jenaVersion          = "3.9.0"
 val blazegraphVersion    = "2.1.4"
 val jacksonVersion       = "2.9.7"
 val catsVersion          = "1.4.0"
+val catsEffectVersion    = "1.0.0"
 val circeVersion         = "0.10.1"
 val scalaTestVersion     = "3.0.5"
 val shapelessVersion     = "2.3.3"
@@ -13,11 +14,12 @@ val akkaHttpCirceVersion = "1.22.0"
 val elasticSearchVersion = "6.4.3"
 val log4jVersion         = "2.11.1"
 val commonsIOVersion     = "1.3.2"
-val rdfVersion           = "0.2.26"
-val monixVersion         = "3.0.0-RC1"
+val rdfVersion           = "0.2.28"
+val monixVersion         = "3.0.0-RC2"
 val topQuadrantVersion   = "1.2.0-nexus3"
 
 lazy val catsCore           = "org.typelevel"                   %% "cats-core"            % catsVersion
+lazy val catsEffect         = "org.typelevel"                   %% "cats-effect"          % catsEffectVersion
 lazy val circeCore          = "io.circe"                        %% "circe-core"           % circeVersion
 lazy val circeParser        = "io.circe"                        %% "circe-parser"         % circeVersion
 lazy val circeGenericExtras = "io.circe"                        %% "circe-generic-extras" % circeVersion
@@ -50,6 +52,7 @@ lazy val esReindex         = "org.codelibs.elasticsearch.module"    % "reindex" 
 lazy val esRestClient      = "org.elasticsearch.client"             % "elasticsearch-rest-client" % elasticSearchVersion
 lazy val esTransportClient = "org.elasticsearch.plugin"             % "transport-netty4-client"   % elasticSearchVersion
 lazy val commonsIO         = "org.apache.commons"                   % "commons-io"                % commonsIOVersion
+lazy val monixEval         = "io.monix"                             %% "monix-eval"               % monixVersion
 lazy val monixTail         = "io.monix"                             %% "monix-tail"               % monixVersion
 lazy val rdfJena           = "ch.epfl.bluebrain.nexus"              %% "rdf-jena"                 % rdfVersion
 lazy val rdfCirce          = "ch.epfl.bluebrain.nexus"              %% "rdf-circe"                % rdfVersion
@@ -70,7 +73,7 @@ lazy val test = project
     name                := "commons-test",
     moduleName          := "commons-test",
     coverageEnabled     := false,
-    libraryDependencies ++= Seq(circeCore, circeParser)
+    libraryDependencies ++= Seq(catsEffect, circeCore, circeParser, scalaTest)
   )
 
 lazy val http = project
@@ -85,6 +88,7 @@ lazy val http = project
                                 catsCore,
                                 circeCore,
                                 journal,
+                                monixEval,
                                 monixTail,
                                 akkaHttpTestKit    % Test,
                                 circeGenericExtras % Test,

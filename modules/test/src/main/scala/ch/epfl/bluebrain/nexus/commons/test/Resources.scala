@@ -1,7 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.test
 
-import io.circe.Json
-import io.circe.parser.parse
+import _root_.io.circe.Json
+import _root_.io.circe.parser.parse
 
 import scala.io.Source
 
