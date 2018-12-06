@@ -4,12 +4,13 @@ import java.util.regex.Pattern
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
+import cats.effect.{IO, LiftIO}
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, akkaHttpClient, withAkkaUnmarshaller}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, untyped, withUnmarshaller}
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult._
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults._
@@ -21,7 +22,7 @@ import org.scalatest._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class ElasticClientSpec
     extends ElasticServer
@@ -39,13 +40,20 @@ class ElasticClientSpec
   private def genIndexString(): String =
     genString(length = 10, pool = Vector.range('a', 'f') ++ """ "*\<>|,/?""")
 
+  private implicit def futureInstance: LiftIO[Future] = new LiftIO[Future] {
+    override def liftIO[A](ioa: IO[A]): Future[A] = ioa.attempt.unsafeToFuture().flatMap {
+      case Right(a) => Future.successful(a)
+      case Left(e)  => Future.failed(e)
+    }
+  }
+
+  private implicit val uc: UntypedHttpClient[Future] = untyped[Future]
+
   "An ElasticClient" should {
-    implicit val ec: ExecutionContext          = system.dispatcher
-    implicit val ul: UntypedHttpClient[Future] = akkaHttpClient
-    val cl: ElasticClient[Future]              = ElasticClient[Future](esUri)
-    val t                                      = "doc"
-    val indexPayload                           = jsonContentOf("/index_payload.json")
-    val mappingPayload                         = jsonContentOf("/mapping_payload.json")
+    val cl: ElasticClient[Future] = ElasticClient[Future](esUri)
+    val t                         = "doc"
+    val indexPayload              = jsonContentOf("/index_payload.json")
+    val mappingPayload            = jsonContentOf("/mapping_payload.json")
     def genJson(k: String, k2: String): Json =
       Json.obj(k -> Json.fromString(genString()), k2 -> Json.fromString(genString()))
     def getValue(key: String, json: Json): String = json.hcursor.get[String](key).getOrElse("")
@@ -96,8 +104,8 @@ class ElasticClientSpec
     "perform document operations" when {
       val p: Pagination                                             = Pagination(0L, 3)
       implicit val D: Decoder[QueryResults[Json]]                   = ElasticDecoder[Json]
-      implicit val rsSearch: HttpClient[Future, QueryResults[Json]] = withAkkaUnmarshaller[QueryResults[Json]]
-      implicit val rsGet: HttpClient[Future, Json]                  = withAkkaUnmarshaller[Json]
+      implicit val rsSearch: HttpClient[Future, QueryResults[Json]] = withUnmarshaller[Future, QueryResults[Json]]
+      implicit val rsGet: HttpClient[Future, Json]                  = withUnmarshaller[Future, Json]
 
       val index          = genIndexString()
       val indexSanitized = cl.sanitize(index)

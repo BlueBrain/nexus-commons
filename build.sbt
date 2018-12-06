@@ -86,10 +86,9 @@ lazy val http = project
                                 akkaHttp,
                                 akkaHttpCirce,
                                 catsCore,
+                                catsEffect,
                                 circeCore,
                                 journal,
-                                monixEval,
-                                monixTail,
                                 akkaHttpTestKit    % Test,
                                 circeGenericExtras % Test,
                                 scalaTest          % Test)
