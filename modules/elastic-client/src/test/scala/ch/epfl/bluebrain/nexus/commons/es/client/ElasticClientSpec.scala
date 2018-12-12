@@ -4,13 +4,12 @@ import java.util.regex.Pattern
 
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import cats.effect.{IO, LiftIO}
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, untyped, withUnmarshaller}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult._
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults._
@@ -39,13 +38,6 @@ class ElasticClientSpec
 
   private def genIndexString(): String =
     genString(length = 10, pool = Vector.range('a', 'f') ++ """ "*\<>|,/?""")
-
-  private implicit def futureInstance: LiftIO[Future] = new LiftIO[Future] {
-    override def liftIO[A](ioa: IO[A]): Future[A] = ioa.attempt.unsafeToFuture().flatMap {
-      case Right(a) => Future.successful(a)
-      case Left(e)  => Future.failed(e)
-    }
-  }
 
   private implicit val uc: UntypedHttpClient[Future] = untyped[Future]
 
