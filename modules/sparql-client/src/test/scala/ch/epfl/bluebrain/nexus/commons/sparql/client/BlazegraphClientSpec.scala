@@ -9,7 +9,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
-import cats.effect.{IO, LiftIO}
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
@@ -59,13 +58,6 @@ class BlazegraphClientSpec
 
   private implicit val ec = system.dispatcher
   private implicit val mt = ActorMaterializer()
-
-  private implicit def futureInstance: LiftIO[Future] = new LiftIO[Future] {
-    override def liftIO[A](ioa: IO[A]): Future[A] = ioa.attempt.unsafeToFuture().flatMap {
-      case Right(a) => Future.successful(a)
-      case Left(e)  => Future.failed(e)
-    }
-  }
 
   private implicit val uc = untyped[Future]
   private implicit val rc = withUnmarshaller[Future, ResultSet]

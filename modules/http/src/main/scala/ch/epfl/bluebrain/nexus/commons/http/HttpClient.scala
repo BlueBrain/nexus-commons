@@ -13,7 +13,7 @@ import cats.effect.{IO, LiftIO}
 import cats.syntax.flatMap._
 import journal.Logger
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 
 /**
@@ -141,5 +141,17 @@ object HttpClient {
       override def toString(entity: HttpEntity): F[String] =
         cl.toString(entity)
     }
+
+  /**
+    * Default LiftIO instance for Scala Future.
+    *
+    * @param ec an implicitly available ExecutionContext
+    */
+  implicit def futureLiftIOInstance(implicit ec: ExecutionContext): LiftIO[Future] = new LiftIO[Future] {
+    override def liftIO[A](ioa: IO[A]): Future[A] = ioa.attempt.unsafeToFuture().flatMap {
+      case Right(a) => Future.successful(a)
+      case Left(e)  => Future.failed(e)
+    }
+  }
 }
 // $COVERAGE-ON$
