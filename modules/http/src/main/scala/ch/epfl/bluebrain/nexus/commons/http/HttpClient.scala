@@ -54,13 +54,13 @@ trait HttpClient[F[_], A] {
     toString(resp.entity).flatMap { body =>
       resp.status match {
         case _: ServerError =>
-          log.error(s"Server Error HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+          log.error(s"Server Error HTTP response for '${req.uri}', status: '${resp.status}', body: $body")
           F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp, body))
         case StatusCodes.BadRequest =>
-          log.warn(s"BadRequest HTTP response for '${req.uri}', discarding bytes")
+          log.warn(s"BadRequest HTTP response for '${req.uri}', body: $body")
           F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp, body))
         case _ =>
-          log.debug(s"HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
+          log.debug(s"HTTP response for '${req.uri}', status: '${resp.status}', body: $body")
           F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp, body))
       }
     }
