@@ -51,20 +51,19 @@ trait HttpClient[F[_], A] {
 
   private[http] def handleError(req: HttpRequest, resp: HttpResponse, log: Logger)(
       implicit F: MonadError[F, Throwable]): F[A] =
-    discardBytes(resp.entity).flatMap { _ =>
+    toString(resp.entity).flatMap { body =>
       resp.status match {
         case _: ServerError =>
           log.error(s"Server Error HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
-          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp, body))
         case StatusCodes.BadRequest =>
           log.warn(s"BadRequest HTTP response for '${req.uri}', discarding bytes")
-          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp, body))
         case _ =>
           log.debug(s"HTTP response for '${req.uri}', status: '${resp.status}', discarding bytes")
-          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp))
+          F.raiseError(UnexpectedUnsuccessfulHttpResponse(resp, body))
       }
     }
-
 }
 
 // $COVERAGE-OFF$

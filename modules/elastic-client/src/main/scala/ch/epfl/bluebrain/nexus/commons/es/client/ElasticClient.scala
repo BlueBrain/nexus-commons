@@ -170,10 +170,10 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     val excludeMap: Map[String, String] =
       if (exclude.isEmpty) Map.empty else Map(excludeFieldsQueryParam -> exclude.mkString(","))
     val uri = base / sanitize(index) / `type` / urlEncode(id) / source
-    rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).recoverWith {
-      case UnexpectedUnsuccessfulHttpResponse(r) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
-      case UnexpectedUnsuccessfulHttpResponse(r)                                     => ElasticFailure.fromResponse(r).flatMap(F.raiseError)
-      case other                                                                     => F.raiseError(other)
+    rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).handleErrorWith {
+      case UnexpectedUnsuccessfulHttpResponse(r, _) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
+      case UnexpectedUnsuccessfulHttpResponse(r, body)                                  => F.raiseError(ElasticFailure.fromStatusCode(r.status, body))
+      case other                                                                        => F.raiseError(other)
     }
   }
 
@@ -267,8 +267,8 @@ object ElasticClient {
   private[client] val updatePath              = "_update"
   private[client] val updateByQueryPath       = "_update_by_query"
   private[client] val deleteByQueryPath       = "_delete_by_query"
-  private[client] val includeFieldsQueryParam = "_source_include"
-  private[client] val excludeFieldsQueryParam = "_source_exclude"
+  private[client] val includeFieldsQueryParam = "_source_includes"
+  private[client] val excludeFieldsQueryParam = "_source_excludes"
   private[client] val newLine                 = System.lineSeparator()
   private[client] val `application/x-ndjson`: MediaType.WithFixedCharset =
     MediaType.applicationWithFixedCharset("x-ndjson", HttpCharsets.`UTF-8`, "json")

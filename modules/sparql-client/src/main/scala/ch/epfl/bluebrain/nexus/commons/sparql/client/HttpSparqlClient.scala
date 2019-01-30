@@ -9,7 +9,7 @@ import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
-import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes}
+import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes, UnexpectedUnsuccessfulHttpResponse}
 import io.circe.Json
 import journal.Logger
 import org.apache.jena.query.ResultSet
@@ -38,6 +38,8 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
     val formData = FormData("query" -> query)
     val req      = Post(endpoint, formData).withHeaders(accept)
     rs(addCredentials(req)).handleErrorWith {
+      case UnexpectedUnsuccessfulHttpResponse(resp, body) =>
+        error(req, body, resp.status, "sparql query")
       case NonFatal(th) =>
         log.error(s"""Unexpected Sparql response for sparql query:
                      |Request: '${req.method} ${req.uri}'
@@ -70,13 +72,17 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
 
   private[client] def error[A](req: HttpRequest, resp: HttpResponse, op: String): F[A] =
     cl.toString(resp.entity).flatMap { body =>
-      log.error(s"""Unexpected Blazegraph response for '$op':
+      error(req, body, resp.status, op)
+    }
+
+  private def error[A](req: HttpRequest, body: String, status: StatusCode, op: String): F[A] = {
+    log.error(s"""Unexpected Blazegraph response for '$op':
                    |Request: '${req.method} ${req.uri}'
-                   |Status: '${resp.status}'
+                   |Status: '$status'
                    |Response: '$body'
            """.stripMargin)
-      F.raiseError(SparqlFailure.fromStatusCode(resp.status, body))
-    }
+    F.raiseError(SparqlFailure.fromStatusCode(status, body))
+  }
 
   protected def addCredentials(req: HttpRequest): HttpRequest = credentials match {
     case None        => req

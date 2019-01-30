@@ -1,10 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
+import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{ClientError, ServerError}
-import akka.http.scaladsl.model.{HttpResponse, StatusCode}
-import cats.MonadError
-import cats.syntax.functor._
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.types.{Err, RetriableErr}
 
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
@@ -19,16 +16,6 @@ trait SparqlFailure extends Err {
 // $COVERAGE-OFF$
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
 object SparqlFailure {
-
-  /**
-    * Generates a SPARQL server failure from the HTTP response status ''code''.
-    *
-    * @param r the HTTP response
-
-    */
-  def fromResponse[F[_]](r: HttpResponse)(implicit cl: UntypedHttpClient[F],
-                                          F: MonadError[F, Throwable]): F[SparqlFailure] =
-    cl.toString(r.entity).map(body => fromStatusCode(r.status, body))
 
   /**
     * Generates a SPARQL server failure from the HTTP response status ''code''.
