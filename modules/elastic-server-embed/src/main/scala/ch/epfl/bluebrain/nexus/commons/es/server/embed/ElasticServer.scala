@@ -79,6 +79,8 @@ object ElasticServer {
   import org.elasticsearch.node.InternalSettingsPreparer
 
   private class MyNode(preparedSettings: Settings, classpathPlugins: util.Collection[Class[_ <: Plugin]])
-      extends Node(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null), classpathPlugins)
+      extends Node(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null), classpathPlugins, true) {
+    override def registerDerivedNodeNameWithLogger(nodeName: String) = ()
+  }
 }
 // $COVERAGE-ON$

@@ -9,5 +9,5 @@ import ch.epfl.bluebrain.nexus.commons.types.Err
   * @param response the underlying unexpected http response
   */
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
-final case class UnexpectedUnsuccessfulHttpResponse(response: HttpResponse)
+final case class UnexpectedUnsuccessfulHttpResponse(response: HttpResponse, body: String)
     extends Err("Received an unexpected http response while communicating with an external service")

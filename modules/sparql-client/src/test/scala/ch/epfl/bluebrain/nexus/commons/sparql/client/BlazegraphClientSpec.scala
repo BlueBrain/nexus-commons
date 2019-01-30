@@ -14,7 +14,7 @@ import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientSpec._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
-import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.SparqlServerError
+import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.{SparqlClientError, SparqlServerError}
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.Json
@@ -121,6 +121,13 @@ class BlazegraphClientSpec
       val expected = jsonContentOf("/sparql-json.json",
                                    Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
       cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue shouldEqual expected
+    }
+
+    "fail the query" in new BlazegraphClientFixture {
+      val cl = client(namespace)
+      cl.createNamespace(properties()).futureValue
+      cl.replace(graph, load(id, label, value)).futureValue
+      whenReady(cl.queryRaw(s"SELECT somethingwrong").failed)(_ shouldBe a[SparqlClientError])
     }
 
     "patch a named graph removing matching predicates" in new BlazegraphClientFixture {

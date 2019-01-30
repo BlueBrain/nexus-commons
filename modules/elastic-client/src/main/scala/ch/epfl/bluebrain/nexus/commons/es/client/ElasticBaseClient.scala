@@ -16,6 +16,7 @@ import journal.Logger
 abstract class ElasticBaseClient[F[_]](implicit
                                        cl: UntypedHttpClient[F],
                                        F: MonadError[F, Throwable]) {
+
   private[client] val log = Logger[this.type]
 
   private[client] def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: String): F[Unit] =
@@ -30,11 +31,9 @@ abstract class ElasticBaseClient[F[_]](implicit
       else if (ignoredCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => false)
       else
         ElasticFailure.fromResponse(resp).flatMap { f =>
-          cl.toString(req.entity).flatMap { reqBody =>
-            log.error(
-              s"Unexpected ElasticSearch response for intent '$intent':\nRequest: '${req.method} ${req.uri}' \nBody: '$reqBody'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
-            F.raiseError(f)
-          }
+          log.error(
+            s"Unexpected ElasticSearch response for intent '$intent':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
+          F.raiseError(f)
         }
     }
 
