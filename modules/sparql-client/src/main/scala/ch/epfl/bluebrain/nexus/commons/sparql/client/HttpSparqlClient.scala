@@ -49,18 +49,14 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
     }
   }
 
-  /**
-    * Executes the argument update query against the underlying sparql endpoint
-    *
-    * @param graph Graph targeted in the update
-    * @param query the update query
-    * @return successful Future[Unit] if update succeeded, failure otherwise
-    */
-  override def executeUpdate(graph: Uri, query: String): F[Unit] = {
-    F.catchNonFatal(UpdateFactory.create(query)).flatMap { _ =>
-      val formData = FormData("update" -> query)
-      val req      = Post(endpoint.withQuery(Query("using-named-graph-uri" -> graph.toString())), formData)
-      log.debug(s"Executing sparql update: '$query'")
+  def bulk(queries: SparqlWriteQuery*): F[Unit] = {
+    val queryString = queries.map(_.value).mkString("\n")
+    F.catchNonFatal(UpdateFactory.create(queryString)).flatMap { _ =>
+      val formData = FormData("update" -> queryString)
+      val qParams =
+        uniqueGraph(queries).map(graph => Query("using-named-graph-uri" -> graph.toString())).getOrElse(Query.Empty)
+      val req = Post(endpoint.withQuery(qParams), formData)
+      log.debug(s"Executing sparql update: '$queries'")
       cl(addCredentials(req)).flatMap { resp =>
         resp.status match {
           case StatusCodes.OK => cl.discardBytes(resp.entity).map(_ => ())
@@ -69,6 +65,12 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
       }
     }
   }
+
+  private def uniqueGraph(query: Seq[SparqlWriteQuery]): Option[Uri] =
+    query.map(_.graph).distinct match {
+      case head :: Nil => Some(head)
+      case _           => None
+    }
 
   private[client] def error[A](req: HttpRequest, resp: HttpResponse, op: String): F[A] =
     cl.toString(resp.entity).flatMap { body =>

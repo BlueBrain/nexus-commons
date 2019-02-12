@@ -10,8 +10,8 @@ import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.types.search._
@@ -28,11 +28,11 @@ import scala.util.Try
   * @param queryClient the query client
   * @tparam F the monadic effect type
   */
-class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implicit
-                                                                         cl: UntypedHttpClient[F],
-                                                                         ec: ExecutionContext,
-                                                                         F: MonadError[F, Throwable])
-    extends ElasticBaseClient[F] {
+class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient[F])(implicit
+                                                                                     cl: UntypedHttpClient[F],
+                                                                                     ec: ExecutionContext,
+                                                                                     F: MonadError[F, Throwable])
+    extends ElasticSearchBaseClient[F] {
 
   /**
     * Verifies if an index exists, recovering gracefully when the index does not exists.
@@ -172,8 +172,9 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     val uri = base / sanitize(index) / `type` / urlEncode(id) / source
     rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).handleErrorWith {
       case UnexpectedUnsuccessfulHttpResponse(r, _) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
-      case UnexpectedUnsuccessfulHttpResponse(r, body)                                  => F.raiseError(ElasticFailure.fromStatusCode(r.status, body))
-      case other                                                                        => F.raiseError(other)
+      case UnexpectedUnsuccessfulHttpResponse(r, body) =>
+        F.raiseError(ElasticSearchFailure.fromStatusCode(r.status, body))
+      case other => F.raiseError(other)
     }
   }
 
@@ -216,7 +217,7 @@ class ElasticClient[F[_]](base: Uri, queryClient: ElasticQueryClient[F])(implici
     Try(URLEncoder.encode(value, "UTF-8")).getOrElse(value)
 }
 
-object ElasticClient {
+object ElasticSearchClient {
 
   /**
     * Enumeration type for all possible bulk operations
@@ -243,7 +244,7 @@ object ElasticClient {
       */
     def payload: String
 
-    private[ElasticClient] def json: Json =
+    private[ElasticSearchClient] def json: Json =
       Json.obj("_index" -> Json.fromString(index), "_type" -> Json.fromString(tpe), "_id" -> Json.fromString(id))
   }
 
@@ -274,7 +275,7 @@ object ElasticClient {
     MediaType.applicationWithFixedCharset("x-ndjson", HttpCharsets.`UTF-8`, "json")
 
   /**
-    * Construct a [[ElasticClient]] from the provided ''base'' uri and the provided query client
+    * Construct a [[ElasticSearchClient]] from the provided ''base'' uri and the provided query client
     *
     * @param base        the base uri of the ElasticSearch endpoint
     * @tparam F the monadic effect type
@@ -282,7 +283,7 @@ object ElasticClient {
   final def apply[F[_]](base: Uri)(implicit
                                    cl: UntypedHttpClient[F],
                                    ec: ExecutionContext,
-                                   F: MonadError[F, Throwable]): ElasticClient[F] =
-    new ElasticClient(base, ElasticQueryClient(base))
+                                   F: MonadError[F, Throwable]): ElasticSearchClient[F] =
+    new ElasticSearchClient(base, ElasticSearchQueryClient(base))
 
 }

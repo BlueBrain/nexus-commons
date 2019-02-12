@@ -1,16 +1,18 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
+import java.util.Properties
+
 import akka.http.scaladsl.model.Uri
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
+import ch.epfl.bluebrain.nexus.commons.test.Randomness._
 
-import scala.annotation.tailrec
-import scala.util.Random
+import scala.collection.JavaConverters._
 
-class BlazegraphClientFixture {
+trait BlazegraphClientFixture {
 
   val namespace: String = genString(8)
   val rand: String      = genString(length = 8)
-  val graph: Uri        = Uri(s"http://$localhost:8080/graphs/$rand")
+  val graph: Uri        = s"http://$localhost:8080/graphs/$rand"
   val id: String        = genString()
   val label: String     = genString()
   val value: String     = genString()
@@ -20,14 +22,9 @@ object BlazegraphClientFixture {
 
   val localhost = "127.0.0.1"
 
-  final def genString(length: Int = 16, pool: IndexedSeq[Char] = Vector.range('a', 'z')): String = {
-    val size = pool.size
-
-    @tailrec
-    def inner(acc: String, remaining: Int): String =
-      if (remaining <= 0) acc
-      else inner(acc + pool(Random.nextInt(size)), remaining - 1)
-
-    inner("", length)
+  def properties(file: String = "/index.properties"): Map[String, String] = {
+    val props = new Properties()
+    props.load(getClass.getResourceAsStream(file))
+    props.asScala.toMap
   }
 }

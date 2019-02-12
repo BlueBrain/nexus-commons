@@ -8,7 +8,7 @@ import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.types.{Err, RetriableErr}
 
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
-trait ElasticFailure extends Err {
+trait ElasticSearchFailure extends Err {
 
   /**
     * the HTTP response payload
@@ -17,7 +17,7 @@ trait ElasticFailure extends Err {
 }
 
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
-object ElasticFailure {
+object ElasticSearchFailure {
 
   /**
     * Generates a ElasticSearch server failure from the HTTP response .
@@ -25,7 +25,7 @@ object ElasticFailure {
     * @param r the HTTP response
     */
   def fromResponse[F[_]](r: HttpResponse)(implicit cl: UntypedHttpClient[F],
-                                          F: MonadError[F, Throwable]): F[ElasticFailure] =
+                                          F: MonadError[F, Throwable]): F[ElasticSearchFailure] =
     cl.toString(r.entity).map(body => fromStatusCode(r.status, body))
 
   /**
@@ -34,7 +34,7 @@ object ElasticFailure {
     * @param code the HTTP response status ''code''
     * @param body the HTTP response payload
     */
-  def fromStatusCode(code: StatusCode, body: String): ElasticFailure =
+  def fromStatusCode(code: StatusCode, body: String): ElasticSearchFailure =
     code match {
       case _: ServerError => ElasticServerError(code, body)
       case _: ClientError => ElasticClientError(code, body)
@@ -49,7 +49,7 @@ object ElasticFailure {
     */
   final case class ElasticServerError(status: StatusCode, body: String)
       extends RetriableErr(s"Server error with status code '$status'")
-      with ElasticFailure
+      with ElasticSearchFailure
 
   /**
     * An unexpected client failure when attempting to communicate with a ElasticSearch endpoint.
@@ -59,7 +59,7 @@ object ElasticFailure {
     */
   final case class ElasticClientError(status: StatusCode, body: String)
       extends Err(s"Client error with status code '$status'")
-      with ElasticFailure
+      with ElasticSearchFailure
 
   /**
     * An unexpected failure when attempting to communicate with a ElasticSearch endpoint.
@@ -69,5 +69,5 @@ object ElasticFailure {
     */
   final case class ElasticUnexpectedError(status: StatusCode, body: String)
       extends RetriableErr(s"Unexpected error with status code '$status'")
-      with ElasticFailure
+      with ElasticSearchFailure
 }

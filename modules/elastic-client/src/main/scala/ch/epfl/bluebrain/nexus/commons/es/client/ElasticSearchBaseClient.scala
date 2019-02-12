@@ -4,18 +4,18 @@ import akka.http.scaladsl.model.{HttpRequest, StatusCode}
 import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import journal.Logger
 
 /**
-  * ElasticBaseClient provides the common methods and vals used for elastic clients.
+  * Common methods and vals used for elastic clients.
   *
   * @tparam F the monadic effect type
   */
-abstract class ElasticBaseClient[F[_]](implicit
-                                       cl: UntypedHttpClient[F],
-                                       F: MonadError[F, Throwable]) {
+abstract class ElasticSearchBaseClient[F[_]](implicit
+                                             cl: UntypedHttpClient[F],
+                                             F: MonadError[F, Throwable]) {
 
   private[client] val log = Logger[this.type]
 
@@ -30,7 +30,7 @@ abstract class ElasticBaseClient[F[_]](implicit
       if (expectedCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => true)
       else if (ignoredCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => false)
       else
-        ElasticFailure.fromResponse(resp).flatMap { f =>
+        ElasticSearchFailure.fromResponse(resp).flatMap { f =>
           log.error(
             s"Unexpected ElasticSearch response for intent '$intent':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
           F.raiseError(f)
@@ -54,7 +54,7 @@ abstract class ElasticBaseClient[F[_]](implicit
   }
 }
 
-object ElasticBaseClient {
+object ElasticSearchBaseClient {
   private[client] val source            = "_source"
   private[client] val anyIndexPath      = "_all"
   private[client] val ignoreUnavailable = "ignore_unavailable"

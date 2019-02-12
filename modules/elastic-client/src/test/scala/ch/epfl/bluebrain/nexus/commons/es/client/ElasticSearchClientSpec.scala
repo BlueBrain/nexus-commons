@@ -5,8 +5,8 @@ import java.util.regex.Pattern
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticClient.BulkOp
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticFailure.ElasticClientError
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
@@ -23,7 +23,7 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import scala.concurrent.duration._
 import scala.concurrent.Future
 
-class ElasticClientSpec
+class ElasticSearchClientSpec
     extends ElasticServer
     with ScalaFutures
     with Matchers
@@ -41,11 +41,11 @@ class ElasticClientSpec
 
   private implicit val uc: UntypedHttpClient[Future] = untyped[Future]
 
-  "An ElasticClient" should {
-    val cl: ElasticClient[Future] = ElasticClient[Future](esUri)
-    val t                         = "doc"
-    val indexPayload              = jsonContentOf("/index_payload.json")
-    val mappingPayload            = jsonContentOf("/mapping_payload.json")
+  "An ElasticSearchClient" should {
+    val cl: ElasticSearchClient[Future] = ElasticSearchClient[Future](esUri)
+    val t                               = "doc"
+    val indexPayload                    = jsonContentOf("/index_payload.json")
+    val mappingPayload                  = jsonContentOf("/mapping_payload.json")
     def genJson(k: String, k2: String): Json =
       Json.obj(k -> Json.fromString(genString()), k2 -> Json.fromString(genString()))
     def getValue(key: String, json: Json): String = json.hcursor.get[String](key).getOrElse("")
@@ -95,7 +95,7 @@ class ElasticClientSpec
 
     "perform document operations" when {
       val p: Pagination                                             = Pagination(0L, 3)
-      implicit val D: Decoder[QueryResults[Json]]                   = ElasticDecoder[Json]
+      implicit val D: Decoder[QueryResults[Json]]                   = ElasticSearchDecoder[Json]
       implicit val rsSearch: HttpClient[Future, QueryResults[Json]] = withUnmarshaller[Future, QueryResults[Json]]
       implicit val rsGet: HttpClient[Future, Json]                  = withUnmarshaller[Future, Json]
 
