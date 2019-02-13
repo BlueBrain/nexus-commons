@@ -2,7 +2,7 @@ val wesoValidatorVersion = "0.0.65-nexus1"
 val jenaVersion          = "3.10.0"
 val blazegraphVersion    = "2.1.4"
 val jacksonVersion       = "2.9.8"
-val catsVersion          = "1.5.0"
+val catsVersion          = "1.6.0"
 val catsEffectVersion    = "1.2.0"
 val circeVersion         = "0.11.1"
 val scalaTestVersion     = "3.0.5"
@@ -10,11 +10,11 @@ val shapelessVersion     = "2.3.3"
 val journalVersion       = "3.0.19"
 val akkaVersion          = "2.5.20"
 val akkaHttpVersion      = "10.1.5"
-val akkaHttpCirceVersion = "1.24.3"
+val akkaHttpCirceVersion = "1.25.2"
 val elasticSearchVersion = "6.6.0"
-val log4jVersion         = "2.11.1"
+val log4jVersion         = "2.11.2"
 val commonsIOVersion     = "1.3.2"
-val rdfVersion           = "0.2.32"
+val rdfVersion           = "0.2.33"
 val monixVersion         = "3.0.0-RC2"
 val topQuadrantVersion   = "1.2.0-nexus3"
 
@@ -54,8 +54,8 @@ lazy val esTransportClient = "org.elasticsearch.plugin"             % "transport
 lazy val commonsIO         = "org.apache.commons"                   % "commons-io"                % commonsIOVersion
 lazy val monixEval         = "io.monix"                             %% "monix-eval"               % monixVersion
 lazy val monixTail         = "io.monix"                             %% "monix-tail"               % monixVersion
-lazy val rdfJena           = "ch.epfl.bluebrain.nexus"              %% "rdf-jena"                 % rdfVersion
 lazy val rdfCirce          = "ch.epfl.bluebrain.nexus"              %% "rdf-circe"                % rdfVersion
+lazy val rdfJena           = "ch.epfl.bluebrain.nexus"              %% "rdf-jena"                 % rdfVersion
 lazy val topQuadrantShacl  = "ch.epfl.bluebrain.nexus.org.topbraid" % "shacl"                     % topQuadrantVersion
 
 lazy val types = project
@@ -125,24 +125,31 @@ lazy val elasticServerEmbed = project
     )
   )
 
-lazy val elasticClient = project
+lazy val elasticSearchClient = project
   .in(file("modules/elastic-client"))
   .dependsOn(http, queryTypes, test % Test, elasticServerEmbed % Test)
+  .enablePlugins(JmhPlugin)
   .settings(
-    name       := "elastic-client",
-    moduleName := "elastic-client",
+    name       := "elastic-search-client",
+    moduleName := "elastic-search-client",
     libraryDependencies ++= Seq(
       akkaStream,
       circeCore,
       akkaSlf4j          % Test,
       circeParser        % Test,
       circeGenericExtras % Test
-    )
+    ),
+    sourceDirectory in Jmh     := (sourceDirectory in Test).value,
+    classDirectory in Jmh      := (classDirectory in Test).value,
+    dependencyClasspath in Jmh := (dependencyClasspath in Test).value,
+    compile in Jmh             := (compile in Jmh).dependsOn(compile in Test).value,
+    run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(http, queryTypes, test % Test)
+  .enablePlugins(JmhPlugin)
   .settings(
     name       := "sparql-client",
     moduleName := "sparql-client",
@@ -152,14 +159,20 @@ lazy val sparqlClient = project
       jenaArq,
       rdfJena,
       akkaSlf4j          % Test,
+      akkaTestKit        % Test,
       circeParser        % Test,
       blazegraph         % Test,
       jacksonAnnotations % Test,
       jacksonCore        % Test,
       jacksonDatabind    % Test,
-      akkaTestKit        % Test,
+      rdfCirce           % Test,
       scalaTest          % Test
-    )
+    ),
+    sourceDirectory in Jmh     := (sourceDirectory in Test).value,
+    classDirectory in Jmh      := (classDirectory in Test).value,
+    dependencyClasspath in Jmh := (dependencyClasspath in Test).value,
+    compile in Jmh             := (compile in Jmh).dependsOn(compile in Test).value,
+    run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
 lazy val shaclValidator = project
@@ -210,7 +223,7 @@ lazy val root = project
              test,
              queryTypes,
              elasticServerEmbed,
-             elasticClient,
+             elasticSearchClient,
              sparqlClient,
              shaclValidator,
              shaclValidatorTQ,

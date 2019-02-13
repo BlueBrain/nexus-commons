@@ -5,7 +5,7 @@ import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults.{ScoredQueryRes
 import ch.epfl.bluebrain.nexus.commons.types.search.{QueryResult, QueryResults}
 import io.circe.{Decoder, Json}
 
-class ElasticDecoder[A](implicit D: Decoder[A]) {
+class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
 
   private type ErrorOrResults = Either[Json, List[QueryResult[A]]]
 
@@ -76,7 +76,7 @@ class ElasticDecoder[A](implicit D: Decoder[A]) {
     }
 }
 
-object ElasticDecoder {
+object ElasticSearchDecoder {
 
   /**
     * Construct a [Decoder] for [QueryResults] of the generic type ''A''
@@ -86,5 +86,5 @@ object ElasticDecoder {
     * @tparam A the generic type for the decoder
     */
   final def apply[A](implicit D: Decoder[A]): Decoder[QueryResults[A]] =
-    new ElasticDecoder[A].decodeQueryResults
+    new ElasticSearchDecoder[A].decodeQueryResults
 }

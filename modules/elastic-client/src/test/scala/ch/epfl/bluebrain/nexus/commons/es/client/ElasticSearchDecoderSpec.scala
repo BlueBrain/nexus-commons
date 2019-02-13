@@ -6,10 +6,10 @@ import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults
 import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults.{ScoredQueryResults, UnscoredQueryResults}
 import io.circe.{Decoder, Json}
 import org.scalatest.{Matchers, WordSpecLike}
-class ElasticDecoderSpec extends WordSpecLike with Matchers with Resources {
+class ElasticSearchDecoderSpec extends WordSpecLike with Matchers with Resources {
 
-  "A ElasticDecoder" should {
-    implicit val D: Decoder[QueryResults[Json]] = ElasticDecoder[Json]
+  "A ElasticSearchDecoder" should {
+    implicit val D: Decoder[QueryResults[Json]] = ElasticSearchDecoder[Json]
 
     "decode ElasticSearch response " in {
       val response = jsonContentOf("/elastic_response.json")

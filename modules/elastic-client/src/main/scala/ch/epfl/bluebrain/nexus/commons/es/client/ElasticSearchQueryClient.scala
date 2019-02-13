@@ -7,8 +7,8 @@ import cats.MonadError
 import cats.syntax.applicativeError._
 import cats.syntax.functor._
 import cats.syntax.show._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticBaseClient._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticQueryClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchQueryClient._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.types.search._
@@ -24,11 +24,11 @@ import scala.concurrent.ExecutionContext
   * @param base the base uri of the ElasticSearch endpoint
   * @tparam F the monadic effect type
   */
-private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
-                                                          cl: UntypedHttpClient[F],
-                                                          ec: ExecutionContext,
-                                                          F: MonadError[F, Throwable])
-    extends ElasticBaseClient[F] {
+private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(implicit
+                                                                cl: UntypedHttpClient[F],
+                                                                ec: ExecutionContext,
+                                                                F: MonadError[F, Throwable])
+    extends ElasticSearchBaseClient[F] {
 
   private[client] val searchPath = "_search"
 
@@ -79,14 +79,15 @@ private[client] class ElasticQueryClient[F[_]](base: Uri)(implicit
         esResponse.mapObject(_.add("_shards", shards))
       }
       .recoverWith {
-        case UnexpectedUnsuccessfulHttpResponse(r, body) => F.raiseError(ElasticFailure.fromStatusCode(r.status, body))
-        case other                                       => F.raiseError(other)
+        case UnexpectedUnsuccessfulHttpResponse(r, body) =>
+          F.raiseError(ElasticSearchFailure.fromStatusCode(r.status, body))
+        case other => F.raiseError(other)
       }
 }
-object ElasticQueryClient {
+object ElasticSearchQueryClient {
 
   /**
-    * Construct a [[ElasticQueryClient]] from the provided ''base'' uri
+    * Construct a [[ElasticSearchQueryClient]] from the provided ''base'' uri
     *
     * @param base        the base uri of the ElasticSearch endpoint
     * @tparam F the monadic effect type
@@ -94,8 +95,8 @@ object ElasticQueryClient {
   final def apply[F[_]](base: Uri)(implicit
                                    cl: UntypedHttpClient[F],
                                    ec: ExecutionContext,
-                                   F: MonadError[F, Throwable]): ElasticQueryClient[F] =
-    new ElasticQueryClient(base)
+                                   F: MonadError[F, Throwable]): ElasticSearchQueryClient[F] =
+    new ElasticSearchQueryClient(base)
 
   private[client] implicit class JsonOpsSearch(query: Json) {
 
