@@ -8,8 +8,8 @@ val circeVersion         = "0.11.1"
 val scalaTestVersion     = "3.0.5"
 val shapelessVersion     = "2.3.3"
 val journalVersion       = "3.0.19"
-val akkaVersion          = "2.5.20"
-val akkaHttpVersion      = "10.1.5"
+val akkaVersion          = "2.5.21"
+val akkaHttpVersion      = "10.1.7"
 val akkaHttpCirceVersion = "1.25.2"
 val elasticSearchVersion = "6.6.0"
 val log4jVersion         = "2.11.2"
@@ -90,6 +90,7 @@ lazy val http = project
                                 circeCore,
                                 journal,
                                 akkaHttpTestKit    % Test,
+                                akkaTestKit        % Test,
                                 circeGenericExtras % Test,
                                 scalaTest          % Test)
   )
