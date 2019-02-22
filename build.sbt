@@ -10,7 +10,7 @@ val journalVersion       = "3.0.19"
 val akkaVersion          = "2.5.21"
 val akkaHttpVersion      = "10.1.7"
 val akkaHttpCirceVersion = "1.25.2"
-val elasticSearchVersion = "6.6.1"
+val elasticSearchVersion = "6.6.0"
 val log4jVersion         = "2.11.2"
 val commonsIOVersion     = "1.3.2"
 val monixVersion         = "3.0.0-RC2"
@@ -123,8 +123,8 @@ lazy val elasticSearchClient = project
   .dependsOn(core, test % Test)
   .enablePlugins(JmhPlugin)
   .settings(
-    name       := "elastic-search-client",
-    moduleName := "elastic-search-client",
+    name       := "elasticsearch-client",
+    moduleName := "elasticsearch-client",
     libraryDependencies ++= Seq(
       akkaStream,
       circeCore,
