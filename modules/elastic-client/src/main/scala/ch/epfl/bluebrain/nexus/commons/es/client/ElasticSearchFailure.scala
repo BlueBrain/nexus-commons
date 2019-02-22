@@ -5,10 +5,9 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCode}
 import cats.MonadError
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
-import ch.epfl.bluebrain.nexus.commons.types.{Err, RetriableErr}
 
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
-trait ElasticSearchFailure extends Err {
+sealed abstract class ElasticSearchFailure(val message: String) extends Exception(message) {
 
   /**
     * the HTTP response payload
@@ -18,6 +17,8 @@ trait ElasticSearchFailure extends Err {
 
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
 object ElasticSearchFailure {
+
+  abstract class ElasticSearchServerOrUnexpectedFailure(message: String) extends ElasticSearchFailure(message)
 
   /**
     * Generates a ElasticSearch server failure from the HTTP response .
@@ -48,8 +49,7 @@ object ElasticSearchFailure {
     * @param body   the response body returned by the ElasticSearch endpoint
     */
   final case class ElasticServerError(status: StatusCode, body: String)
-      extends RetriableErr(s"Server error with status code '$status'")
-      with ElasticSearchFailure
+      extends ElasticSearchServerOrUnexpectedFailure(s"Server error with status code '$status'")
 
   /**
     * An unexpected client failure when attempting to communicate with a ElasticSearch endpoint.
@@ -58,8 +58,7 @@ object ElasticSearchFailure {
     * @param body   the response body returned by the ElasticSearch endpoint
     */
   final case class ElasticClientError(status: StatusCode, body: String)
-      extends Err(s"Client error with status code '$status'")
-      with ElasticSearchFailure
+      extends ElasticSearchFailure(s"Client error with status code '$status'")
 
   /**
     * An unexpected failure when attempting to communicate with a ElasticSearch endpoint.
@@ -68,6 +67,5 @@ object ElasticSearchFailure {
     * @param body   the response body returned by the ElasticSearch endpoint
     */
   final case class ElasticUnexpectedError(status: StatusCode, body: String)
-      extends RetriableErr(s"Unexpected error with status code '$status'")
-      with ElasticSearchFailure
+      extends ElasticSearchServerOrUnexpectedFailure(s"Unexpected error with status code '$status'")
 }

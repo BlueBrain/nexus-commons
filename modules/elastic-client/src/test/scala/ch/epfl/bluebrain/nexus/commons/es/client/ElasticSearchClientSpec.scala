@@ -10,10 +10,11 @@ import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticCli
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
+import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
 import ch.epfl.bluebrain.nexus.commons.test.Resources
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult._
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults._
-import ch.epfl.bluebrain.nexus.commons.types.search.{Pagination, QueryResults, Sort, SortList}
+import ch.epfl.bluebrain.nexus.commons.search.QueryResult._
+import ch.epfl.bluebrain.nexus.commons.search.QueryResults._
+import ch.epfl.bluebrain.nexus.commons.search.{QueryResults, Sort, SortList}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.parser.parse
 import io.circe.{Decoder, Json}

@@ -1,11 +1,8 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
-import java.io.StringWriter
-
 import akka.http.scaladsl.model.Uri
-import ch.epfl.bluebrain.nexus.rdf.Graph
-import ch.epfl.bluebrain.nexus.rdf.syntax.jena._
-import org.apache.jena.riot.{Lang, RDFDataMgr}
+import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.{Graph, NTriples, RootedGraph}
 
 /**
   * Enumeration type for all supported sparql write queries
@@ -110,9 +107,6 @@ object SparqlWriteQuery {
       graph
     )
 
-  private def toNTriples(graph: Graph): String = {
-    val writer = new StringWriter()
-    RDFDataMgr.write(writer, graph.asJenaModel.getGraph, Lang.NTRIPLES)
-    writer.toString
-  }
+  private def toNTriples(graph: Graph): String =
+    RootedGraph.anon(graph).as[NTriples]().value
 }

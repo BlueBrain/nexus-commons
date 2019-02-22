@@ -1,4 +1,3 @@
-val wesoValidatorVersion = "0.0.65-nexus1"
 val jenaVersion          = "3.10.0"
 val blazegraphVersion    = "2.1.4"
 val jacksonVersion       = "2.9.8"
@@ -8,126 +7,120 @@ val circeVersion         = "0.11.1"
 val scalaTestVersion     = "3.0.5"
 val shapelessVersion     = "2.3.3"
 val journalVersion       = "3.0.19"
-val akkaVersion          = "2.5.20"
-val akkaHttpVersion      = "10.1.5"
+val akkaVersion          = "2.5.21"
+val akkaHttpVersion      = "10.1.7"
 val akkaHttpCirceVersion = "1.25.2"
-val elasticSearchVersion = "6.6.0"
+val elasticSearchVersion = "6.6.1"
 val log4jVersion         = "2.11.2"
 val commonsIOVersion     = "1.3.2"
-val rdfVersion           = "0.2.33"
 val monixVersion         = "3.0.0-RC2"
-val topQuadrantVersion   = "1.2.0-nexus3"
+val pureconfigVersion    = "0.10.2"
 
-lazy val catsCore           = "org.typelevel"                   %% "cats-core"            % catsVersion
-lazy val catsEffect         = "org.typelevel"                   %% "cats-effect"          % catsEffectVersion
-lazy val circeCore          = "io.circe"                        %% "circe-core"           % circeVersion
-lazy val circeParser        = "io.circe"                        %% "circe-parser"         % circeVersion
-lazy val circeGenericExtras = "io.circe"                        %% "circe-generic-extras" % circeVersion
-lazy val circeJava8         = "io.circe"                        %% "circe-java8"          % circeVersion
-lazy val scalaTest          = "org.scalatest"                   %% "scalatest"            % scalaTestVersion
-lazy val shapeless          = "com.chuusai"                     %% "shapeless"            % shapelessVersion
-lazy val journal            = "io.verizon.journal"              %% "core"                 % journalVersion
-lazy val wesoSchema         = "com.github.bogdanromanx.es.weso" %% "schema"               % wesoValidatorVersion
-lazy val jenaArq            = "org.apache.jena"                 % "jena-arq"              % jenaVersion
-lazy val blazegraph         = "com.blazegraph"                  % "blazegraph-jar"        % blazegraphVersion
-lazy val jacksonAnnotations = "com.fasterxml.jackson.core"      % "jackson-annotations"   % jacksonVersion
-lazy val jacksonCore        = "com.fasterxml.jackson.core"      % "jackson-core"          % jacksonVersion
-lazy val jacksonDatabind    = "com.fasterxml.jackson.core"      % "jackson-databind"      % jacksonVersion
+val rdfVersion         = "0.3.0"
+val sourcingVersion    = "0.13.0"
+val topQuadrantVersion = "1.2.0-nexus4"
 
-lazy val akkaActor   = "com.typesafe.akka" %% "akka-actor"   % akkaVersion
-lazy val akkaTestKit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion
-lazy val akkaSlf4j   = "com.typesafe.akka" %% "akka-slf4j"   % akkaVersion
-lazy val akkaStream  = "com.typesafe.akka" %% "akka-stream"  % akkaVersion
+lazy val rdf              = "ch.epfl.bluebrain.nexus"              %% "rdf"           % rdfVersion
+lazy val sourcingCore     = "ch.epfl.bluebrain.nexus"              %% "sourcing-core" % sourcingVersion
+lazy val topQuadrantShacl = "ch.epfl.bluebrain.nexus.org.topbraid" % "shacl"          % topQuadrantVersion
+
+lazy val catsCore           = "org.typelevel"              %% "cats-core"            % catsVersion
+lazy val catsEffect         = "org.typelevel"              %% "cats-effect"          % catsEffectVersion
+lazy val circeCore          = "io.circe"                   %% "circe-core"           % circeVersion
+lazy val circeParser        = "io.circe"                   %% "circe-parser"         % circeVersion
+lazy val circeGenericExtras = "io.circe"                   %% "circe-generic-extras" % circeVersion
+lazy val scalaTest          = "org.scalatest"              %% "scalatest"            % scalaTestVersion
+lazy val shapeless          = "com.chuusai"                %% "shapeless"            % shapelessVersion
+lazy val journal            = "io.verizon.journal"         %% "core"                 % journalVersion
+lazy val jenaArq            = "org.apache.jena"            % "jena-arq"              % jenaVersion
+lazy val blazegraph         = "com.blazegraph"             % "blazegraph-jar"        % blazegraphVersion
+lazy val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations"   % jacksonVersion
+lazy val jacksonCore        = "com.fasterxml.jackson.core" % "jackson-core"          % jacksonVersion
+lazy val jacksonDatabind    = "com.fasterxml.jackson.core" % "jackson-databind"      % jacksonVersion
+
+lazy val akkaActor           = "com.typesafe.akka" %% "akka-actor"            % akkaVersion
+lazy val akkaCluster         = "com.typesafe.akka" %% "akka-cluster"          % akkaVersion
+lazy val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
+lazy val akkaDistributedData = "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion
+lazy val akkaTestKit         = "com.typesafe.akka" %% "akka-testkit"          % akkaVersion
+lazy val akkaSlf4j           = "com.typesafe.akka" %% "akka-slf4j"            % akkaVersion
+lazy val akkaStream          = "com.typesafe.akka" %% "akka-stream"           % akkaVersion
 
 lazy val akkaHttp        = "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion
 lazy val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
 lazy val akkaHttpCirce   = "de.heikoseeberger" %% "akka-http-circe"   % akkaHttpCirceVersion
 lazy val akkaHttpCore    = "com.typesafe.akka" %% "akka-http-core"    % akkaHttpVersion
 
-lazy val log4jCore         = "org.apache.logging.log4j"             % "log4j-core"                % log4jVersion
-lazy val log4jApi          = "org.apache.logging.log4j"             % "log4j-api"                 % log4jVersion
-lazy val esCore            = "org.elasticsearch"                    % "elasticsearch"             % elasticSearchVersion
-lazy val esPainless        = "org.codelibs.elasticsearch.module"    % "lang-painless"             % elasticSearchVersion
-lazy val esReindex         = "org.codelibs.elasticsearch.module"    % "reindex"                   % elasticSearchVersion
-lazy val esRestClient      = "org.elasticsearch.client"             % "elasticsearch-rest-client" % elasticSearchVersion
-lazy val esTransportClient = "org.elasticsearch.plugin"             % "transport-netty4-client"   % elasticSearchVersion
-lazy val commonsIO         = "org.apache.commons"                   % "commons-io"                % commonsIOVersion
-lazy val monixEval         = "io.monix"                             %% "monix-eval"               % monixVersion
-lazy val monixTail         = "io.monix"                             %% "monix-tail"               % monixVersion
-lazy val rdfCirce          = "ch.epfl.bluebrain.nexus"              %% "rdf-circe"                % rdfVersion
-lazy val rdfJena           = "ch.epfl.bluebrain.nexus"              %% "rdf-jena"                 % rdfVersion
-lazy val topQuadrantShacl  = "ch.epfl.bluebrain.nexus.org.topbraid" % "shacl"                     % topQuadrantVersion
+lazy val log4jCore         = "org.apache.logging.log4j"          % "log4j-core"                % log4jVersion
+lazy val log4jApi          = "org.apache.logging.log4j"          % "log4j-api"                 % log4jVersion
+lazy val esCore            = "org.elasticsearch"                 % "elasticsearch"             % elasticSearchVersion
+lazy val esPainless        = "org.codelibs.elasticsearch.module" % "lang-painless"             % elasticSearchVersion
+lazy val esReindex         = "org.codelibs.elasticsearch.module" % "reindex"                   % elasticSearchVersion
+lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearch-rest-client" % elasticSearchVersion
+lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
+lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
+lazy val monixEval         = "io.monix"                          %% "monix-eval"               % monixVersion
+lazy val monixTail         = "io.monix"                          %% "monix-tail"               % monixVersion
+lazy val pureconfig        = "com.github.pureconfig"             %% "pureconfig"               % pureconfigVersion
 
-lazy val types = project
-  .in(file("modules/types"))
-  .settings(
-    name                := "commons-types",
-    moduleName          := "commons-types",
-    libraryDependencies ++= Seq(catsCore, circeCore, circeGenericExtras, circeParser % Test, scalaTest % Test)
-  )
+lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.1.5"
+lazy val kamonPrometheus = "io.kamon" %% "kamon-prometheus"      % "1.1.1"
+lazy val kamonJaeger     = "io.kamon" %% "kamon-jaeger"          % "1.0.2"
+lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.5"
+lazy val kamonMetrics    = "io.kamon" %% "kamon-system-metrics"  % "1.0.1"
+lazy val kamonAkka       = "io.kamon" %% "kamon-akka-2.5"        % "1.1.3"
+lazy val kamonAkkaHttp   = "io.kamon" %% "kamon-akka-http-2.5"   % "1.1.1"
+lazy val kamonAkkaRemote = "io.kamon" %% "kamon-akka-remote-2.5" % "1.1.0"
 
 lazy val test = project
   .in(file("modules/test"))
-  .dependsOn(types)
   .settings(
     name                := "commons-test",
     moduleName          := "commons-test",
     coverageEnabled     := false,
-    libraryDependencies ++= Seq(catsEffect, circeCore, circeParser, scalaTest)
+    libraryDependencies ++= Seq(akkaTestKit, akkaClusterSharding, catsEffect, circeCore, circeParser, scalaTest)
   )
 
-lazy val http = project
-  .in(file("modules/http"))
-  .dependsOn(types, test % Test)
-  .settings(
-    name       := "commons-http",
-    moduleName := "commons-http",
-    libraryDependencies ++= Seq(shapeless,
-                                akkaHttp,
-                                akkaHttpCirce,
-                                catsCore,
-                                catsEffect,
-                                circeCore,
-                                journal,
-                                akkaHttpTestKit    % Test,
-                                circeGenericExtras % Test,
-                                scalaTest          % Test)
-  )
-
-lazy val queryTypes = project
-  .in(file("modules/query-types"))
-  .settings(
-    name                := "commons-query-types",
-    moduleName          := "commons-query-types",
-    libraryDependencies ++= Seq(catsCore, circeCore, scalaTest % Test, circeGenericExtras % Test)
-  )
-
-lazy val elasticServerEmbed = project
-  .in(file("modules/elastic-server-embed"))
+lazy val core = project
+  .in(file("modules/core"))
   .dependsOn(test)
   .settings(
-    name       := "elastic-server-embed",
-    moduleName := "elastic-server-embed",
+    name       := "commons-core",
+    moduleName := "commons-core",
     libraryDependencies ++= Seq(
+      akkaActor,
+      akkaCluster,
+      akkaDistributedData,
       akkaHttp,
-      akkaStream,
-      akkaTestKit,
-      commonsIO,
-      esCore,
-      esPainless,
-      esReindex,
-      esRestClient,
-      esTransportClient,
-      log4jCore,
-      log4jApi,
-      scalaTest,
-      akkaSlf4j % Test,
+      akkaHttpCirce,
+      catsCore,
+      catsEffect,
+      circeCore,
+      circeGenericExtras,
+      journal,
+      kamonCore,
+      kamonPrometheus,
+      kamonJaeger,
+      kamonLogback,
+      kamonMetrics,
+      kamonAkka % Runtime,
+      kamonAkkaHttp,
+      kamonAkkaRemote % Runtime,
+      pureconfig,
+      rdf,
+      shapeless,
+      sourcingCore,
+      topQuadrantShacl,
+      akkaHttpTestKit % Test,
+      akkaTestKit     % Test,
+      akkaSlf4j       % Test,
+      scalaTest       % Test
     )
   )
 
 lazy val elasticSearchClient = project
   .in(file("modules/elastic-client"))
-  .dependsOn(http, queryTypes, test % Test, elasticServerEmbed % Test)
+  .dependsOn(core, test % Test)
   .enablePlugins(JmhPlugin)
   .settings(
     name       := "elastic-search-client",
@@ -137,7 +130,14 @@ lazy val elasticSearchClient = project
       circeCore,
       akkaSlf4j          % Test,
       circeParser        % Test,
-      circeGenericExtras % Test
+      circeGenericExtras % Test,
+      esCore             % Test,
+      esPainless         % Test,
+      esReindex          % Test,
+      esRestClient       % Test,
+      esTransportClient  % Test,
+      log4jCore          % Test,
+      log4jApi           % Test
     ),
     sourceDirectory in Jmh     := (sourceDirectory in Test).value,
     classDirectory in Jmh      := (classDirectory in Test).value,
@@ -148,7 +148,7 @@ lazy val elasticSearchClient = project
 
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
-  .dependsOn(http, queryTypes, test % Test)
+  .dependsOn(core, test % Test)
   .enablePlugins(JmhPlugin)
   .settings(
     name       := "sparql-client",
@@ -157,7 +157,7 @@ lazy val sparqlClient = project
       akkaStream,
       circeCore,
       jenaArq,
-      rdfJena,
+      rdf,
       akkaSlf4j          % Test,
       akkaTestKit        % Test,
       circeParser        % Test,
@@ -165,7 +165,6 @@ lazy val sparqlClient = project
       jacksonAnnotations % Test,
       jacksonCore        % Test,
       jacksonDatabind    % Test,
-      rdfCirce           % Test,
       scalaTest          % Test
     ),
     sourceDirectory in Jmh     := (sourceDirectory in Test).value,
@@ -175,59 +174,11 @@ lazy val sparqlClient = project
     run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
-lazy val shaclValidator = project
-  .in(file("modules/ld/shacl-validator"))
-  .dependsOn(types)
-  .settings(
-    name       := "shacl-shaclex-validator",
-    moduleName := "shacl-shaclex-validator",
-    resolvers  += Resolver.bintrayRepo("bogdanromanx", "maven"),
-    libraryDependencies ++= Seq(journal,
-                                wesoSchema,
-                                catsCore,
-                                circeCore,
-                                akkaSlf4j   % Test,
-                                circeParser % Test,
-                                scalaTest   % Test)
-  )
-
-lazy val shaclValidatorTQ = project
-  .in(file("modules/ld/shacl-topquadrant-validator"))
-  .dependsOn(http, test)
-  .settings(
-    name       := "shacl-topquadrant-validator",
-    moduleName := "shacl-topquadrant-validator",
-    resolvers  += Resolver.bintrayRepo("bogdanromanx", "maven"),
-    libraryDependencies ++= Seq(catsCore,
-                                journal,
-                                rdfCirce,
-                                topQuadrantShacl,
-                                akkaSlf4j   % Test,
-                                circeParser % Test,
-                                scalaTest   % Test)
-  )
-
-lazy val schemas = project
-  .in(file("modules/schemas"))
-  .settings(
-    name       := "commons-schemas",
-    moduleName := "commons-schemas"
-  )
-
 lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(types,
-             http,
-             test,
-             queryTypes,
-             elasticServerEmbed,
-             elasticSearchClient,
-             sparqlClient,
-             shaclValidator,
-             shaclValidatorTQ,
-             schemas)
+  .aggregate(core, test, elasticSearchClient, sparqlClient)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 

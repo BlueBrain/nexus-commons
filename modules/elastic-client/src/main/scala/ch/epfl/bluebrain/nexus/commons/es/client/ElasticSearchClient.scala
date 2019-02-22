@@ -14,7 +14,8 @@ import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
-import ch.epfl.bluebrain.nexus.commons.types.search._
+import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
+import ch.epfl.bluebrain.nexus.commons.search._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 

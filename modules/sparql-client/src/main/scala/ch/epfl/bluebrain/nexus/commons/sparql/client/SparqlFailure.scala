@@ -2,10 +2,9 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes.{ClientError, ServerError}
-import ch.epfl.bluebrain.nexus.commons.types.{Err, RetriableErr}
 
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
-trait SparqlFailure extends Err {
+sealed abstract class SparqlFailure(val message: String) extends Exception(message) {
 
   /**
     * the HTTP response payload
@@ -16,6 +15,8 @@ trait SparqlFailure extends Err {
 // $COVERAGE-OFF$
 @SuppressWarnings(Array("IncorrectlyNamedExceptions"))
 object SparqlFailure {
+
+  abstract class SparqlServerOrUnexpectedFailure(message: String) extends SparqlFailure(message)
 
   /**
     * Generates a SPARQL server failure from the HTTP response status ''code''.
@@ -37,8 +38,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlServerError(status: StatusCode, body: String)
-      extends RetriableErr(s"Server error with status code '$status'")
-      with SparqlFailure
+      extends SparqlServerOrUnexpectedFailure(s"Server error with status code '$status'")
 
   /**
     * A client failure when attempting to communicate with a sparql endpoint.
@@ -47,8 +47,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlClientError(status: StatusCode, body: String)
-      extends Err(s"Client error with status code '$status'")
-      with SparqlFailure
+      extends SparqlFailure(s"Client error with status code '$status'")
 
   /**
     * An unexpected failure when attempting to communicate with a sparql endpoint.
@@ -57,8 +56,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlUnexpectedError(status: StatusCode, body: String)
-      extends RetriableErr(s"Unexpected status code '$status'")
-      with SparqlFailure
+      extends SparqlServerOrUnexpectedFailure(s"Unexpected status code '$status'")
 
 }
 // $COVERAGE-ON$

@@ -1,9 +1,9 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
+import ch.epfl.bluebrain.nexus.commons.search.QueryResults
 import ch.epfl.bluebrain.nexus.commons.test.Resources
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult.ScoredQueryResult
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults.{ScoredQueryResults, UnscoredQueryResults}
+import ch.epfl.bluebrain.nexus.commons.search.QueryResult.ScoredQueryResult
+import ch.epfl.bluebrain.nexus.commons.search.QueryResults.{ScoredQueryResults, UnscoredQueryResults}
 import io.circe.{Decoder, Json}
 import org.scalatest.{Matchers, WordSpecLike}
 class ElasticSearchDecoderSpec extends WordSpecLike with Matchers with Resources {
