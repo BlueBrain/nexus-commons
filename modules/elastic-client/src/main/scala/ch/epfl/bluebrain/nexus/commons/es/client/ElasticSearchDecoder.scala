@@ -1,8 +1,8 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResult.{ScoredQueryResult, UnscoredQueryResult}
-import ch.epfl.bluebrain.nexus.commons.types.search.QueryResults.{ScoredQueryResults, UnscoredQueryResults}
-import ch.epfl.bluebrain.nexus.commons.types.search.{QueryResult, QueryResults}
+import ch.epfl.bluebrain.nexus.commons.search.QueryResult.{ScoredQueryResult, UnscoredQueryResult}
+import ch.epfl.bluebrain.nexus.commons.search.{QueryResult, QueryResults}
+import ch.epfl.bluebrain.nexus.commons.search.QueryResults.{ScoredQueryResults, UnscoredQueryResults}
 import io.circe.{Decoder, Json}
 
 class ElasticSearchDecoder[A](implicit D: Decoder[A]) {

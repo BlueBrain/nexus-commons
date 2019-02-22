@@ -3,8 +3,6 @@ package ch.epfl.bluebrain.nexus.commons.test
 import java.net.InetSocketAddress
 import java.nio.channels.ServerSocketChannel
 
-import ch.epfl.bluebrain.nexus.commons.types.Version
-
 import scala.annotation.tailrec
 import scala.util.Random
 
@@ -39,15 +37,6 @@ trait Randomness {
     */
   final def genInt(max: Int = 100): Int =
     Random.nextInt(max)
-
-  /**
-    * Generates an arbitrary version using generated integers.
-    *
-    * @see [[Randomness#genInt]]
-    * @return a new version instance of arbitrary integer values
-    */
-  final def genVersion(): Version =
-    Version(genInt(), genInt(), genInt())
 
   /**
     * @return a random available port on the loopback interface

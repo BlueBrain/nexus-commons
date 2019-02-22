@@ -1,5 +1,0 @@
-{
-  "@context": [
-    "{{base}}/contexts/nexus/core/shacl20170720/v0.1.0"
-  ]
-}

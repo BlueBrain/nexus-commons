@@ -12,7 +12,8 @@ import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
 import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph
-import ch.epfl.bluebrain.nexus.rdf.syntax.circe._
+import ch.epfl.bluebrain.nexus.rdf.Node.blank
+import ch.epfl.bluebrain.nexus.rdf.syntax._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.Json
 import org.apache.commons.io.FileUtils
@@ -75,7 +76,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
     val json = jsonContentOf("/resource.json")
     client.createNamespace(properties()).futureValue
 
-    dataList = List.fill(100)(json.asGraph.right.value)
+    dataList = List.fill(100)(json.asGraph(blank).right.value)
   }
 
   @TearDown(Level.Trial) def doTearDown(): Unit = {

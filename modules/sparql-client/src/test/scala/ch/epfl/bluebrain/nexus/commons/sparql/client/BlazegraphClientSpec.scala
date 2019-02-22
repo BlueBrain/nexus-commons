@@ -15,7 +15,8 @@ import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
 import ch.epfl.bluebrain.nexus.commons.test.Randomness
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import ch.epfl.bluebrain.nexus.rdf.Graph
-import ch.epfl.bluebrain.nexus.rdf.syntax.circe._
+import ch.epfl.bluebrain.nexus.rdf.Node.blank
+import ch.epfl.bluebrain.nexus.rdf.syntax._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.Json
 import io.circe.parser._
@@ -170,7 +171,7 @@ class BlazegraphClientSpec
           "http://schema.org/value",
           "http://www.w3.org/2000/01/rdf-schema#label"
         ))
-      cl.patch(graph, json.asGraph.right.value, strategy).futureValue
+      cl.patch(graph, json.asGraph(blank).right.value, strategy).futureValue
       cl.triples() should have size 4
       val results = cl.triples(graph)
       results should have size 4
@@ -205,7 +206,7 @@ class BlazegraphClientSpec
       ).right.value
       cl.replace(graph, load(id, label, value)).futureValue
       val strategy = PatchStrategy.removeButPredicates(Set("http://schema.org/value"))
-      cl.patch(graph, json.asGraph.right.value, strategy).futureValue
+      cl.patch(graph, json.asGraph(blank).right.value, strategy).futureValue
       val results = cl.triples(graph)
       results should have size 5
       results.map(_._3).toSet should contain allOf (label + "-updated", value, "name", "title")
@@ -233,5 +234,8 @@ class BlazegraphClientSpec
   }
 
   private def load(id: String, label: String, value: String): Graph =
-    jsonContentOf("/ld.json", Map(quote("{{ID}}") -> id, quote("{{LABEL}}") -> label, quote("{{VALUE}}") -> value)).asGraph.right.value
+    jsonContentOf("/ld.json", Map(quote("{{ID}}") -> id, quote("{{LABEL}}") -> label, quote("{{VALUE}}") -> value))
+      .asGraph(blank)
+      .right
+      .value
 }
