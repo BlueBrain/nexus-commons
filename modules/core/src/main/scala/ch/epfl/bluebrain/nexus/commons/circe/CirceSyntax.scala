@@ -12,7 +12,5 @@ final class CirceJsonOps(private val json: Json) extends AnyVal {
 
   def sortKeys(implicit keys: OrderedKeys): Json = JsonKeys.sortKeys(json)
 
-  def removeKeys(keys: String*): Json = JsonKeys.removeKeys(json, keys: _*)
-
   def addContext(context: ContextUri): Json = JsonLd.addContext(json, context.value)
 }

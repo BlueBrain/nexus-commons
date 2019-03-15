@@ -123,22 +123,6 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
       }
     }
 
-    "manipulating json" should {
-      "remove keys object" in {
-        val obj = Json.obj("one" -> Json.obj("two" -> Json.fromString("something")), "two" -> Json.fromString("abc"))
-        obj.removeKeys("two") shouldEqual Json.obj("one" -> Json.obj("two" -> Json.fromString("something")))
-        obj.removeKeys("three") shouldEqual obj
-      }
-      "remove keys array" in {
-        val obj      = Json.obj("one" -> Json.obj("two" -> Json.fromString("something")), "two" -> Json.fromString("abc"))
-        val objNoKey = Json.obj("one" -> Json.obj("two" -> Json.fromString("something")))
-        val arrObj   = Json.arr(obj, obj, Json.obj("three" -> Json.fromString("something")))
-        arrObj.removeKeys("two") shouldEqual Json.arr(objNoKey,
-                                                      objNoKey,
-                                                      Json.obj("three" -> Json.fromString("something")))
-      }
-    }
-
     "injecting context" should {
       val contextString = Json.fromString(context.toString)
 
