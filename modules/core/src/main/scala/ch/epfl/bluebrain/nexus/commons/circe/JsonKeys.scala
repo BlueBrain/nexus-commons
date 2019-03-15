@@ -35,18 +35,4 @@ object JsonKeys {
 
     canonicalJson(json)
   }
-
-  /**
-    * Removes the provided keys from the json.
-    *
-    * @param json the json
-    * @param keys list of ''keys'' to be removed from the top level of the ''json''
-    * @return the original json without the provided ''keys'' on the top level of the structure
-    */
-  def removeKeys(json: Json, keys: String*): Json = {
-    def inner(obj: JsonObject): Json =
-      keys.foldLeft(obj)((accObj, key) => accObj.remove(key)).asJson
-
-    json.arrayOrObject[Json](json, arr => arr.map(j => removeKeys(j, keys: _*)).asJson, obj => inner(obj))
-  }
 }

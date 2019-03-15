@@ -6,12 +6,13 @@ import ch.epfl.bluebrain.nexus.rdf.Iri.AbsoluteIri
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
 import ch.epfl.bluebrain.nexus.rdf.syntax._
 import ch.epfl.bluebrain.nexus.rdf.instances._
-import ch.epfl.bluebrain.nexus.commons.circe.syntax._
 import io.circe.{Encoder, Json}
 import journal.Logger
 import org.apache.jena.rdf.model.Resource
+
 import ch.epfl.bluebrain.nexus.commons.test.Resources.jsonContentOf
 import ch.epfl.bluebrain.nexus.rdf.MarshallingError._
+import ch.epfl.bluebrain.nexus.rdf.syntax._
 
 import scala.util.{Success, Try}
 
