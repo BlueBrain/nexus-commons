@@ -3,26 +3,17 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 import akka.http.scaladsl.model.Uri
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.rdf.Graph
-import io.circe.Json
-import org.apache.jena.query.ResultSet
 
 /**
   * Base sparql client implementing basic SPARQL query execution logic
   */
-abstract class SparqlClient[F[_]]()(implicit rsJson: HttpClient[F, Json], rsSet: HttpClient[F, ResultSet]) {
-
-  /**
-    * @param q the query to execute against the sparql endpoint
-    * @return the unmarshalled result set of the provided query executed against the sparql endpoint
-    */
-  def queryRs(q: String): F[ResultSet] =
-    query(q)(rsSet)
+abstract class SparqlClient[F[_]]()(implicit rsJson: HttpClient[F, SparqlResults]) {
 
   /**
     * @param q the query to execute against the sparql endpoint
     * @return the raw result of the provided query executed against the sparql endpoint
     */
-  def queryRaw(q: String): F[Json] =
+  def queryRaw(q: String): F[SparqlResults] =
     query(q)(rsJson)
 
   /**

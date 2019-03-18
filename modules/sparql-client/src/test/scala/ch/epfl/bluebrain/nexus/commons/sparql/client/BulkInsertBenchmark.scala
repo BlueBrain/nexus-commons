@@ -7,17 +7,15 @@ import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
+import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
-import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
 import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
 import ch.epfl.bluebrain.nexus.rdf.syntax._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
-import io.circe.Json
 import org.apache.commons.io.FileUtils
-import org.apache.jena.query.ResultSet
 import org.eclipse.jetty.server.Server
 import org.openjdk.jmh.annotations._
 import org.scalatest.EitherValues
@@ -62,8 +60,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
     implicit val ec = system.dispatcher
     implicit val mt = ActorMaterializer()
     implicit val uc = untyped[Future]
-    implicit val rc = withUnmarshaller[Future, ResultSet]
-    implicit val jc = withUnmarshaller[Future, Json]
+    implicit val jc = withUnmarshaller[Future, SparqlResults]
     val _           = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
 
     server = {
