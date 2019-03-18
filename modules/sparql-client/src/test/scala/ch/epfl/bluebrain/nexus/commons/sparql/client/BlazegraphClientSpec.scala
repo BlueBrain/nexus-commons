@@ -8,23 +8,22 @@ import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
+import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
-import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.{SparqlClientError, SparqlServerError}
+import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
-import ch.epfl.bluebrain.nexus.commons.test.Randomness
+import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, Randomness}
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
 import ch.epfl.bluebrain.nexus.rdf.syntax._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
-import io.circe.Json
 import io.circe.parser._
-import org.apache.jena.query.ResultSet
+import io.circe.syntax._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, EitherValues, Matchers, WordSpecLike}
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,7 +35,8 @@ class BlazegraphClientSpec
     with ScalaFutures
     with EitherValues
     with BeforeAndAfterAll
-    with Randomness {
+    with Randomness
+    with CirceEq {
 
   private val port = freePort()
 
@@ -62,8 +62,7 @@ class BlazegraphClientSpec
   private implicit val mt = ActorMaterializer()
 
   private implicit val uc = untyped[Future]
-  private implicit val rc = withUnmarshaller[Future, ResultSet]
-  private implicit val jc = withUnmarshaller[Future, Json]
+  private implicit val jc = withUnmarshaller[Future, SparqlResults]
 
   "A BlazegraphClient" should {
     def client(ns: String) = BlazegraphClient[Future](s"http://$localhost:$port/blazegraph", ns, None)
@@ -136,7 +135,8 @@ class BlazegraphClientSpec
       cl.replace(graph, load(id, label, value)).futureValue
       val expected = jsonContentOf("/sparql-json.json",
                                    Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
-      cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue shouldEqual expected
+      cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson should equalIgnoreArrayOrder(
+        expected)
     }
 
     "fail the query" in new BlazegraphClientFixture {
@@ -215,15 +215,11 @@ class BlazegraphClientSpec
 
   implicit class BlazegraphClientOps(cl: BlazegraphClient[Future])(implicit ec: ExecutionContext) {
     private def triplesFor(query: String) =
-      cl.queryRs(query).map { rs =>
-        rs.asScala.toList.map { qs =>
-          val obj = {
-            val node = qs.get("?o")
-            if (node.isLiteral) node.asLiteral().getLexicalForm
-            else node.asResource().toString
+      cl.queryRaw(query).map {
+        case SparqlResults(_, Bindings(mapList)) =>
+          mapList.map { triples =>
+            (triples("s").value, triples("p").value, triples("o").value)
           }
-          (qs.get("?s").toString, qs.get("?p").toString, obj)
-        }
       }
 
     def triples(graph: Uri): List[(String, String, String)] =

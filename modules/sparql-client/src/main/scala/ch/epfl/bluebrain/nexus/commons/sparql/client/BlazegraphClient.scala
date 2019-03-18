@@ -8,8 +8,6 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
-import io.circe.Json
-import org.apache.jena.query.ResultSet
 
 import scala.concurrent.ExecutionContext
 
@@ -24,8 +22,7 @@ import scala.concurrent.ExecutionContext
 class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
     implicit F: MonadError[F, Throwable],
     cl: UntypedHttpClient[F],
-    rsJson: HttpClient[F, Json],
-    rsSet: HttpClient[F, ResultSet],
+    rsJson: HttpClient[F, SparqlResults],
     ec: ExecutionContext)
     extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
 
@@ -94,8 +91,7 @@ object BlazegraphClient {
   def apply[F[_]](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
       implicit F: MonadError[F, Throwable],
       cl: UntypedHttpClient[F],
-      rsJson: HttpClient[F, Json],
-      rsSet: HttpClient[F, ResultSet],
+      rsJson: HttpClient[F, SparqlResults],
       ec: ExecutionContext): BlazegraphClient[F] =
     new BlazegraphClient[F](base, namespace, credentials)
 }

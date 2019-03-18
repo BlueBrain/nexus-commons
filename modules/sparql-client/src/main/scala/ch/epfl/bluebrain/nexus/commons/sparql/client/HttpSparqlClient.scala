@@ -10,9 +10,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes, UnexpectedUnsuccessfulHttpResponse}
-import io.circe.Json
 import journal.Logger
-import org.apache.jena.query.ResultSet
 import org.apache.jena.update.UpdateFactory
 
 import scala.concurrent.ExecutionContext
@@ -26,8 +24,7 @@ import scala.util.control.NonFatal
   */
 class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
                                                                                   cl: UntypedHttpClient[F],
-                                                                                  rsJson: HttpClient[F, Json],
-                                                                                  rsSet: HttpClient[F, ResultSet],
+                                                                                  rsJson: HttpClient[F, SparqlResults],
                                                                                   ec: ExecutionContext)
     extends SparqlClient[F] {
 
@@ -96,8 +93,7 @@ object HttpSparqlClient {
 
   def apply[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
                                                                        cl: UntypedHttpClient[F],
-                                                                       rsJson: HttpClient[F, Json],
-                                                                       rsSet: HttpClient[F, ResultSet],
+                                                                       rsJson: HttpClient[F, SparqlResults],
                                                                        ec: ExecutionContext): SparqlClient[F] =
     new HttpSparqlClient[F](endpoint, credentials)
 
