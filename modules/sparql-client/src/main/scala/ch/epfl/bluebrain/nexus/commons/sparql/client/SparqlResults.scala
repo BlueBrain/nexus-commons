@@ -45,8 +45,10 @@ object SparqlResults {
       * Creates a new head which is a merge of the provided head and the current head
       * @param that the provided head
       */
-    def ++(that: Head): Head =
-      Head((vars ++ that.vars).distinct, link.map(l => (that.link.getOrElse(List.empty) ++ l).distinct))
+    def ++(that: Head): Head = {
+      val newLink = (link ++ that.link).flatten.toList
+      Head((vars ++ that.vars).distinct, if (newLink.isEmpty) None else Some(newLink))
+    }
   }
 
   /**
