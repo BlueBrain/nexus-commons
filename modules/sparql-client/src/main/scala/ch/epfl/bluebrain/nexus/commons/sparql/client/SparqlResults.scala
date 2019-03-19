@@ -26,6 +26,11 @@ final case class SparqlResults(head: Head, results: Bindings) {
 object SparqlResults {
 
   /**
+    * Empty SparqlResults
+    */
+  val empty = SparqlResults(Head(List.empty), Bindings(List.empty))
+
+  /**
     * The "head" member gives the variables mentioned in the results and may contain a "link" member.
     *
     * @param vars  an array giving the names of the variables used in the results.

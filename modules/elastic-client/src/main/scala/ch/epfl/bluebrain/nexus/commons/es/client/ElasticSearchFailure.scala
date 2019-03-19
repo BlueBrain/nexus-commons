@@ -38,7 +38,7 @@ object ElasticSearchFailure {
   def fromStatusCode(code: StatusCode, body: String): ElasticSearchFailure =
     code match {
       case _: ServerError => ElasticServerError(code, body)
-      case _: ClientError => ElasticClientError(code, body)
+      case _: ClientError => ElasticSearchClientError(code, body)
       case _              => ElasticUnexpectedError(code, body)
     }
 
@@ -57,7 +57,7 @@ object ElasticSearchFailure {
     * @param status the status returned by the ElasticSearch endpoint
     * @param body   the response body returned by the ElasticSearch endpoint
     */
-  final case class ElasticClientError(status: StatusCode, body: String)
+  final case class ElasticSearchClientError(status: StatusCode, body: String)
       extends ElasticSearchFailure(s"Client error with status code '$status'")
 
   /**
