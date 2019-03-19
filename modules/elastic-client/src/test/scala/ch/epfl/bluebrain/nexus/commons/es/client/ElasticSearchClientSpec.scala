@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticClientError
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticSearchClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
@@ -83,7 +83,7 @@ class ElasticSearchClientSpec
         cl.createIndex(index).futureValue shouldEqual true
         cl.updateMapping(index, "doc", mappingPayload).futureValue shouldEqual true
         cl.updateMapping(genIndexString(), "doc", mappingPayload).futureValue shouldEqual false
-        whenReady(cl.updateMapping(index, "doc", indexPayload).failed)(_ shouldBe a[ElasticClientError])
+        whenReady(cl.updateMapping(index, "doc", indexPayload).failed)(_ shouldBe a[ElasticSearchClientError])
       }
 
       "delete index" in {
@@ -263,11 +263,11 @@ class ElasticSearchClientSpec
       "return ElasticClientError when query is wrong" in {
 
         val query = Json.obj("query" -> Json.obj("other" -> Json.obj()))
-        val result: ElasticClientError =
+        val result: ElasticSearchClientError =
           cl.searchRaw(query, Set(indexSanitized))
             .failed
             .futureValue
-            .asInstanceOf[ElasticClientError]
+            .asInstanceOf[ElasticSearchClientError]
         result.status shouldEqual StatusCodes.BadRequest
         parse(result.body).toOption.value shouldEqual jsonContentOf("/elastic_client_error.json")
 

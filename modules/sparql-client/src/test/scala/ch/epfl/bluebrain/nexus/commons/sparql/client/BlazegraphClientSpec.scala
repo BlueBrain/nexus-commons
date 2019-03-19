@@ -21,7 +21,7 @@ import ch.epfl.bluebrain.nexus.rdf.syntax._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, EitherValues, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -36,7 +36,8 @@ class BlazegraphClientSpec
     with EitherValues
     with BeforeAndAfterAll
     with Randomness
-    with CirceEq {
+    with CirceEq
+    with Eventually {
 
   private val port = freePort()
 
@@ -135,8 +136,10 @@ class BlazegraphClientSpec
       cl.replace(graph, load(id, label, value)).futureValue
       val expected = jsonContentOf("/sparql-json.json",
                                    Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
-      cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson should equalIgnoreArrayOrder(
-        expected)
+      eventually {
+        cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson should equalIgnoreArrayOrder(
+          expected)
+      }
     }
 
     "fail the query" in new BlazegraphClientFixture {
