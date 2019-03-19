@@ -45,8 +45,9 @@ class SparqlResultsSpec extends WordSpecLike with Matchers with Resources with E
     }
 
     "add head" in {
-      head ++ Head(List("v")) shouldEqual Head(List("x", "hpage", "name", "mbox", "age", "blurb", "friend", "v"),
-                                               Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq")))
+      head ++ Head(List("v", "hpage", "name")) shouldEqual Head(
+        List("x", "hpage", "name", "mbox", "age", "blurb", "friend", "v"),
+        Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq")))
     }
 
     "add binding" in {
