@@ -16,13 +16,16 @@ import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
 import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, Randomness}
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import ch.epfl.bluebrain.nexus.rdf.Graph
-import ch.epfl.bluebrain.nexus.rdf.Node.blank
+import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
 import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.instances._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.parser._
 import io.circe.syntax._
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest.{BeforeAndAfterAll, EitherValues, Matchers, WordSpecLike}
+import org.scalatest._
+import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
+import io.circe.Printer
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,8 +39,11 @@ class BlazegraphClientSpec
     with EitherValues
     with BeforeAndAfterAll
     with Randomness
+    with OptionValues
     with CirceEq
     with Eventually {
+
+  private implicit val printer = Printer.noSpaces.copy(dropNullValues = true)
 
   private val port = freePort()
 
@@ -111,9 +117,12 @@ class BlazegraphClientSpec
       val cl = client(namespace)
       cl.createNamespace(properties()).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
-      cl.replace(graph, load(id, label, value + "-updated")).futureValue
-      cl.triples(graph).map(_._3) should contain theSameElementsAs Set(label, value + "-updated")
-      cl.triples().map(_._3) should contain theSameElementsAs Set(label, value + "-updated")
+      val triple: Triple = ((url"http://example/com/$id", owl.sameAs, """{"key": "value"}"""))
+      cl.replace(graph, load(id, label, value + "-updated") + triple).futureValue
+      cl.triples(graph).map(_._3) should contain theSameElementsAs Set(label,
+                                                                       value + "-updated",
+                                                                       """{"key": "value"}""")
+      cl.triples().map(_._3) should contain theSameElementsAs Set(label, value + "-updated", """{"key": "value"}""")
     }
 
     "run bulk operation" in new BlazegraphClientFixture {
@@ -136,10 +145,12 @@ class BlazegraphClientSpec
       cl.replace(graph, load(id, label, value)).futureValue
       val expected = jsonContentOf("/sparql-json.json",
                                    Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
-      eventually {
-        cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson should equalIgnoreArrayOrder(
-          expected)
-      }
+      val result = cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson
+      result.asObject.value("head").value.removeKeys("link") shouldEqual expected.asObject.value("head").value
+      val bindings =
+        result.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.pretty)
+      bindings should contain theSameElementsAs
+        expected.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.pretty)
     }
 
     "fail the query" in new BlazegraphClientFixture {
@@ -174,7 +185,7 @@ class BlazegraphClientSpec
           "http://schema.org/value",
           "http://www.w3.org/2000/01/rdf-schema#label"
         ))
-      cl.patch(graph, json.asGraph(blank).right.value, strategy).futureValue
+      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).futureValue
       cl.triples() should have size 4
       val results = cl.triples(graph)
       results should have size 4
@@ -209,7 +220,7 @@ class BlazegraphClientSpec
       ).right.value
       cl.replace(graph, load(id, label, value)).futureValue
       val strategy = PatchStrategy.removeButPredicates(Set("http://schema.org/value"))
-      cl.patch(graph, json.asGraph(blank).right.value, strategy).futureValue
+      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).futureValue
       val results = cl.triples(graph)
       results should have size 5
       results.map(_._3).toSet should contain allOf (label + "-updated", value, "name", "title")
@@ -234,7 +245,7 @@ class BlazegraphClientSpec
 
   private def load(id: String, label: String, value: String): Graph =
     jsonContentOf("/ld.json", Map(quote("{{ID}}") -> id, quote("{{LABEL}}") -> label, quote("{{VALUE}}") -> value))
-      .asGraph(blank)
+      .asGraph(url"http://localhost/$id")
       .right
       .value
 }
