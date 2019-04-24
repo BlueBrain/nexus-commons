@@ -11,7 +11,7 @@ import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes, UnexpectedUnsuccessfulHttpResponse}
 import journal.Logger
-import org.apache.jena.update.UpdateFactory
+import org.apache.jena.query.ParameterizedSparqlString
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -48,7 +48,9 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
 
   def bulk(queries: SparqlWriteQuery*): F[Unit] = {
     val queryString = queries.map(_.value).mkString("\n")
-    F.catchNonFatal(UpdateFactory.create(queryString)).flatMap { _ =>
+    val pss         = new ParameterizedSparqlString
+    pss.setCommandText(queryString)
+    F.catchNonFatal(pss.asUpdate()).flatMap { _ =>
       val formData = FormData("update" -> queryString)
       val qParams =
         uniqueGraph(queries).map(graph => Query("using-named-graph-uri" -> graph.toString())).getOrElse(Query.Empty)
