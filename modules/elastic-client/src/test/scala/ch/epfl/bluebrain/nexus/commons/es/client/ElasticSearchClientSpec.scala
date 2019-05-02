@@ -161,7 +161,9 @@ class ElasticSearchClientSpec
         val elems =
           list.map(_._2).sortWith(getValue("key", _) < getValue("key", _))
 
-        val qrs = UnscoredQueryResults(elems.length.toLong, elems.take(3).map(UnscoredQueryResult(_)))
+        val qrs = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.take(3).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
         cl.search[Json](matchAll, Set(indexSanitized))(p, sort = SortList(List(Sort("key"))))
           .futureValue shouldEqual qrs
       }
@@ -169,7 +171,9 @@ class ElasticSearchClientSpec
         val elems =
           list.map(_._2).sortWith(getValue("key", _) > getValue("key", _))
 
-        val qrs = UnscoredQueryResults(elems.length.toLong, elems.take(3).map(UnscoredQueryResult(_)))
+        val qrs = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.take(3).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
         cl.search[Json](matchAll, Set(indexSanitized))(p, sort = SortList(List(Sort("-key"))))
           .futureValue shouldEqual qrs
       }
