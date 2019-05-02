@@ -16,10 +16,10 @@ class ElasticSearchDecoderSpec extends WordSpecLike with Matchers with Resources
       val json1    = Json.obj("key" -> Json.fromString("a"), "key2" -> Json.fromString("b"))
       val json2    = Json.obj("key" -> Json.fromString("c"), "key2" -> Json.fromString("d"))
 
-      response.as[QueryResults[Json]].toOption.get shouldEqual ScoredQueryResults(
-        2L,
-        1F,
-        List(ScoredQueryResult(0.5F, json1, None), ScoredQueryResult(0.8F, json2, None)))
+      response.as[QueryResults[Json]].toOption.get shouldEqual ScoredQueryResults(2L,
+                                                                                  1F,
+                                                                                  List(ScoredQueryResult(0.5F, json1),
+                                                                                       ScoredQueryResult(0.8F, json2)))
     }
 
     "decode ElasticSearch empty response" in {

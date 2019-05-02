@@ -18,7 +18,7 @@ class QueryResultSpec extends WordSpecLike with Matchers {
         )
       }
     "transform the source value" in {
-      ScoredQueryResult(1F, 1, None).map(_ + 1) shouldEqual ScoredQueryResult(1F, 2)
+      ScoredQueryResult(1F, 1).map(_ + 1) shouldEqual ScoredQueryResult(1F, 2)
     }
     "encodes a queryResult" in {
       import io.circe.syntax._
