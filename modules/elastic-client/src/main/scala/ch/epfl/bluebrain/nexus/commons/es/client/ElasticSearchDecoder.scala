@@ -10,15 +10,17 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
   private type ErrorOrResults = Either[Json, List[QueryResult[A]]]
 
   private def queryResults(json: Json, scored: Boolean): ErrorOrResults = {
-    def queryResult(result: Json): Option[QueryResult[A]] =
+    def queryResult(result: Json): Option[QueryResult[A]] = {
+      val sort = result.hcursor.get[Seq[Json]]("sort").toOption
       result.hcursor.get[A]("_source") match {
         case Right(source) =>
-          if (scored) Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0F), source))
-          else Some(UnscoredQueryResult(source))
+          if (scored) Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0F), source, sort))
+          else Some(UnscoredQueryResult(source, sort))
         // $COVERAGE-OFF$
         case _ => None
         // $COVERAGE-ON$
       }
+    }
     json.hcursor
       .downField("hits")
       .downField("hits")
@@ -82,7 +84,6 @@ object ElasticSearchDecoder {
     * Construct a [Decoder] for [QueryResults] of the generic type ''A''
     *
     * @param D the implicitly available decoder for ''A''
-    * @param E the implicitly available encoder for ''A''
     * @tparam A the generic type for the decoder
     */
   final def apply[A](implicit D: Decoder[A]): Decoder[QueryResults[A]] =
