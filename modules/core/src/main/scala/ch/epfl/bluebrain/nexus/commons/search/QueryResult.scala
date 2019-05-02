@@ -23,7 +23,7 @@ object QueryResult {
     * @param source the source of the query result
     * @param sort   the sort parameter of the query result
     */
-  final case class ScoredQueryResult[A](score: Float, source: A, sort: Option[Seq[Json]]) extends QueryResult[A]
+  final case class ScoredQueryResult[A](score: Float, source: A, sort: Option[Seq[Json]] = None) extends QueryResult[A]
 
   /**
     * A single instance result entry without score.
@@ -31,7 +31,7 @@ object QueryResult {
     * @param source the source of the query result
     * @param sort   the sort parameter of the query result
     */
-  final case class UnscoredQueryResult[A](source: A, sort: Option[Seq[Json]]) extends QueryResult[A]
+  final case class UnscoredQueryResult[A](source: A, sort: Option[Seq[Json]] = None) extends QueryResult[A]
 
   final implicit val queryResultFunctor: Functor[QueryResult] =
     new Functor[QueryResult] {

@@ -128,7 +128,7 @@ class ElasticSearchClientSpec
         val query = jsonContentOf("/query.json",
                                   Map(Pattern.quote("{{value1}}") -> getValue("key", json),
                                       Pattern.quote("{{value2}}") -> getValue("key2", json)))
-        val qrs = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, json, None)))
+        val qrs = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, json)))
         cl.search[Json](query, Set(indexSanitized))(p).futureValue shouldEqual qrs
       }
 
@@ -137,7 +137,7 @@ class ElasticSearchClientSpec
         val query = jsonContentOf("/query.json",
                                   Map(Pattern.quote("{{value1}}") -> getValue("key", json),
                                       Pattern.quote("{{value2}}") -> getValue("key2", json)))
-        val qrs = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, json, None)))
+        val qrs = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, json)))
         cl.search[Json](query, Set(indexSanitized.take(5) + "*"))(p).futureValue shouldEqual qrs
       }
 
@@ -153,7 +153,7 @@ class ElasticSearchClientSpec
                                   Map(Pattern.quote("{{value1}}") -> getValue("key", json),
                                       Pattern.quote("{{value2}}") -> getValue("key2", json)))
         val expectedJson = Json.obj("key" -> Json.fromString(getValue("key", json)))
-        val qrs          = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, expectedJson, None)))
+        val qrs          = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, expectedJson)))
         cl.search[Json](query)(p, fields = Set("key")).futureValue shouldEqual qrs
       }
 
