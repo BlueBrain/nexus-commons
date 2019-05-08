@@ -95,7 +95,7 @@ class ElasticSearchClientSpec
     }
 
     "perform document operations" when {
-      val p: Pagination                                             = Pagination(0L, 3)
+      val p: Pagination                                             = Pagination(0, 3)
       implicit val D: Decoder[QueryResults[Json]]                   = ElasticSearchDecoder[Json]
       implicit val rsSearch: HttpClient[Future, QueryResults[Json]] = withUnmarshaller[Future, QueryResults[Json]]
       implicit val rsGet: HttpClient[Future, Json]                  = withUnmarshaller[Future, Json]
@@ -176,6 +176,59 @@ class ElasticSearchClientSpec
           elems.take(3).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
         cl.search[Json](matchAll, Set(indexSanitized))(p, sort = SortList(List(Sort("-key"))))
           .futureValue shouldEqual qrs
+      }
+
+      "search elements with sort_after" in {
+        val elems =
+          list.map(_._2).sortWith(getValue("key", _) < getValue("key", _))
+
+        val qrs1 = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.take(3).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
+
+        val results1: QueryResults[Json] =
+          cl.search[Json](matchAll, Set(indexSanitized))(p, sort = SortList(List(Sort("key")))).futureValue
+
+        results1 shouldEqual qrs1
+
+        val sort                  = results1.results.last.sort.value
+        val searchAfterPagination = Pagination(sort, 3)
+
+        val qrs2 = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.slice(3, 6).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
+
+        val results2 = cl
+          .search[Json](matchAll, Set(indexSanitized))(searchAfterPagination, sort = SortList(List(Sort("key"))))
+          .futureValue
+
+        results2 shouldEqual qrs2
+
+      }
+
+      "search elements with from" in {
+        val elems =
+          list.map(_._2).sortWith(getValue("key", _) < getValue("key", _))
+
+        val qrs1 = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.take(3).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
+
+        val results1 = cl.search[Json](matchAll, Set(indexSanitized))(p, sort = SortList(List(Sort("key")))).futureValue
+
+        results1 shouldEqual qrs1
+
+        val searchAfterPagination = Pagination(3, 3)
+
+        val qrs2 = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.slice(3, 6).map(elem => UnscoredQueryResult(elem, Some(List(Json.fromString(getValue("key", elem)))))))
+
+        val results2 = cl
+          .search[Json](matchAll, Set(indexSanitized))(searchAfterPagination, sort = SortList(List(Sort("key"))))
+          .futureValue
+
+        results2 shouldEqual qrs2
       }
 
       "search which returns 0 values" in {

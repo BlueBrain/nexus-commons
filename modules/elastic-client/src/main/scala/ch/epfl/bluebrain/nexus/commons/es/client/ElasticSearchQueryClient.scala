@@ -109,8 +109,12 @@ object ElasticSearchQueryClient {
       *
       * @param page the pagination information
       */
-    def addPage(page: Pagination): Json =
-      query deepMerge Json.obj("from" -> Json.fromLong(page.from), "size" -> Json.fromInt(page.size))
+    def addPage(page: Pagination): Json = page match {
+      case FromPagination(from, size) =>
+        query deepMerge Json.obj("from" -> Json.fromInt(from), "size" -> Json.fromInt(size))
+      case SearchAfterPagination(searchAfter, size) =>
+        query deepMerge Json.obj("search_after" -> Json.arr(searchAfter: _*), "size" -> Json.fromInt(size))
+    }
 
     /**
       * Adds sources to the query, which defines what fields are going to be present in the response
