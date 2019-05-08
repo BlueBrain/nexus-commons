@@ -1,8 +1,8 @@
-val jenaVersion          = "3.10.0"
+val jenaVersion          = "3.11.0"
 val blazegraphVersion    = "2.1.5"
 val jacksonVersion       = "2.9.8"
 val catsVersion          = "1.6.0"
-val catsEffectVersion    = "1.2.0"
+val catsEffectVersion    = "1.3.0"
 val circeVersion         = "0.11.1"
 val scalaTestVersion     = "3.0.7"
 val shapelessVersion     = "2.3.3"
@@ -16,7 +16,7 @@ val commonsIOVersion     = "1.3.2"
 val monixVersion         = "3.0.0-RC2"
 val pureconfigVersion    = "0.10.2"
 
-val rdfVersion         = "0.3.6"
+val rdfVersion         = "0.3.7"
 val sourcingVersion    = "0.16.1"
 val topQuadrantVersion = "1.2.0-nexus4"
 
@@ -63,10 +63,10 @@ lazy val monixEval         = "io.monix"                          %% "monix-eval"
 lazy val monixTail         = "io.monix"                          %% "monix-tail"               % monixVersion
 lazy val pureconfig        = "com.github.pureconfig"             %% "pureconfig"               % pureconfigVersion
 
-lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.1.5"
+lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.1.6"
 lazy val kamonPrometheus = "io.kamon" %% "kamon-prometheus"      % "1.1.1"
 lazy val kamonJaeger     = "io.kamon" %% "kamon-jaeger"          % "1.0.2"
-lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.5"
+lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.6"
 lazy val kamonMetrics    = "io.kamon" %% "kamon-system-metrics"  % "1.0.1"
 lazy val kamonAkka       = "io.kamon" %% "kamon-akka-2.5"        % "1.1.3"
 lazy val kamonAkkaHttp   = "io.kamon" %% "kamon-akka-http-2.5"   % "1.1.1"
