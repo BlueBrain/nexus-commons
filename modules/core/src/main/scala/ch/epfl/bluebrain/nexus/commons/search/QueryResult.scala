@@ -11,7 +11,7 @@ import io.circe.{Encoder, Json}
   */
 sealed trait QueryResult[A] extends Product with Serializable {
   def source: A
-  def sort: Option[Seq[Json]]
+  def sort: Option[Json]
 }
 
 object QueryResult {
@@ -23,7 +23,7 @@ object QueryResult {
     * @param source the source of the query result
     * @param sort   the sort parameter of the query result
     */
-  final case class ScoredQueryResult[A](score: Float, source: A, sort: Option[Seq[Json]] = None) extends QueryResult[A]
+  final case class ScoredQueryResult[A](score: Float, source: A, sort: Option[Json] = None) extends QueryResult[A]
 
   /**
     * A single instance result entry without score.
@@ -31,7 +31,7 @@ object QueryResult {
     * @param source the source of the query result
     * @param sort   the sort parameter of the query result
     */
-  final case class UnscoredQueryResult[A](source: A, sort: Option[Seq[Json]] = None) extends QueryResult[A]
+  final case class UnscoredQueryResult[A](source: A, sort: Option[Json] = None) extends QueryResult[A]
 
   final implicit val queryResultFunctor: Functor[QueryResult] =
     new Functor[QueryResult] {

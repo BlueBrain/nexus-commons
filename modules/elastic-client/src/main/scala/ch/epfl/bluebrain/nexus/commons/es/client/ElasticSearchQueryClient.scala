@@ -113,7 +113,7 @@ object ElasticSearchQueryClient {
       case FromPagination(from, size) =>
         query deepMerge Json.obj("from" -> Json.fromInt(from), "size" -> Json.fromInt(size))
       case SearchAfterPagination(searchAfter, size) =>
-        query deepMerge Json.obj("search_after" -> Json.arr(searchAfter: _*), "size" -> Json.fromInt(size))
+        query deepMerge Json.obj("search_after" -> searchAfter, "size" -> Json.fromInt(size))
     }
 
     /**
