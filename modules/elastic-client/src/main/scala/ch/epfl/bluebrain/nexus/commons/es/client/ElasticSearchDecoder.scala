@@ -11,7 +11,7 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
 
   private def queryResults(json: Json, scored: Boolean): ErrorOrResults = {
     def queryResult(result: Json): Option[QueryResult[A]] = {
-      val sort = result.hcursor.get[Seq[Json]]("sort").toOption
+      val sort = result.hcursor.get[Json]("sort").toOption
       result.hcursor.get[A]("_source") match {
         case Right(source) =>
           if (scored) Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0F), source, sort))

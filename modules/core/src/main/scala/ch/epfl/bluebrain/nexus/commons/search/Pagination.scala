@@ -26,14 +26,15 @@ final case class FromPagination(from: Int, size: Int) extends Pagination
 /**
   * Request pagination data type using `search_after`.
   *
-  * @param searchAfter  [[Json]] array to use as ElasticSearch `search_after` field.
+  * @param searchAfter  [[Json]] to use as ElasticSearch `search_after` field. Should be directly taken from `sort` field
+  *                     in the search results.
   * @param size         the maximum number of results per page
   */
-final case class SearchAfterPagination(searchAfter: Seq[Json], size: Int) extends Pagination
+final case class SearchAfterPagination(searchAfter: Json, size: Int) extends Pagination
 
 object Pagination {
 
-  def apply(size: Int): Pagination                         = FromPagination(0, size)
-  def apply(from: Int, size: Int): Pagination              = FromPagination(from, size)
-  def apply(searchAfter: Seq[Json], size: Int): Pagination = SearchAfterPagination(searchAfter, size)
+  def apply(size: Int): Pagination                    = FromPagination(0, size)
+  def apply(from: Int, size: Int): Pagination         = FromPagination(from, size)
+  def apply(searchAfter: Json, size: Int): Pagination = SearchAfterPagination(searchAfter, size)
 }
