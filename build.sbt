@@ -17,7 +17,7 @@ val monixVersion         = "3.0.0-RC2"
 val pureconfigVersion    = "0.11.0"
 
 val rdfVersion         = "0.3.8"
-val sourcingVersion    = "0.16.1"
+val sourcingVersion    = "0.16.2"
 val topQuadrantVersion = "1.2.0-nexus4"
 
 lazy val rdf              = "ch.epfl.bluebrain.nexus"              %% "rdf"           % rdfVersion
