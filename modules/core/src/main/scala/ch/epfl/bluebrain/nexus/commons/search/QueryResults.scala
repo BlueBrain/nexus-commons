@@ -11,7 +11,7 @@ import io.circe.Encoder
   */
 sealed trait QueryResults[A] extends Product with Serializable {
   def total: Long
-
+  def token: Option[String]
   def results: List[QueryResult[A]]
 
   /**
@@ -31,9 +31,13 @@ object QueryResults {
     * @param total    the total number of results
     * @param maxScore the maximum score of the individual query results
     * @param results  the collection of results
+    * @param token   the optional token used to generate the next link
     * @tparam A generic type of the response's payload
     */
-  final case class ScoredQueryResults[A](total: Long, maxScore: Float, results: List[QueryResult[A]])
+  final case class ScoredQueryResults[A](total: Long,
+                                         maxScore: Float,
+                                         results: List[QueryResult[A]],
+                                         token: Option[String] = None)
       extends QueryResults[A] {
     override def copyWith[B](res: List[QueryResult[B]]): QueryResults[B] = ScoredQueryResults[B](total, maxScore, res)
   }
@@ -43,9 +47,11 @@ object QueryResults {
     *
     * @param total   the total number of results
     * @param results the collection of results
+    * @param token   the optional token used to generate the next link
     * @tparam A generic type of the response's payload
     */
-  final case class UnscoredQueryResults[A](total: Long, results: List[QueryResult[A]]) extends QueryResults[A] {
+  final case class UnscoredQueryResults[A](total: Long, results: List[QueryResult[A]], token: Option[String] = None)
+      extends QueryResults[A] {
     override def copyWith[B](res: List[QueryResult[B]]): QueryResults[B] = UnscoredQueryResults[B](total, res)
 
   }

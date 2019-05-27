@@ -1,5 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
+import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.search.QueryResult.{ScoredQueryResult, UnscoredQueryResult}
 import ch.epfl.bluebrain.nexus.commons.search.{QueryResult, QueryResults}
 import ch.epfl.bluebrain.nexus.commons.search.QueryResults.{ScoredQueryResults, UnscoredQueryResults}
@@ -11,44 +12,26 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
 
   private def queryResults(json: Json, scored: Boolean): ErrorOrResults = {
     def queryResult(result: Json): Option[QueryResult[A]] = {
-      val sort = result.hcursor.get[Json]("sort").toOption
       result.hcursor.get[A]("_source") match {
-        case Right(source) =>
-          if (scored) Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0F), source, sort))
-          else Some(UnscoredQueryResult(source, sort))
-        // $COVERAGE-OFF$
-        case _ => None
-        // $COVERAGE-ON$
+        case Right(s) if scored => Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0F), s))
+        case Right(s)           => Some(UnscoredQueryResult(s))
+        case _                  => None
       }
     }
-    json.hcursor
-      .downField("hits")
-      .downField("hits")
-      .focus
-      .flatMap(_.asArray)
-      .getOrElse(Vector.empty)
-      .foldLeft[ErrorOrResults](Right(List.empty)) {
-        case (Left(prev), _) =>
-          // $COVERAGE-OFF$
-          Left(prev)
-        // $COVERAGE-ON$
-        case (Right(acc), result) =>
-          queryResult(result) match {
-            case Some(qr) =>
-              Right(qr :: acc)
-            // $COVERAGE-OFF$
-            case _ => Left(result)
-            // $COVERAGE-ON$
-          }
-      }
+    val hitsList = json.hcursor.downField("hits").downField("hits").focus.flatMap(_.asArray).getOrElse(Vector.empty)
+    hitsList
+      .foldM(List.empty[QueryResult[A]])((acc, json) => queryResult(json).map(_ :: acc).toRight(json))
       .map(_.reverse)
   }
+
+  private def token(json: Json): Option[String] =
+    json.hcursor.downField("hits").downField("hits").downArray.last.get[Json]("sort").toOption.map(_.noSpaces)
 
   private def decodeScoredQueryResults(maxScore: Float): Decoder[QueryResults[A]] =
     Decoder.decodeJson.emap { json =>
       val total = json.hcursor.downField("hits").get[Long]("total").getOrElse(0L)
       queryResults(json, scored = true) match {
-        case Right(list) => Right(ScoredQueryResults(total, maxScore, list))
+        case Right(list) => Right(ScoredQueryResults(total, maxScore, list, token(json)))
         // $COVERAGE-OFF$
         case Left(errJson) => Left(s"Could not decode source from value '$errJson'")
         // $COVERAGE-ON$
@@ -59,7 +42,7 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
     Decoder.decodeJson.emap { json =>
       val total = json.hcursor.downField("hits").get[Long]("total").getOrElse(0L)
       queryResults(json, scored = false) match {
-        case Right(list) => Right(UnscoredQueryResults(total, list))
+        case Right(list) => Right(UnscoredQueryResults(total, list, token(json)))
         // $COVERAGE-OFF$
         case Left(errJson) => Left(s"Could not decode source from value '$errJson'")
         // $COVERAGE-ON$
@@ -67,15 +50,11 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
     }
 
   val decodeQueryResults: Decoder[QueryResults[A]] =
-    Decoder.decodeJson.flatMap { json =>
-      json.hcursor
-        .downField("hits")
-        .get[Float]("max_score")
-        .toOption
-        .filterNot(f => f.isInfinite || f.isNaN)
-        .map(decodeScoredQueryResults)
-        .getOrElse(decodeUnscoredResults)
-    }
+    Decoder.decodeJson.flatMap(
+      _.hcursor.downField("hits").get[Float]("max_score").toOption.filterNot(f => f.isInfinite || f.isNaN) match {
+        case Some(maxScore) => decodeScoredQueryResults(maxScore)
+        case None           => decodeUnscoredResults
+      })
 }
 
 object ElasticSearchDecoder {

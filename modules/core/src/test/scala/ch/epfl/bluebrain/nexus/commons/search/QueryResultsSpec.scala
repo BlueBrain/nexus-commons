@@ -28,9 +28,10 @@ class QueryResultsSpec extends WordSpecLike with Matchers {
 
     "encodes a queryResults" in {
       val result  = ScoredQueryResult(1F, 1): QueryResult[Int]
-      val results = ScoredQueryResults(10L, 1F, List(result)): QueryResults[Int]
+      val results = ScoredQueryResults(10L, 1F, List(result), Some("token")): QueryResults[Int]
       results.asJson shouldEqual Json.obj(
         "total"    -> Json.fromLong(results.total),
+        "token"    -> Json.fromString("token"),
         "maxScore" -> Json.fromFloatOrNull(1F),
         "results"  -> Json.arr(result.asJson)
       )
