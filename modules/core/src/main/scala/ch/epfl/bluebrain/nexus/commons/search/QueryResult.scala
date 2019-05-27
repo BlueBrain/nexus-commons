@@ -2,7 +2,7 @@ package ch.epfl.bluebrain.nexus.commons.search
 
 import cats.Functor
 import cats.syntax.functor._
-import io.circe.{Encoder, Json}
+import io.circe.Encoder
 
 /**
   * Defines the signature for a single instance result entry
@@ -11,7 +11,6 @@ import io.circe.{Encoder, Json}
   */
 sealed trait QueryResult[A] extends Product with Serializable {
   def source: A
-  def sort: Option[Json]
 }
 
 object QueryResult {
@@ -21,17 +20,15 @@ object QueryResult {
     *
     * @param score  the resulting score for the entry
     * @param source the source of the query result
-    * @param sort   the sort parameter of the query result
     */
-  final case class ScoredQueryResult[A](score: Float, source: A, sort: Option[Json] = None) extends QueryResult[A]
+  final case class ScoredQueryResult[A](score: Float, source: A) extends QueryResult[A]
 
   /**
     * A single instance result entry without score.
     *
     * @param source the source of the query result
-    * @param sort   the sort parameter of the query result
     */
-  final case class UnscoredQueryResult[A](source: A, sort: Option[Json] = None) extends QueryResult[A]
+  final case class UnscoredQueryResult[A](source: A) extends QueryResult[A]
 
   final implicit val queryResultFunctor: Functor[QueryResult] =
     new Functor[QueryResult] {
