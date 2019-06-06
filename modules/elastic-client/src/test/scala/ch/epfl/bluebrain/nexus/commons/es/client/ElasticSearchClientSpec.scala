@@ -6,11 +6,11 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.future._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticSearchClientError
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.{ElasticSearchClientError, ElasticUnexpectedError}
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
-import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
+import ch.epfl.bluebrain.nexus.commons.search.Pagination
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import ch.epfl.bluebrain.nexus.commons.search.QueryResult._
 import ch.epfl.bluebrain.nexus.commons.search.QueryResults._
@@ -442,6 +442,23 @@ class ElasticSearchClientSpec
         forAll(list) {
           case (id, _) => cl.delete(index, t, id).futureValue
         }
+      }
+
+      "fail bulking" in {
+        val toUpdate = genString() -> genJson("key", "key1")
+        val toDelete = genString() -> genJson("key", "key3")
+        val list     = List(toUpdate, toDelete)
+        val ops      = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        cl.bulk(ops).futureValue shouldEqual (())
+
+        val updated = Json.obj("key1" -> Json.fromString("updated"))
+        cl.bulk(
+            List(
+              BulkOp.Delete(indexSanitized, t, toDelete._1),
+              BulkOp.Update(genString(), t, toUpdate._1, Json.obj("doc" -> updated))
+            ))
+          .failed
+          .futureValue shouldBe a[ElasticUnexpectedError]
       }
     }
   }
