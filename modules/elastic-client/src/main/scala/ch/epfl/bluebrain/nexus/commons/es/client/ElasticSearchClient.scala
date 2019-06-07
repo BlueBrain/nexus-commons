@@ -12,12 +12,14 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUnexpectedError
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
 import ch.epfl.bluebrain.nexus.commons.search._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
+import io.circe.parser.parse
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
@@ -100,8 +102,24 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     case Nil => F.unit
     case _ =>
       val entity = HttpEntity(`application/x-ndjson`, ops.map(_.payload).mkString("", newLine, newLine))
-      execute(Post(base / "_bulk", entity), Set(OK), "bulk update")
+      bulkExecute(Post(base / "_bulk", entity))
   }
+
+  private def bulkExecute(req: HttpRequest): F[Unit] =
+    cl(req).flatMap { resp =>
+      if (resp.status == OK)
+        cl.toString(resp.entity).flatMap { body =>
+          parse(body).flatMap(_.hcursor.get[Boolean]("errors")) match {
+            case Right(false) => F.unit
+            case _            => F.raiseError(ElasticUnexpectedError(BadRequest, body))
+          }
+        } else
+        ElasticSearchFailure.fromResponse(resp).flatMap { f =>
+          log.error(
+            s"Unexpected ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
+          F.raiseError(f)
+        }
+    }
 
   /**
     * Updates an existing document with the provided payload.
