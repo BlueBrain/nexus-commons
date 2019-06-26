@@ -42,9 +42,8 @@ class ElasticSearchClientSpec
 
   private implicit val uc: UntypedHttpClient[Future] = untyped[Future]
 
-  "An ElasticSearchClient" should {
+  "An ElasticSearchClient" when {
     val cl: ElasticSearchClient[Future] = ElasticSearchClient[Future](esUri)
-    val t                               = "doc"
     val indexPayload                    = jsonContentOf("/index_payload.json")
     val mappingPayload                  = jsonContentOf("/mapping_payload.json")
     def genJson(k: String, k2: String): Json =
@@ -53,20 +52,22 @@ class ElasticSearchClientSpec
 
     val matchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()))
 
-    "sanitize index names" in {
-      forAll(""" "*\<>|,/?""") { ch =>
-        cl.sanitize(s"a${ch}a") shouldEqual "a_a"
+    "sanitilizing index names" should {
+      "succeed" in {
+        forAll(""" "*\<>|,/?""") { ch =>
+          cl.sanitize(s"a${ch}a") shouldEqual "a_a"
+        }
+        cl.sanitize(s"a*a", allowWildCard = true) shouldEqual "a*a"
       }
-      cl.sanitize(s"a*a", allowWildCard = true) shouldEqual "a*a"
     }
 
-    "perform index operations" when {
+    "performing index operations" should {
 
       "return false when index does not exist" in {
         cl.existsIndex("some").futureValue shouldEqual false
       }
 
-      "create mappings when index does not exist" in {
+      "create mappings if index does not exist" in {
         val index = genIndexString()
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
         cl.createIndex(index, indexPayload).futureValue shouldEqual false
@@ -81,9 +82,9 @@ class ElasticSearchClientSpec
       "create mappings" in {
         val index = genIndexString()
         cl.createIndex(index).futureValue shouldEqual true
-        cl.updateMapping(index, "doc", mappingPayload).futureValue shouldEqual true
-        cl.updateMapping(genIndexString(), "doc", mappingPayload).futureValue shouldEqual false
-        whenReady(cl.updateMapping(index, "doc", indexPayload).failed)(_ shouldBe a[ElasticSearchClientError])
+        cl.updateMapping(index, mappingPayload).futureValue shouldEqual true
+        cl.updateMapping(genIndexString(), mappingPayload).futureValue shouldEqual false
+        whenReady(cl.updateMapping(index, indexPayload).failed)(_ shouldBe a[ElasticSearchClientError])
       }
 
       "delete index" in {
@@ -94,7 +95,7 @@ class ElasticSearchClientSpec
       }
     }
 
-    "perform document operations" when {
+    "performing document operations" should {
       val p: Pagination                                             = Pagination(0, 3)
       implicit val D: Decoder[QueryResults[Json]]                   = ElasticSearchDecoder[Json]
       implicit val rsSearch: HttpClient[Future, QueryResults[Json]] = withUnmarshaller[Future, QueryResults[Json]]
@@ -106,7 +107,7 @@ class ElasticSearchClientSpec
 
       "add documents" in {
         cl.createIndex(index, indexPayload).futureValue shouldEqual true
-        val ops = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        val ops = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
         cl.bulk(ops).futureValue shouldEqual (())
       }
 
@@ -114,13 +115,13 @@ class ElasticSearchClientSpec
         forAll(list) {
           case (id, json) =>
             eventually {
-              cl.get[Json](index, t, id).futureValue.value shouldEqual json
+              cl.get[Json](index, id).futureValue.value shouldEqual json
             }
         }
       }
 
       "return none when fetch documents that do not exist" in {
-        cl.get[Json](index, t, genString()).futureValue shouldEqual None
+        cl.get[Json](index, genString()).futureValue shouldEqual None
       }
 
       "search for some specific keys and values" in {
@@ -250,19 +251,20 @@ class ElasticSearchClientSpec
           list.sortWith((e1, e2) => getValue("key", e1._2) < getValue("key", e2._2))
 
         val json = cl.searchRaw(sortedMatchAll, Set(indexSanitized)).futureValue
+        println(json.asObject.value("took").value)
         val expectedResponse = jsonContentOf("/elastic_search_response.json").mapObject { obj =>
           obj
             .add("took", json.asObject.value("took").value)
             .add(
               "hits",
               Json.obj(
-                "total"     -> Json.fromInt(10),
+                "total"     -> Json.obj("value" -> Json.fromInt(10), "relation" -> Json.fromString("eq")),
                 "max_score" -> Json.Null,
                 "hits" -> Json.arr(
                   elems.map { e =>
                     Json.obj(
                       "_index"  -> Json.fromString(cl.sanitize(index)),
-                      "_type"   -> Json.fromString("doc"),
+                      "_type"   -> Json.fromString("_doc"),
                       "_id"     -> Json.fromString(e._1),
                       "_score"  -> Json.Null,
                       "_source" -> e._2,
@@ -294,13 +296,13 @@ class ElasticSearchClientSpec
             .add(
               "hits",
               Json.obj(
-                "total"     -> Json.fromInt(10),
+                "total"     -> Json.obj("value" -> Json.fromInt(10), "relation" -> Json.fromString("eq")),
                 "max_score" -> Json.Null,
                 "hits" -> Json.arr(
                   elems.map { e =>
                     Json.obj(
                       "_index"  -> Json.fromString(cl.sanitize(index)),
-                      "_type"   -> Json.fromString("doc"),
+                      "_type"   -> Json.fromString("_doc"),
                       "_id"     -> Json.fromString(e._1),
                       "_score"  -> Json.Null,
                       "_source" -> e._2,
@@ -336,12 +338,12 @@ class ElasticSearchClientSpec
         forAll(listModified) {
           case (id, json) =>
             val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
-            cl.update(index, t, id, updateScript).futureValue shouldEqual (())
-            cl.get[Json](index, t, id).futureValue.value shouldEqual json
+            cl.update(index, id, updateScript).futureValue shouldEqual (())
+            cl.get[Json](index, id).futureValue.value shouldEqual json
             val jsonWithKey = Json.obj("key" -> Json.fromString(getValue("key", json)))
-            cl.get[Json](index, t, id, include = Set("key")).futureValue.value shouldEqual jsonWithKey
-            cl.get[Json](index, t, id, exclude = Set("key2")).futureValue.value shouldEqual jsonWithKey
-            cl.get[Json](index, t, id, include = Set("key"), exclude = Set("key2"))
+            cl.get[Json](index, id, include = Set("key")).futureValue.value shouldEqual jsonWithKey
+            cl.get[Json](index, id, exclude = Set("key2")).futureValue.value shouldEqual jsonWithKey
+            cl.get[Json](index, id, include = Set("key"), exclude = Set("key2"))
               .futureValue
               .value shouldEqual jsonWithKey
         }
@@ -361,15 +363,15 @@ class ElasticSearchClientSpec
               jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", mapModified(id))))
 
             cl.updateDocuments(Set(indexSanitized), query, updateScript).futureValue shouldEqual (())
-            cl.get[Json](index, t, id).futureValue.value shouldEqual mapModified(id)
+            cl.get[Json](index, id).futureValue.value shouldEqual mapModified(id)
         }
       }
 
       "delete documents" in {
         forAll(mapModified.toList.take(3)) {
           case (id, _) =>
-            cl.delete(index, t, id).futureValue shouldEqual (())
-            cl.get[Json](index, t, id).futureValue shouldEqual None
+            cl.delete(index, id).futureValue shouldEqual (())
+            cl.get[Json](index, id).futureValue shouldEqual None
         }
       }
 
@@ -380,7 +382,7 @@ class ElasticSearchClientSpec
               jsonContentOf("/simple_query.json",
                             Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
             cl.deleteDocuments(Set(indexSanitized), query).futureValue shouldEqual (())
-            cl.get[Json](index, t, id).futureValue shouldEqual None
+            cl.get[Json](index, id).futureValue shouldEqual None
         }
       }
 
@@ -389,24 +391,24 @@ class ElasticSearchClientSpec
         val toOverride = genString() -> genJson("key", "key2")
         val toDelete   = genString() -> genJson("key", "key3")
         val list       = List(toUpdate, toOverride, toDelete)
-        val ops        = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        val ops        = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
         cl.bulk(ops).futureValue shouldEqual (())
 
         val updated = Json.obj("key1" -> Json.fromString("updated"))
         cl.bulk(List(
-            BulkOp.Delete(indexSanitized, t, toDelete._1),
-            BulkOp.Index(indexSanitized, t, toOverride._1, updated),
-            BulkOp.Update(indexSanitized, t, toUpdate._1, Json.obj("doc" -> updated))
+            BulkOp.Delete(indexSanitized, toDelete._1),
+            BulkOp.Index(indexSanitized, toOverride._1, updated),
+            BulkOp.Update(indexSanitized, toUpdate._1, Json.obj("doc" -> updated))
           ))
           .futureValue shouldEqual (())
         eventually {
-          cl.get[Json](index, t, toUpdate._1).futureValue.value shouldEqual toUpdate._2.deepMerge(updated)
+          cl.get[Json](index, toUpdate._1).futureValue.value shouldEqual toUpdate._2.deepMerge(updated)
         }
         eventually {
-          cl.get[Json](index, t, toOverride._1).futureValue.value shouldEqual updated
+          cl.get[Json](index, toOverride._1).futureValue.value shouldEqual updated
         }
         eventually {
-          cl.get[Json](index, t, toDelete._1).futureValue shouldEqual None
+          cl.get[Json](index, toDelete._1).futureValue shouldEqual None
         }
       }
 
@@ -416,31 +418,31 @@ class ElasticSearchClientSpec
 
       "add and fetch ids with non UTF-8 characters" in {
         val list = List.fill(5)(genIndexString() -> genJson("key", "key1"))
-        val ops  = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        val ops  = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
         cl.bulk(ops).futureValue shouldEqual (())
 
         forAll(list) {
           case (id, json) =>
             eventually {
-              cl.get[Json](index, t, id).futureValue.value shouldEqual json
+              cl.get[Json](index, id).futureValue.value shouldEqual json
             }
         }
 
         forAll(list) {
           case (id, _) =>
-            cl.update(index, t, id, Json.obj("doc" -> Json.obj("id" -> Json.fromString(id)))).futureValue
+            cl.update(index, id, Json.obj("doc" -> Json.obj("id" -> Json.fromString(id)))).futureValue
         }
 
         forAll(list) {
           case (id, json) =>
             eventually {
-              cl.get[Json](index, t, id).futureValue.value shouldEqual json.deepMerge(
+              cl.get[Json](index, id).futureValue.value shouldEqual json.deepMerge(
                 Json.obj("id" -> Json.fromString(id)))
             }
         }
 
         forAll(list) {
-          case (id, _) => cl.delete(index, t, id).futureValue
+          case (id, _) => cl.delete(index, id).futureValue
         }
       }
 
@@ -448,14 +450,14 @@ class ElasticSearchClientSpec
         val toUpdate = genString() -> genJson("key", "key1")
         val toDelete = genString() -> genJson("key", "key3")
         val list     = List(toUpdate, toDelete)
-        val ops      = list.map { case (id, json) => BulkOp.Create(indexSanitized, t, id, json) }
+        val ops      = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
         cl.bulk(ops).futureValue shouldEqual (())
 
         val updated = Json.obj("key1" -> Json.fromString("updated"))
         cl.bulk(
             List(
-              BulkOp.Delete(indexSanitized, t, toDelete._1),
-              BulkOp.Update(genString(), t, toUpdate._1, Json.obj("doc" -> updated))
+              BulkOp.Delete(indexSanitized, toDelete._1),
+              BulkOp.Update(genString(), toUpdate._1, Json.obj("doc" -> updated))
             ))
           .failed
           .futureValue shouldBe a[ElasticUnexpectedError]

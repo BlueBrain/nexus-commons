@@ -68,14 +68,14 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
   @Benchmark
   def bulk1(): Unit =
     dataList.foreach { data =>
-      client.create(index, "doc", genString(), data).futureValue
+      client.create(index, genString(), data).futureValue
     }
 
   @Benchmark
   def bulk10(): Unit = {
     val iter = dataList.iterator
     (0 until 20).foreach { _ =>
-      val bulk = List.fill(10)(iter.next()).map(data => BulkOp.Index(index, "doc", genString(), data))
+      val bulk = List.fill(10)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
       client.bulk(bulk).futureValue
     }
   }
@@ -84,7 +84,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
   def bulk20(): Unit = {
     val iter = dataList.iterator
     (0 until 10).foreach { _ =>
-      val bulk = List.fill(20)(iter.next()).map(data => BulkOp.Index(index, "doc", genString(), data))
+      val bulk = List.fill(20)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
       client.bulk(bulk).futureValue
     }
   }
@@ -93,7 +93,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
   def bulk50(): Unit = {
     val iter = dataList.iterator
     (0 until 4).foreach { _ =>
-      val bulk = List.fill(50)(iter.next()).map(data => BulkOp.Index(index, "doc", genString(), data))
+      val bulk = List.fill(50)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
       client.bulk(bulk).futureValue
     }
   }
@@ -102,14 +102,14 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
   def bulk100(): Unit = {
     val iter = dataList.iterator
     (0 until 2).foreach { _ =>
-      val bulk = List.fill(100)(iter.next()).map(data => BulkOp.Index(index, "doc", genString(), data))
+      val bulk = List.fill(100)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
       client.bulk(bulk).futureValue
     }
   }
 
   @Benchmark
   def bulk200(): Unit = {
-    val bulk = dataList.map(data => BulkOp.Index(index, "doc", genString(), data))
+    val bulk = dataList.map(data => BulkOp.Index(index, genString(), data))
     client.bulk(bulk.toList).futureValue
   }
 }

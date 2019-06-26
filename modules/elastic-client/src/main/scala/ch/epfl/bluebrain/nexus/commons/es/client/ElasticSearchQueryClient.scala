@@ -41,7 +41,7 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(implicit
   )
 
   /**
-    * Search for the provided ''query'' inside the ''indices'' and ''types''
+    * Search for the provided ''query'' inside the ''indices''
     *
     * @param query   the initial search query
     * @param indices the indices to use on search (if empty, searches in all the indices)
