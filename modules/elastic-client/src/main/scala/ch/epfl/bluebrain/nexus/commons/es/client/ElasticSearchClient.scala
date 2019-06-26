@@ -16,7 +16,6 @@ import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUne
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
-import ch.epfl.bluebrain.nexus.commons.search._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 import io.circe.parser.parse
@@ -63,15 +62,11 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
   /**
     * Attempts to update the mappings of a given index recovering gracefully when the index does not exists.
     * @param index   the index
-    * @param `type`  the type to use
     * @param payload the payload to attach to the index mappings when it exists
     * @return ''true'' wrapped in ''F'' when the mappings have been updated and ''false'' wrapped in ''F'' when the index does not exist
     */
-  def updateMapping(index: String, `type`: String, payload: Json): F[Boolean] =
-    execute(Put(base / sanitize(index) / "_mapping" / `type`, payload),
-            Set(OK, Created),
-            Set(NotFound),
-            "update index mappings")
+  def updateMapping(index: String, payload: Json): F[Boolean] =
+    execute(Put(base / sanitize(index) / "_mapping", payload), Set(OK, Created), Set(NotFound), "update index mappings")
 
   /**
     * Attempts to delete an index recovering gracefully when the index is not found.
@@ -83,15 +78,14 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     execute(Delete(base / sanitize(index)), Set(OK), Set(NotFound), "delete index")
 
   /**
-    * Creates a new document inside the ''index'' and ''`type`'' with the provided ''payload''
+    * Creates a new document inside the ''index'' with the provided ''payload''
     *
     * @param index   the index to use
-    * @param `type`  the type to use
     * @param id      the id of the document to update
     * @param payload the document's payload
     */
-  def create(index: String, `type`: String, id: String, payload: Json): F[Unit] =
-    execute(Put(base / sanitize(index) / `type` / urlEncode(id), payload), Set(OK, Created), "create document")
+  def create(index: String, id: String, payload: Json): F[Unit] =
+    execute(Put(base / sanitize(index) / urlEncode(id), payload), Set(OK, Created), "create document")
 
   /**
     * Creates a bulk update with the operations defined on the provided ''ops'' argument.
@@ -125,13 +119,12 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * Updates an existing document with the provided payload.
     *
     * @param index   the index to use
-    * @param `type`  the type to use
     * @param id      the id of the document to update
     * @param payload the document's payload
     * @param qp      the optional query parameters
     */
-  def update(index: String, `type`: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] =
-    execute(Post((base / sanitize(index) / `type` / urlEncode(id) / updatePath).withQuery(qp), payload),
+  def update(index: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] =
+    execute(Post((base / sanitize(index) / updatePath / urlEncode(id)).withQuery(qp), payload),
             Set(OK, Created),
             "update index")
 
@@ -155,11 +148,10 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * Deletes the document with the provided ''id''
     *
     * @param index  the index to use
-    * @param `type` the type to use
     * @param id     the id to delete
     */
-  def delete(index: String, `type`: String, id: String): F[Unit] =
-    execute(Delete(base / sanitize(index) / `type` / urlEncode(id)), Set(OK), "delete index")
+  def delete(index: String, id: String): F[Unit] =
+    execute(Delete(base / sanitize(index) / docType / urlEncode(id)), Set(OK), "delete index")
 
   /**
     * Deletes every document with that matches the provided ''query''
@@ -171,24 +163,20 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     execute(Post(base / indexPath(indices) / deleteByQueryPath, query), Set(OK), "delete index from query")
 
   /**
-    * Fetch a document inside the ''index'' and ''`type`'' with the provided ''id''
+    * Fetch a document inside the ''index'' with the provided ''id''
     *
     * @param index   the index to use
-    * @param `type`  the type to use
     * @param id      the id of the document to fetch
     * @param include the fields to be returned
     * @param exclude the fields not to be returned
     */
-  def get[A](index: String,
-             `type`: String,
-             id: String,
-             include: Set[String] = Set.empty,
-             exclude: Set[String] = Set.empty)(implicit rs: HttpClient[F, A]): F[Option[A]] = {
+  def get[A](index: String, id: String, include: Set[String] = Set.empty, exclude: Set[String] = Set.empty)(
+      implicit rs: HttpClient[F, A]): F[Option[A]] = {
     val includeMap: Map[String, String] =
       if (include.isEmpty) Map.empty else Map(includeFieldsQueryParam -> include.mkString(","))
     val excludeMap: Map[String, String] =
       if (exclude.isEmpty) Map.empty else Map(excludeFieldsQueryParam -> exclude.mkString(","))
-    val uri = base / sanitize(index) / `type` / urlEncode(id) / source
+    val uri = base / sanitize(index) / source / urlEncode(id)
     rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).handleErrorWith {
       case UnexpectedUnsuccessfulHttpResponse(r, _) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
       case UnexpectedUnsuccessfulHttpResponse(r, body) =>
@@ -198,7 +186,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
   }
 
   /**
-    * Search for the provided ''query'' inside the ''indices'' and ''types''
+    * Search for the provided ''query'' inside the ''indices''
     *
     * @param query   the initial search query
     * @param indices the indices to use on search (if empty, searches in all the indices)
@@ -249,11 +237,6 @@ object ElasticSearchClient {
     def index: String
 
     /**
-      * @return the type to use for the current bulk operation
-      */
-    def tpe: String
-
-    /**
       * @return the id of the document for the current bulk operation
       */
     def id: String
@@ -264,22 +247,22 @@ object ElasticSearchClient {
     def payload: String
 
     private[ElasticSearchClient] def json: Json =
-      Json.obj("_index" -> Json.fromString(index), "_type" -> Json.fromString(tpe), "_id" -> Json.fromString(id))
+      Json.obj("_index" -> Json.fromString(index), "_id" -> Json.fromString(id))
   }
 
   object BulkOp {
-    final case class Index(index: String, tpe: String, id: String, content: Json) extends BulkOp {
+    final case class Index(index: String, id: String, content: Json) extends BulkOp {
       def payload: String = Json.obj("index" -> json).noSpaces + newLine + content.noSpaces
     }
-    final case class Create(index: String, tpe: String, id: String, content: Json) extends BulkOp {
+    final case class Create(index: String, id: String, content: Json) extends BulkOp {
       def payload: String = Json.obj("create" -> json).noSpaces + newLine + content.noSpaces
     }
-    final case class Update(index: String, tpe: String, id: String, content: Json, retry: Int = 0) extends BulkOp {
+    final case class Update(index: String, id: String, content: Json, retry: Int = 0) extends BulkOp {
       val modified = if (retry > 0) json deepMerge Json.obj("retry_on_conflict" -> Json.fromInt(retry)) else json
 
       def payload: String = Json.obj("update" -> modified).noSpaces + newLine + content.noSpaces
     }
-    final case class Delete(index: String, tpe: String, id: String) extends BulkOp {
+    final case class Delete(index: String, id: String) extends BulkOp {
       def payload: String = Json.obj("delete" -> json).noSpaces + newLine
     }
   }
