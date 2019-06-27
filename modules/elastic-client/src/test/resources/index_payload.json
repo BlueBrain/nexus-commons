@@ -1,16 +1,14 @@
 {
   "mappings": {
-    "doc" : {
-      "properties": {
-        "key": {
-          "type": "keyword"
-        },
-        "/key2": {
-          "type": "keyword"
-        },
-        "age": {
-          "type": "integer"
-        }
+    "properties": {
+      "key": {
+        "type": "keyword"
+      },
+      "/key2": {
+        "type": "keyword"
+      },
+      "age": {
+        "type": "integer"
       }
     }
   },

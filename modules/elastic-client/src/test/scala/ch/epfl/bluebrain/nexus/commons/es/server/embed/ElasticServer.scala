@@ -18,6 +18,7 @@ import org.elasticsearch.plugins.Plugin
 import org.elasticsearch.transport.Netty4Plugin
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 // $COVERAGE-OFF$
@@ -52,7 +53,7 @@ abstract class ElasticServer
     .builder()
     .put("path.home", dataDir.toString)
     .put("http.port", s"$startPort-$endPort")
-    .put("http.enabled", true)
+    .put("http.cors.enabled", true)
     .put("cluster.name", clusterName)
     .put("http.type", "netty4")
     .build
@@ -72,15 +73,18 @@ abstract class ElasticServer
   }
 }
 
-object ElasticServer {
+object ElasticServer extends Randomness {
 
   import java.util
 
   import org.elasticsearch.node.InternalSettingsPreparer
 
   private class MyNode(preparedSettings: Settings, classpathPlugins: util.Collection[Class[_ <: Plugin]])
-      extends Node(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null), classpathPlugins, true) {
-    override def registerDerivedNodeNameWithLogger(nodeName: String) = ()
-  }
+      extends Node(InternalSettingsPreparer.prepareEnvironment(preparedSettings,
+                                                               Map.empty[String, String].asJava,
+                                                               null,
+                                                               () => genString()),
+                   classpathPlugins,
+                   true) {}
 }
 // $COVERAGE-ON$

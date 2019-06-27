@@ -55,6 +55,7 @@ abstract class ElasticSearchBaseClient[F[_]](implicit
 }
 
 object ElasticSearchBaseClient {
+  private[client] val docType           = "_doc"
   private[client] val source            = "_source"
   private[client] val anyIndexPath      = "_all"
   private[client] val ignoreUnavailable = "ignore_unavailable"
