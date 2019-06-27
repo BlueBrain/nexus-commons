@@ -63,15 +63,6 @@ lazy val monixEval         = "io.monix"                          %% "monix-eval"
 lazy val monixTail         = "io.monix"                          %% "monix-tail"               % monixVersion
 lazy val pureconfig        = "com.github.pureconfig"             %% "pureconfig"               % pureconfigVersion
 
-lazy val kamonCore       = "io.kamon" %% "kamon-core"            % "1.1.6"
-lazy val kamonPrometheus = "io.kamon" %% "kamon-prometheus"      % "1.1.2"
-lazy val kamonJaeger     = "io.kamon" %% "kamon-jaeger"          % "1.0.2"
-lazy val kamonLogback    = "io.kamon" %% "kamon-logback"         % "1.0.7"
-lazy val kamonMetrics    = "io.kamon" %% "kamon-system-metrics"  % "1.0.1"
-lazy val kamonAkka       = "io.kamon" %% "kamon-akka-2.5"        % "1.1.4"
-lazy val kamonAkkaHttp   = "io.kamon" %% "kamon-akka-http-2.5"   % "1.1.2"
-lazy val kamonAkkaRemote = "io.kamon" %% "kamon-akka-remote-2.5" % "1.1.0"
-
 lazy val test = project
   .in(file("modules/test"))
   .settings(
@@ -98,14 +89,6 @@ lazy val core = project
       circeCore,
       circeGenericExtras,
       journal,
-      kamonCore,
-      kamonPrometheus,
-      kamonJaeger,
-      kamonLogback,
-      kamonMetrics,
-      kamonAkka % Runtime,
-      kamonAkkaHttp,
-      kamonAkkaRemote % Runtime,
       pureconfig,
       rdf,
       shapeless,
