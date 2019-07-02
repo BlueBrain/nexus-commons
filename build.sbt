@@ -157,11 +157,26 @@ lazy val sparqlClient = project
     run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
+lazy val kamon = project
+  .in(file("modules/kamon"))
+  .settings(
+    name            := "commons-kamon",
+    moduleName      := "commons-kamon",
+    coverageEnabled := false,
+    resolvers += Resolver
+      .bintrayRepo("bogdanromanx", "maven"), // temporary for kamon-bundle until a new version is released
+    libraryDependencies ++= Seq(
+      "io.kamon" %% "kamon-bundle"     % "2.0.0-df48480160c3b9e4d9e56416440205d769db685a", // RC2 + kamon-akka, kamon-akka-http bumped to RC3
+      "io.kamon" %% "kamon-prometheus" % "2.0.0-RC1",
+      "io.kamon" %% "kamon-jaeger"     % "2.0.0-RC1"
+    )
+  )
+
 lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(core, test, elasticSearchClient, sparqlClient)
+  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 
