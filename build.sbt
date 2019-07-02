@@ -1,20 +1,47 @@
-val jenaVersion          = "3.12.0"
-val blazegraphVersion    = "2.1.5"
-val jacksonVersion       = "2.9.9"
-val catsVersion          = "1.6.1"
-val catsEffectVersion    = "1.3.1"
-val circeVersion         = "0.11.1"
-val scalaTestVersion     = "3.0.8"
-val shapelessVersion     = "2.3.3"
-val journalVersion       = "3.0.19"
-val akkaVersion          = "2.5.23"
-val akkaHttpVersion      = "10.1.8"
-val akkaHttpCirceVersion = "1.27.0"
-val elasticSearchVersion = "7.2.0"
-val log4jVersion         = "2.11.2"
-val commonsIOVersion     = "1.3.2"
-val monixVersion         = "3.0.0-RC2"
-val pureconfigVersion    = "0.11.1"
+/*
+scalafmt: {
+  style = defaultWithAlign
+  maxColumn = 150
+  align.tokens = [
+    { code = "=>", owner = "Case" }
+    { code = "?", owner = "Case" }
+    { code = "extends", owner = "Defn.(Class|Trait|Object)" }
+    { code = "//", owner = ".*" }
+    { code = "{", owner = "Template" }
+    { code = "}", owner = "Template" }
+    { code = ":=", owner = "Term.ApplyInfix" }
+    { code = "++=", owner = "Term.ApplyInfix" }
+    { code = "+=", owner = "Term.ApplyInfix" }
+    { code = "%", owner = "Term.ApplyInfix" }
+    { code = "%%", owner = "Term.ApplyInfix" }
+    { code = "%%%", owner = "Term.ApplyInfix" }
+    { code = "->", owner = "Term.ApplyInfix" }
+    { code = "?", owner = "Term.ApplyInfix" }
+    { code = "<-", owner = "Enumerator.Generator" }
+    { code = "?", owner = "Enumerator.Generator" }
+    { code = "=", owner = "(Enumerator.Val|Defn.(Va(l|r)|Def|Type))" }
+  ]
+}
+ */
+
+val jenaVersion           = "3.12.0"
+val blazegraphVersion     = "2.1.5"
+val jacksonVersion        = "2.9.9"
+val catsVersion           = "1.6.1"
+val catsEffectVersion     = "1.3.1"
+val circeVersion          = "0.11.1"
+val scalaTestVersion      = "3.0.8"
+val shapelessVersion      = "2.3.3"
+val journalVersion        = "3.0.19"
+val akkaVersion           = "2.5.23"
+val akkaManagementVersion = "1.0.1"
+val akkaHttpVersion       = "10.1.8"
+val akkaHttpCirceVersion  = "1.27.0"
+val elasticSearchVersion  = "7.2.0"
+val log4jVersion          = "2.12.0"
+val commonsIOVersion      = "1.3.2"
+val monixVersion          = "3.0.0-RC2"
+val pureconfigVersion     = "0.11.1"
 
 val rdfVersion         = "0.3.9"
 val sourcingVersion    = "0.16.3"
@@ -46,22 +73,24 @@ lazy val akkaTestKit         = "com.typesafe.akka" %% "akka-testkit"          % 
 lazy val akkaSlf4j           = "com.typesafe.akka" %% "akka-slf4j"            % akkaVersion
 lazy val akkaStream          = "com.typesafe.akka" %% "akka-stream"           % akkaVersion
 
-lazy val akkaHttp        = "com.typesafe.akka" %% "akka-http"         % akkaHttpVersion
-lazy val akkaHttpTestKit = "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion
-lazy val akkaHttpCirce   = "de.heikoseeberger" %% "akka-http-circe"   % akkaHttpCirceVersion
-lazy val akkaHttpCore    = "com.typesafe.akka" %% "akka-http-core"    % akkaHttpVersion
-
-lazy val log4jCore         = "org.apache.logging.log4j"          % "log4j-core"                % log4jVersion
-lazy val log4jApi          = "org.apache.logging.log4j"          % "log4j-api"                 % log4jVersion
-lazy val esCore            = "org.elasticsearch"                 % "elasticsearch"             % elasticSearchVersion
-lazy val esPainless        = "org.codelibs.elasticsearch.module" % "lang-painless"             % elasticSearchVersion
-lazy val esReindex         = "org.codelibs.elasticsearch.module" % "reindex"                   % elasticSearchVersion
-lazy val esRestClient      = "org.elasticsearch.client"          % "elasticsearch-rest-client" % elasticSearchVersion
-lazy val esTransportClient = "org.elasticsearch.plugin"          % "transport-netty4-client"   % elasticSearchVersion
-lazy val commonsIO         = "org.apache.commons"                % "commons-io"                % commonsIOVersion
-lazy val monixEval         = "io.monix"                          %% "monix-eval"               % monixVersion
-lazy val monixTail         = "io.monix"                          %% "monix-tail"               % monixVersion
-lazy val pureconfig        = "com.github.pureconfig"             %% "pureconfig"               % pureconfigVersion
+lazy val akkaHttp                  = "com.typesafe.akka"                 %% "akka-http"                    % akkaHttpVersion
+lazy val akkaHttpTestKit           = "com.typesafe.akka"                 %% "akka-http-testkit"            % akkaHttpVersion
+lazy val akkaHttpCirce             = "de.heikoseeberger"                 %% "akka-http-circe"              % akkaHttpCirceVersion
+lazy val akkaHttpCore              = "com.typesafe.akka"                 %% "akka-http-core"               % akkaHttpVersion
+lazy val akkaMultiNodeTestKit      = "com.typesafe.akka"                 %% "akka-multi-node-testkit"      % akkaVersion
+lazy val akkaClusterManagement     = "com.lightbend.akka.management"     %% "akka-management"              % akkaManagementVersion
+lazy val akkaClusterManagementHttp = "com.lightbend.akka.management"     %% "akka-management-cluster-http" % akkaManagementVersion
+lazy val log4jCore                 = "org.apache.logging.log4j"          % "log4j-core"                    % log4jVersion
+lazy val log4jApi                  = "org.apache.logging.log4j"          % "log4j-api"                     % log4jVersion
+lazy val esCore                    = "org.elasticsearch"                 % "elasticsearch"                 % elasticSearchVersion
+lazy val esPainless                = "org.codelibs.elasticsearch.module" % "lang-painless"                 % elasticSearchVersion
+lazy val esReindex                 = "org.codelibs.elasticsearch.module" % "reindex"                       % elasticSearchVersion
+lazy val esRestClient              = "org.elasticsearch.client"          % "elasticsearch-rest-client"     % elasticSearchVersion
+lazy val esTransportClient         = "org.elasticsearch.plugin"          % "transport-netty4-client"       % elasticSearchVersion
+lazy val commonsIO                 = "org.apache.commons"                % "commons-io"                    % commonsIOVersion
+lazy val monixEval                 = "io.monix"                          %% "monix-eval"                   % monixVersion
+lazy val monixTail                 = "io.monix"                          %% "monix-tail"                   % monixVersion
+lazy val pureconfig                = "com.github.pureconfig"             %% "pureconfig"                   % pureconfigVersion
 
 lazy val test = project
   .in(file("modules/test"))
@@ -129,6 +158,28 @@ lazy val elasticSearchClient = project
     run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
+lazy val akkaDowning = project
+  .in(file("modules/akka-downing"))
+  .dependsOn(core % Test, test % Test)
+  .enablePlugins(MultiJvmPlugin)
+  .configs(MultiJvm)
+  .settings(
+    name                      := "akka-downing",
+    moduleName                := "akka-downing",
+    coverageMinimum           := 75,
+    parallelExecution in Test := false,
+    libraryDependencies ++= Seq(
+      akkaCluster,
+      pureconfig,
+      akkaMultiNodeTestKit      % Test,
+      akkaClusterManagement     % Test,
+      akkaClusterManagementHttp % Test,
+      akkaHttp                  % Test,
+      akkaTestKit               % Test,
+      scalaTest                 % Test
+    )
+  )
+
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(core, test % Test)
@@ -176,7 +227,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon)
+  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon, akkaDowning)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 
@@ -184,8 +235,7 @@ inThisBuild(
   Seq(
     homepage := Some(url("https://github.com/BlueBrain/nexus-commons")),
     licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-    scmInfo := Some(
-      ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git")),
+    scmInfo  := Some(ScmInfo(url("https://github.com/BlueBrain/nexus-commons"), "scm:git:git@github.com:BlueBrain/nexus-commons.git")),
     developers := List(
       Developer("bogdanromanx", "Bogdan Roman", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),
       Developer("hygt", "Henry Genet", "noreply@epfl.ch", url("https://bluebrain.epfl.ch/")),

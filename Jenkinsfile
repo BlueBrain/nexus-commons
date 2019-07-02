@@ -19,7 +19,7 @@ pipeline {
                     steps {
                         node("slave-sbt") {
                             checkout scm
-                            sh "sbt clean coverage test coverageReport coverageAggregate"
+                            sh "sbt clean coverage test multi-jvm:test coverageReport coverageAggregate"
                             sh "curl -s https://codecov.io/bash >> ./coverage.sh"
                             sh "bash ./coverage.sh -t `oc get secrets codecov-secret --template='{{.data.nexus_commons}}' | base64 -d`"
                         }
@@ -46,7 +46,7 @@ pipeline {
             steps {
                 node("slave-sbt") {
                     checkout scm
-                    sh "sbt clean coverage test coverageReport coverageAggregate"
+                    sh "sbt clean coverage test multi-jvm:test coverageReport coverageAggregate"
                     sh "curl -s https://codecov.io/bash >> ./coverage.sh"
                     sh "bash ./coverage.sh -t `oc get secrets codecov-secret --template='{{.data.nexus_commons}}' | base64 -d`"
                 }
