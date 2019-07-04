@@ -7,6 +7,11 @@ import ch.epfl.bluebrain.nexus.commons.downing.config.{DowningConfig, Settings}
 
 import scala.concurrent.duration._
 
+/**
+  * Keep oldest akka cluster downing implementation.
+  * This module is based on the document Akka Split Brain Resolver: https://doc.akka.io/docs/akka-enhancements/1.1.10/split-brain-resolver.html
+  * The implementation is inspired by the code on the github repository https://github.com/arnohaase/simple-akka-downing from Arno Haase, which is licensed under Apache 2.0
+  */
 class KeepOldestAkkaDowningProvider(system: ActorSystem) extends DowningProvider {
   private val config = Settings(system).downingConfig
 

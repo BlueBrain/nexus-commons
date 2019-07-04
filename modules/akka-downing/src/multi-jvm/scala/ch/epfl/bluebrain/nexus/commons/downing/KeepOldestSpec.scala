@@ -4,6 +4,11 @@ import akka.remote.testconductor.RoleName
 import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.duration._
 
+/**
+  * Keep oldest akka cluster downing multi jvm testing.
+  * The testing setup is inspired by the code on the github repository https://github.com/arnohaase/simple-akka-downing from Arno Haase, which is licensed under Apache 2.0
+  * The implementation is inspired by the code on the github repository https://github.com/arnohaase/simple-akka-downing from Arno Haase, which is licensed under Apache 2.0
+  */
 abstract class KeepOldestSpec(config: DowningConfig, survivors: Int*)
     extends MultiNodeClusterSpec(config)
     with ScalaFutures {

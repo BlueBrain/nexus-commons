@@ -27,6 +27,8 @@ import scala.concurrent.duration._
 import scala.util.Try
 
 /**
+  * Keep oldest akka cluster downing multi node testing.
+  * The testing setup is inspired by the code on the github repository https://github.com/arnohaase/simple-akka-downing from Arno Haase, which is licensed under Apache 2.0
   * Based on test code of Akka cluster itself
   */
 abstract class MultiNodeClusterSpec(config: DowningConfig)

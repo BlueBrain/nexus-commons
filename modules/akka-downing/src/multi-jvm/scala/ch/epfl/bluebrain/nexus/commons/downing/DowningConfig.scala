@@ -6,6 +6,11 @@ import akka.remote.testkit.MultiNodeConfig
 import com.typesafe.config.ConfigFactory
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 
+/**
+  * Keep oldest akka cluster downing configuration for a 5 nodes cluster.
+  * The testing setup is inspired by the code on the github repository https://github.com/arnohaase/simple-akka-downing from Arno Haase, which is licensed under Apache 2.0
+  * The implementation is inspired by the code on the github repository https://github.com/arnohaase/simple-akka-downing from Arno Haase, which is licensed under Apache 2.0
+  */
 class DowningConfig(downIfAlone: Boolean) extends MultiNodeConfig with Resources {
 
   final val CLUSTER_SIZE = 5
