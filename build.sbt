@@ -43,7 +43,7 @@ val commonsIOVersion      = "1.3.2"
 val monixVersion          = "3.0.0-RC2"
 val pureconfigVersion     = "0.11.1"
 
-val rdfVersion         = "0.3.9"
+val rdfVersion         = "0.3.10"
 val sourcingVersion    = "0.16.3"
 val topQuadrantVersion = "1.2.0-nexus4"
 
