@@ -56,11 +56,12 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(implicit
                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
       page: Pagination,
       fields: Set[String] = Set.empty,
-      sort: SortList = SortList.Empty)(implicit
-                                       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
+      sort: SortList = SortList.Empty,
+      totalHits: Boolean = true)(implicit
+                                 rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
     rs(
       Post((base / indexPath(indices) / searchPath).withQuery(qp),
-           query.addPage(page).addSources(fields).addSort(sort)))
+           query.addPage(page).addSources(fields).addSort(sort).addTotalHits(totalHits)))
 
   /**
     * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
@@ -115,6 +116,9 @@ object ElasticSearchQueryClient {
       case SearchAfterPagination(searchAfter, size) =>
         query deepMerge Json.obj("search_after" -> searchAfter, "size" -> Json.fromInt(size))
     }
+
+    def addTotalHits(value: Boolean): Json =
+      query deepMerge Json.obj(trackTotalHits -> Json.fromBoolean(value))
 
     /**
       * Adds sources to the query, which defines what fields are going to be present in the response

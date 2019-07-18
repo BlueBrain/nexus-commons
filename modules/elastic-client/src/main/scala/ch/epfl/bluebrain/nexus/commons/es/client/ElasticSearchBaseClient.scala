@@ -60,4 +60,5 @@ object ElasticSearchBaseClient {
   private[client] val anyIndexPath      = "_all"
   private[client] val ignoreUnavailable = "ignore_unavailable"
   private[client] val allowNoIndices    = "allow_no_indices"
+  private[client] val trackTotalHits    = "track_total_hits"
 }

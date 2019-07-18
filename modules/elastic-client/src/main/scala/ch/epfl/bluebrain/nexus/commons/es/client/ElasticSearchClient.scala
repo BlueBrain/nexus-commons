@@ -200,10 +200,11 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
                 indices: Set[String] = Set.empty,
                 qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
       page: Pagination,
+      totalHits: Boolean = true,
       fields: Set[String] = Set.empty,
       sort: SortList = SortList.Empty)(implicit
                                        rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
-    queryClient(query, indices, qp)(page, fields, sort)
+    queryClient(query, indices, qp)(page, fields, sort, totalHits)
 
   /**
     * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
