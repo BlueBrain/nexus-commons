@@ -7,9 +7,7 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import cats.MonadError
-import cats.syntax.applicativeError._
-import cats.syntax.flatMap._
-import cats.syntax.functor._
+import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUnexpectedError
@@ -22,6 +20,7 @@ import io.circe.parser.parse
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
   * ElasticSearch client implementation that uses a RESTful API endpoint for interacting with a ElasticSearch deployment.
@@ -100,7 +99,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
   }
 
   private def bulkExecute(req: HttpRequest): F[Unit] =
-    cl(req).flatMap { resp =>
+    cl(req).handleErrorWith(handleError(req, "bulk update")).flatMap { resp =>
       if (resp.status == OK)
         cl.toString(resp.entity).flatMap { body =>
           parse(body).flatMap(_.hcursor.get[Boolean]("errors")) match {
@@ -181,7 +180,9 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
       case UnexpectedUnsuccessfulHttpResponse(r, _) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
       case UnexpectedUnsuccessfulHttpResponse(r, body) =>
         F.raiseError(ElasticSearchFailure.fromStatusCode(r.status, body))
-      case other => F.raiseError(other)
+      case NonFatal(th) =>
+        log.error(s"Unexpected response for ElasticSearch 'get' call. Request: 'GET $uri'", th)
+        F.raiseError(ElasticUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
     }
   }
 
