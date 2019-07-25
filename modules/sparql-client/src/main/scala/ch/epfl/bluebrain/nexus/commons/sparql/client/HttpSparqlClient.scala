@@ -5,11 +5,10 @@ import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Accept, HttpCredentials}
 import cats.MonadError
-import cats.syntax.applicativeError._
-import cats.syntax.flatMap._
-import cats.syntax.functor._
+import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes, UnexpectedUnsuccessfulHttpResponse}
+import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.SparqlUnexpectedError
 import journal.Logger
 import org.apache.jena.query.ParameterizedSparqlString
 
@@ -42,7 +41,7 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
                      |Request: '${req.method} ${req.uri}'
                      |Query: '$query'
            """.stripMargin)
-        F.raiseError(th)
+        F.raiseError(SparqlUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
     }
   }
 
@@ -56,7 +55,7 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
         uniqueGraph(queries).map(graph => Query("using-named-graph-uri" -> graph.toString())).getOrElse(Query.Empty)
       val req = Post(endpoint.withQuery(qParams), formData)
       log.debug(s"Executing sparql update: '$queries'")
-      cl(addCredentials(req)).flatMap { resp =>
+      cl(addCredentials(req)).handleErrorWith(handleError(req, "bulk update")).flatMap { resp =>
         resp.status match {
           case StatusCodes.OK => cl.discardBytes(resp.entity).map(_ => ())
           case _              => error(req, resp, "sparql update")
@@ -83,6 +82,12 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
                    |Response: '$body'
            """.stripMargin)
     F.raiseError(SparqlFailure.fromStatusCode(status, body))
+  }
+
+  private[client] def handleError[A](req: HttpRequest, intent: String): Throwable => F[A] = {
+    case NonFatal(th) =>
+      log.error(s"Unexpected response for Sparql '$intent' call. Request: '${req.method} ${req.uri}'", th)
+      F.raiseError(SparqlUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
   }
 
   protected def addCredentials(req: HttpRequest): HttpRequest = credentials match {

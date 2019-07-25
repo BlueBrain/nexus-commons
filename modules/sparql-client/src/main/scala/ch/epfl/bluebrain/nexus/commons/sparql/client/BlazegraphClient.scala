@@ -4,8 +4,7 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import cats.MonadError
-import cats.syntax.flatMap._
-import cats.syntax.functor._
+import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 
@@ -42,13 +41,15 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     */
   def namespaceExists: F[Boolean] = {
     val req = Get(s"$base/namespace/$namespace")
-    cl(addCredentials(req)).flatMap { resp =>
-      resp.status match {
-        case StatusCodes.OK       => cl.discardBytes(resp.entity).map(_ => true)
-        case StatusCodes.NotFound => cl.discardBytes(resp.entity).map(_ => false)
-        case _                    => error(req, resp, "get namespace")
+    cl(addCredentials(req))
+      .handleErrorWith(handleError(req, "namespaceExists"))
+      .flatMap { resp =>
+        resp.status match {
+          case StatusCodes.OK       => cl.discardBytes(resp.entity).map(_ => true)
+          case StatusCodes.NotFound => cl.discardBytes(resp.entity).map(_ => false)
+          case _                    => error(req, resp, "get namespace")
+        }
       }
-    }
   }
 
   /**
@@ -61,7 +62,7 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     val updated = properties + ("com.bigdata.rdf.sail.namespace" -> namespace)
     val payload = updated.map { case (key, value) => s"$key=$value" }.mkString("\n")
     val req     = Post(s"$base/namespace", HttpEntity(payload))
-    cl(addCredentials(req)).flatMap { resp =>
+    cl(addCredentials(req)).handleErrorWith(handleError(req, "createNamespace")).flatMap { resp =>
       resp.status match {
         case StatusCodes.Created  => cl.discardBytes(resp.entity).map(_ => true)
         case StatusCodes.Conflict => cl.discardBytes(resp.entity).map(_ => false)
@@ -77,7 +78,7 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     */
   def deleteNamespace: F[Boolean] = {
     val req = Delete(s"$base/namespace/$namespace")
-    cl(addCredentials(req)).flatMap { resp =>
+    cl(addCredentials(req)).handleErrorWith(handleError(req, "deleteNamespace")).flatMap { resp =>
       resp.status match {
         case StatusCodes.OK       => cl.discardBytes(resp.entity).map(_ => true)
         case StatusCodes.NotFound => cl.discardBytes(resp.entity).map(_ => false)

@@ -1,12 +1,14 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
-import akka.http.scaladsl.model.{HttpRequest, StatusCode}
+import akka.http.scaladsl.model.{HttpRequest, StatusCode, StatusCodes}
 import cats.MonadError
-import cats.syntax.flatMap._
-import cats.syntax.functor._
+import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUnexpectedError
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import journal.Logger
+
+import scala.util.control.NonFatal
 
 /**
   * Common methods and vals used for elastic clients.
@@ -22,11 +24,17 @@ abstract class ElasticSearchBaseClient[F[_]](implicit
   private[client] def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: String): F[Unit] =
     execute(req, expectedCodes, Set.empty, intent).map(_ => ())
 
+  private[client] def handleError[A](req: HttpRequest, intent: String): Throwable => F[A] = {
+    case NonFatal(th) =>
+      log.error(s"Unexpected response for ElasticSearch '$intent' call. Request: '${req.method} ${req.uri}'", th)
+      F.raiseError(ElasticUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
+  }
+
   private[client] def execute(req: HttpRequest,
                               expectedCodes: Set[StatusCode],
                               ignoredCodes: Set[StatusCode],
                               intent: String): F[Boolean] =
-    cl(req).flatMap { resp =>
+    cl(req).handleErrorWith(handleError(req, intent)).flatMap { resp =>
       if (expectedCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => true)
       else if (ignoredCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => false)
       else
