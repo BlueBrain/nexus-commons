@@ -37,12 +37,12 @@ val akkaVersion           = "2.5.23"
 val akkaManagementVersion = "1.0.1"
 val akkaHttpVersion       = "10.1.9"
 val akkaHttpCirceVersion  = "1.27.0"
-val elasticSearchVersion  = "7.2.0"
+val elasticSearchVersion  = "7.2.1"
 val log4jVersion          = "2.12.0"
 val commonsIOVersion      = "1.3.2"
 val pureconfigVersion     = "0.11.1"
 
-val rdfVersion         = "0.3.10"
+val rdfVersion         = "0.3.11"
 val sourcingVersion    = "0.16.3"
 val topQuadrantVersion = "1.2.0-nexus4"
 
@@ -212,20 +212,20 @@ lazy val kamon = project
     moduleName      := "commons-kamon",
     coverageEnabled := false,
     libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy-agent"              % "1.9.14",
-      "io.kamon"      % "kanela-agent"                  % "1.0.0-RC4",
-      "io.kamon"      %% "kamon-status-page"            % "2.0.0-RC1",
-      "io.kamon"      %% "kamon-instrumentation-common" % "2.0.0-RC2",
-      "io.kamon"      %% "kamon-executors"              % "2.0.0-RC2",
-      "io.kamon"      %% "kamon-scala-future"           % "2.0.0-RC2",
-      "io.kamon"      %% "kamon-akka"                   % "2.0.0-RC3",
+      "net.bytebuddy" % "byte-buddy-agent"              % "1.9.16",
+      "io.kamon"      % "kanela-agent"                  % "1.0.0",
+      "io.kamon"      %% "kamon-status-page"            % "2.0.0",
+      "io.kamon"      %% "kamon-instrumentation-common" % "2.0.0",
+      "io.kamon"      %% "kamon-executors"              % "2.0.0",
+      "io.kamon"      %% "kamon-scala-future"           % "2.0.0",
+      "io.kamon"      %% "kamon-akka"                   % "2.0.0",
       "io.kamon"      %% "kamon-akka-remote"            % "2.0.0-RC2",
-      "io.kamon"      %% "kamon-logback"                % "2.0.0-RC2",
-      "io.kamon"      %% "kamon-system-metrics"         % "2.0.0-RC1",
-      "io.kamon"      %% "kamon-core"                   % "2.0.0-RC1",
-      "io.kamon"      %% "kamon-akka-http"              % "2.0.0-RC3",
-      "io.kamon"      %% "kamon-prometheus"             % "2.0.0-RC1",
-      "io.kamon"      %% "kamon-jaeger"                 % "2.0.0-RC1"
+      "io.kamon"      %% "kamon-logback"                % "2.0.0",
+      "io.kamon"      %% "kamon-system-metrics"         % "2.0.0",
+      "io.kamon"      %% "kamon-core"                   % "2.0.0",
+      "io.kamon"      %% "kamon-akka-http"              % "2.0.0",
+      "io.kamon"      %% "kamon-prometheus"             % "2.0.0",
+      "io.kamon"      %% "kamon-jaeger"                 % "2.0.0"
     )
   )
 
