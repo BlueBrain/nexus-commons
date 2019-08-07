@@ -29,22 +29,22 @@ val jenaVersion           = "3.12.0"
 val blazegraphVersion     = "2.1.5"
 val jacksonVersion        = "2.9.9"
 val catsVersion           = "1.6.1"
-val catsEffectVersion     = "1.3.1"
+val catsEffectVersion     = "1.4.0"
 val circeVersion          = "0.11.1"
 val scalaTestVersion      = "3.0.8"
 val shapelessVersion      = "2.3.3"
 val journalVersion        = "3.0.19"
 val akkaVersion           = "2.5.23"
-val akkaManagementVersion = "1.0.1"
+val akkaManagementVersion = "1.0.2"
 val akkaHttpVersion       = "10.1.9"
 val akkaHttpCirceVersion  = "1.27.0"
-val elasticSearchVersion  = "7.2.1"
+val elasticSearchVersion  = "7.3.0"
 val log4jVersion          = "2.12.0"
 val commonsIOVersion      = "1.3.2"
 val pureconfigVersion     = "0.11.1"
 
-val rdfVersion         = "0.3.11"
-val sourcingVersion    = "0.16.3"
+val rdfVersion         = "0.3.13"
+val sourcingVersion    = "0.16.4"
 val topQuadrantVersion = "1.2.0-nexus4"
 
 lazy val rdf              = "ch.epfl.bluebrain.nexus"              %% "rdf"           % rdfVersion
@@ -213,7 +213,7 @@ lazy val kamon = project
     moduleName      := "commons-kamon",
     coverageEnabled := false,
     libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy-agent"              % "1.9.16",
+      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.0",
       "io.kamon"      % "kanela-agent"                  % "1.0.0",
       "io.kamon"      %% "kamon-status-page"            % kamonVersion,
       "io.kamon"      %% "kamon-instrumentation-common" % kamonVersion,
