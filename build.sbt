@@ -28,6 +28,7 @@ val kamonVersion          = "2.0.0"
 val jenaVersion           = "3.12.0"
 val blazegraphVersion     = "2.1.5"
 val jacksonVersion        = "2.9.9"
+val jacksonBindVersion    = "2.9.9.3"
 val catsVersion           = "1.6.1"
 val catsEffectVersion     = "1.4.0"
 val circeVersion          = "0.11.1"
@@ -63,7 +64,7 @@ lazy val jenaArq            = "org.apache.jena"            % "jena-arq"         
 lazy val blazegraph         = "com.blazegraph"             % "blazegraph-jar"        % blazegraphVersion
 lazy val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations"   % jacksonVersion
 lazy val jacksonCore        = "com.fasterxml.jackson.core" % "jackson-core"          % jacksonVersion
-lazy val jacksonDatabind    = "com.fasterxml.jackson.core" % "jackson-databind"      % jacksonVersion
+lazy val jacksonDatabind    = "com.fasterxml.jackson.core" % "jackson-databind"      % jacksonBindVersion
 
 lazy val akkaActor           = "com.typesafe.akka" %% "akka-actor"            % akkaVersion
 lazy val akkaCluster         = "com.typesafe.akka" %% "akka-cluster"          % akkaVersion
