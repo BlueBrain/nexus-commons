@@ -14,5 +14,5 @@ import scala.concurrent.duration.FiniteDuration
 final case class KeyValueStoreConfig(
     askTimeout: FiniteDuration,
     consistencyTimeout: FiniteDuration,
-    retry: RetryStrategyConfig,
+    retry: RetryStrategyConfig
 )

@@ -13,7 +13,7 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
   private def queryResults(json: Json, scored: Boolean): ErrorOrResults = {
     def queryResult(result: Json): Option[QueryResult[A]] = {
       result.hcursor.get[A]("_source") match {
-        case Right(s) if scored => Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0F), s))
+        case Right(s) if scored => Some(ScoredQueryResult(result.hcursor.get[Float]("_score").getOrElse(0f), s))
         case Right(s)           => Some(UnscoredQueryResult(s))
         case _                  => None
       }
@@ -55,7 +55,8 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
       _.hcursor.downField("hits").get[Float]("max_score").toOption.filterNot(f => f.isInfinite || f.isNaN) match {
         case Some(maxScore) => decodeScoredQueryResults(maxScore)
         case None           => decodeUnscoredResults
-      })
+      }
+    )
 }
 
 object ElasticSearchDecoder {

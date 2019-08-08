@@ -14,19 +14,19 @@ class QueryResultSpec extends WordSpecLike with Matchers {
         Json.obj(
           "resultId" -> Json.fromString("/some/path"),
           "score"    -> Json.fromFloatOrString(qr.score),
-          "source"   -> Json.fromInt(qr.source),
+          "source"   -> Json.fromInt(qr.source)
         )
       }
     "transform the source value" in {
-      ScoredQueryResult(1F, 1).map(_ + 1) shouldEqual ScoredQueryResult(1F, 2)
+      ScoredQueryResult(1f, 1).map(_ + 1) shouldEqual ScoredQueryResult(1f, 2)
     }
     "encodes a queryResult" in {
       import io.circe.syntax._
-      val result = ScoredQueryResult(1F, 1): QueryResult[Int]
+      val result = ScoredQueryResult(1f, 1): QueryResult[Int]
       result.asJson shouldEqual Json.obj(
         "resultId" -> Json.fromString("/some/path"),
-        "score"    -> Json.fromFloatOrString(1F),
-        "source"   -> Json.fromInt(result.source),
+        "score"    -> Json.fromFloatOrString(1f),
+        "source"   -> Json.fromInt(result.source)
       )
     }
   }

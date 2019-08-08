@@ -18,7 +18,8 @@ object KeyValueStoreError {
     */
   final case class ReadWriteConsistencyTimeout(timeout: FiniteDuration)
       extends KeyValueStoreError(
-        s"Timed out after '${timeout.toMillis} ms' while waiting for a consistent read or write.")
+        s"Timed out after '${timeout.toMillis} ms' while waiting for a consistent read or write."
+      )
 
   /**
     * Signals that an error occurred when trying to perform a distributed data operation.

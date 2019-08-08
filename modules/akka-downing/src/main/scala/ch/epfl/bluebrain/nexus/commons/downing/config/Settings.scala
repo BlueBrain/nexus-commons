@@ -39,10 +39,12 @@ object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
   *                               partition are created in surviving partition
   * @param downAllWhenUnstable    Time margin to decide downing of all cluster members. If there is instability on the cluster for more than downAllWhenUnstable + stableAfter, all the members of the cluster will be downed
   */
-final case class DowningConfig(stableAfter: FiniteDuration,
-                               downIfAlone: Boolean,
-                               downRemovalMargin: FiniteDuration,
-                               downAllWhenUnstable: Option[FiniteDuration]) {
+final case class DowningConfig(
+    stableAfter: FiniteDuration,
+    downIfAlone: Boolean,
+    downRemovalMargin: FiniteDuration,
+    downAllWhenUnstable: Option[FiniteDuration]
+) {
   require(stableAfter > 0.seconds)
   require(downRemovalMargin > 0.seconds)
   downAllWhenUnstable.foreach(v => require(v > 0.seconds))

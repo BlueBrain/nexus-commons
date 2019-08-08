@@ -29,11 +29,12 @@ import scala.util.control.NonFatal
   * @param queryClient the query client
   * @tparam F the monadic effect type
   */
-class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient[F])(implicit
-                                                                                     cl: UntypedHttpClient[F],
-                                                                                     ec: ExecutionContext,
-                                                                                     F: MonadError[F, Throwable])
-    extends ElasticSearchBaseClient[F] {
+class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient[F])(
+    implicit
+    cl: UntypedHttpClient[F],
+    ec: ExecutionContext,
+    F: MonadError[F, Throwable]
+) extends ElasticSearchBaseClient[F] {
 
   /**
     * Verifies if an index exists, recovering gracefully when the index does not exists.
@@ -109,7 +110,8 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
         } else
         ElasticSearchFailure.fromResponse(resp).flatMap { f =>
           log.error(
-            s"Unexpected ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
+            s"Unexpected ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'"
+          )
           F.raiseError(f)
         }
     }
@@ -123,9 +125,11 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param qp      the optional query parameters
     */
   def update(index: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] =
-    execute(Post((base / sanitize(index) / updatePath / urlEncode(id)).withQuery(qp), payload),
-            Set(OK, Created),
-            "update index")
+    execute(
+      Post((base / sanitize(index) / updatePath / urlEncode(id)).withQuery(qp), payload),
+      Set(OK, Created),
+      "update index"
+    )
 
   /**
     * Updates every document with ''payload'' found when searching for ''query''
@@ -135,10 +139,12 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param payload the document's payload
     * @param qp      the optional query parameters
     */
-  def updateDocuments(indices: Set[String] = Set.empty,
-                      query: Json,
-                      payload: Json,
-                      qp: Query = Query.Empty): F[Unit] = {
+  def updateDocuments(
+      indices: Set[String] = Set.empty,
+      query: Json,
+      payload: Json,
+      qp: Query = Query.Empty
+  ): F[Unit] = {
     val uri = (base / indexPath(indices) / updateByQueryPath).withQuery(qp)
     execute(Post(uri, payload deepMerge query), Set(OK, Created), "update index from query")
   }
@@ -170,7 +176,8 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param exclude the fields not to be returned
     */
   def get[A](index: String, id: String, include: Set[String] = Set.empty, exclude: Set[String] = Set.empty)(
-      implicit rs: HttpClient[F, A]): F[Option[A]] = {
+      implicit rs: HttpClient[F, A]
+  ): F[Option[A]] = {
     val includeMap: Map[String, String] =
       if (include.isEmpty) Map.empty else Map(includeFieldsQueryParam -> include.mkString(","))
     val excludeMap: Map[String, String] =
@@ -197,14 +204,14 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param qp      the optional query parameters
     * @tparam A the generic type to be returned
     */
-  def search[A](query: Json,
-                indices: Set[String] = Set.empty,
-                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
-      page: Pagination,
-      totalHits: Boolean = true,
-      fields: Set[String] = Set.empty,
-      sort: SortList = SortList.Empty)(implicit
-                                       rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
+  def search[A](
+      query: Json,
+      indices: Set[String] = Set.empty,
+      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true")
+  )(page: Pagination, totalHits: Boolean = true, fields: Set[String] = Set.empty, sort: SortList = SortList.Empty)(
+      implicit
+      rs: HttpClient[F, QueryResults[A]]
+  ): F[QueryResults[A]] =
     queryClient(query, indices, qp)(page, fields, sort, totalHits)
 
   /**
@@ -215,11 +222,14 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param qp the optional query parameters
     * @return ES response JSON
     */
-  def searchRaw(query: Json,
-                indices: Set[String] = Set.empty,
-                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
+  def searchRaw(
+      query: Json,
+      indices: Set[String] = Set.empty,
+      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true")
+  )(
       implicit
-      rs: HttpClient[F, Json]): F[Json] =
+      rs: HttpClient[F, Json]
+  ): F[Json] =
     queryClient.searchRaw(query, indices, qp)
 
   private def urlEncode(value: String): String =
@@ -284,10 +294,12 @@ object ElasticSearchClient {
     * @param base        the base uri of the ElasticSearch endpoint
     * @tparam F the monadic effect type
     */
-  final def apply[F[_]](base: Uri)(implicit
-                                   cl: UntypedHttpClient[F],
-                                   ec: ExecutionContext,
-                                   F: MonadError[F, Throwable]): ElasticSearchClient[F] =
+  final def apply[F[_]](base: Uri)(
+      implicit
+      cl: UntypedHttpClient[F],
+      ec: ExecutionContext,
+      F: MonadError[F, Throwable]
+  ): ElasticSearchClient[F] =
     new ElasticSearchClient(base, ElasticSearchQueryClient(base))
 
 }

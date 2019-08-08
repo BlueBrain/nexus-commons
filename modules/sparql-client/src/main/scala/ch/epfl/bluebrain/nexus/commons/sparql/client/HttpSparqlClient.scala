@@ -21,16 +21,17 @@ import scala.util.control.NonFatal
   * @param endpoint    the sparql endpoint
   * @param credentials the credentials to use when communicating with the sparql endpoint
   */
-class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
-                                                                                  cl: UntypedHttpClient[F],
-                                                                                  rsJson: HttpClient[F, SparqlResults],
-                                                                                  ec: ExecutionContext)
-    extends SparqlClient[F] {
+class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(
+    implicit F: MonadError[F, Throwable],
+    cl: UntypedHttpClient[F],
+    rsJson: HttpClient[F, SparqlResults],
+    ec: ExecutionContext
+) extends SparqlClient[F] {
 
   private val log = Logger[this.type]
 
   def query[A](query: String)(implicit rs: HttpClient[F, A]): F[A] = {
-    val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1F))
+    val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1f))
     val formData = FormData("query" -> query)
     val req      = Post(endpoint, formData).withHeaders(accept)
     rs(addCredentials(req)).handleErrorWith {
@@ -98,10 +99,12 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
 
 object HttpSparqlClient {
 
-  def apply[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(implicit F: MonadError[F, Throwable],
-                                                                       cl: UntypedHttpClient[F],
-                                                                       rsJson: HttpClient[F, SparqlResults],
-                                                                       ec: ExecutionContext): SparqlClient[F] =
+  def apply[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(
+      implicit F: MonadError[F, Throwable],
+      cl: UntypedHttpClient[F],
+      rsJson: HttpClient[F, SparqlResults],
+      ec: ExecutionContext
+  ): SparqlClient[F] =
     new HttpSparqlClient[F](endpoint, credentials)
 
 }

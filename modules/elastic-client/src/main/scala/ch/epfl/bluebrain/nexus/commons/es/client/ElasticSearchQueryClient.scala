@@ -25,11 +25,12 @@ import scala.concurrent.ExecutionContext
   * @param base the base uri of the ElasticSearch endpoint
   * @tparam F the monadic effect type
   */
-private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(implicit
-                                                                cl: UntypedHttpClient[F],
-                                                                ec: ExecutionContext,
-                                                                F: MonadError[F, Throwable])
-    extends ElasticSearchBaseClient[F] {
+private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(
+    implicit
+    cl: UntypedHttpClient[F],
+    ec: ExecutionContext,
+    F: MonadError[F, Throwable]
+) extends ElasticSearchBaseClient[F] {
 
   private[client] val searchPath = "_search"
 
@@ -51,17 +52,20 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(implicit
     * @param qp      the optional query parameters
     * @tparam A the generic type to be returned
     */
-  def apply[A](query: Json,
-               indices: Set[String] = Set.empty,
-               qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
-      page: Pagination,
-      fields: Set[String] = Set.empty,
-      sort: SortList = SortList.Empty,
-      totalHits: Boolean = true)(implicit
-                                 rs: HttpClient[F, QueryResults[A]]): F[QueryResults[A]] =
+  def apply[A](
+      query: Json,
+      indices: Set[String] = Set.empty,
+      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true")
+  )(page: Pagination, fields: Set[String] = Set.empty, sort: SortList = SortList.Empty, totalHits: Boolean = true)(
+      implicit
+      rs: HttpClient[F, QueryResults[A]]
+  ): F[QueryResults[A]] =
     rs(
-      Post((base / indexPath(indices) / searchPath).withQuery(qp),
-           query.addPage(page).addSources(fields).addSort(sort).addTotalHits(totalHits)))
+      Post(
+        (base / indexPath(indices) / searchPath).withQuery(qp),
+        query.addPage(page).addSources(fields).addSort(sort).addTotalHits(totalHits)
+      )
+    )
 
   /**
     * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
@@ -71,11 +75,14 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(implicit
     * @param qp the optional query parameters
     * @return ES response JSON
     */
-  def searchRaw(query: Json,
-                indices: Set[String] = Set.empty,
-                qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"))(
+  def searchRaw(
+      query: Json,
+      indices: Set[String] = Set.empty,
+      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true")
+  )(
       implicit
-      rs: HttpClient[F, Json]): F[Json] =
+      rs: HttpClient[F, Json]
+  ): F[Json] =
     rs(Post((base / indexPath(indices) / searchPath).withQuery(qp), query))
       .map { esResponse =>
         esResponse.mapObject(_.add("_shards", shards))
@@ -94,10 +101,12 @@ object ElasticSearchQueryClient {
     * @param base        the base uri of the ElasticSearch endpoint
     * @tparam F the monadic effect type
     */
-  final def apply[F[_]](base: Uri)(implicit
-                                   cl: UntypedHttpClient[F],
-                                   ec: ExecutionContext,
-                                   F: MonadError[F, Throwable]): ElasticSearchQueryClient[F] =
+  final def apply[F[_]](base: Uri)(
+      implicit
+      cl: UntypedHttpClient[F],
+      ec: ExecutionContext,
+      F: MonadError[F, Throwable]
+  ): ElasticSearchQueryClient[F] =
     new ElasticSearchQueryClient(base)
 
   private[client] implicit class JsonOpsSearch(query: Json) {

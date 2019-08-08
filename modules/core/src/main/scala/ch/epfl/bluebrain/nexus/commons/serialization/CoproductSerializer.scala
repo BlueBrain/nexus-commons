@@ -85,7 +85,8 @@ object CoproductSerializer {
       headTypeable: Typeable[H],
       headEncoder: Encoder[H],
       headDecoder: Decoder[H],
-      tailSerializer: CoproductSerializer[T]): CoproductSerializer[H :+: T] = new CoproductSerializer[:+:[H, T]] {
+      tailSerializer: CoproductSerializer[T]
+  ): CoproductSerializer[H :+: T] = new CoproductSerializer[:+:[H, T]] {
 
     override def manifest(x: Any): Option[String] =
       headTypeable

@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent { label 'slave-sbt' }
     tools {
         jdk 'jdk11'
     }

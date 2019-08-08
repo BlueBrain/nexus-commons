@@ -25,8 +25,9 @@ object ElasticSearchFailure {
     *
     * @param r the HTTP response
     */
-  def fromResponse[F[_]](r: HttpResponse)(implicit cl: UntypedHttpClient[F],
-                                          F: MonadError[F, Throwable]): F[ElasticSearchFailure] =
+  def fromResponse[F[_]](
+      r: HttpResponse
+  )(implicit cl: UntypedHttpClient[F], F: MonadError[F, Throwable]): F[ElasticSearchFailure] =
     cl.toString(r.entity).map(body => fromStatusCode(r.status, body))
 
   /**

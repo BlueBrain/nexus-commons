@@ -15,9 +15,11 @@ import scala.util.control.NonFatal
   *
   * @tparam F the monadic effect type
   */
-abstract class ElasticSearchBaseClient[F[_]](implicit
-                                             cl: UntypedHttpClient[F],
-                                             F: MonadError[F, Throwable]) {
+abstract class ElasticSearchBaseClient[F[_]](
+    implicit
+    cl: UntypedHttpClient[F],
+    F: MonadError[F, Throwable]
+) {
 
   private[client] val log = Logger[this.type]
 
@@ -30,17 +32,20 @@ abstract class ElasticSearchBaseClient[F[_]](implicit
       F.raiseError(ElasticUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
   }
 
-  private[client] def execute(req: HttpRequest,
-                              expectedCodes: Set[StatusCode],
-                              ignoredCodes: Set[StatusCode],
-                              intent: String): F[Boolean] =
+  private[client] def execute(
+      req: HttpRequest,
+      expectedCodes: Set[StatusCode],
+      ignoredCodes: Set[StatusCode],
+      intent: String
+  ): F[Boolean] =
     cl(req).handleErrorWith(handleError(req, intent)).flatMap { resp =>
       if (expectedCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => true)
       else if (ignoredCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => false)
       else
         ElasticSearchFailure.fromResponse(resp).flatMap { f =>
           log.error(
-            s"Unexpected ElasticSearch response for intent '$intent':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'")
+            s"Unexpected ElasticSearch response for intent '$intent':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'"
+          )
           F.raiseError(f)
         }
     }

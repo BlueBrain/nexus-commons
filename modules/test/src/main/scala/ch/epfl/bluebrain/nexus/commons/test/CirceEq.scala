@@ -12,9 +12,11 @@ trait CirceEq {
   case class IgnoredArrayOrder(json: Json) extends Matcher[Json] {
     private def sortKeys(value: Json): Json = {
       def canonicalJson(json: Json): Json =
-        json.arrayOrObject[Json](json,
-                                 arr => Json.fromValues(arr.sortBy(_.hashCode()).map(canonicalJson)),
-                                 obj => sorted(obj).asJson)
+        json.arrayOrObject[Json](
+          json,
+          arr => Json.fromValues(arr.sortBy(_.hashCode()).map(canonicalJson)),
+          obj => sorted(obj).asJson
+        )
 
       def sorted(jObj: JsonObject): JsonObject =
         JsonObject.fromIterable(jObj.toVector.sortBy(_._1).map { case (k, v) => k -> canonicalJson(v) })

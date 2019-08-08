@@ -17,11 +17,13 @@ class AkkaCoproductSerializerSpec extends WordSpecLike with Matchers with Inspec
 
     "computing a manifest" should {
       "provide the correct type" in {
-        val mapping = Map[AnyRef, String](Event.Zero -> "Event",
-                                          Event.One(12)                 -> "Event",
-                                          Event.Two(12, Some("twelve")) -> "Event",
-                                          Event.Two(12, None)           -> "Event",
-                                          TheCommand(12)                -> "Command")
+        val mapping = Map[AnyRef, String](
+          Event.Zero                    -> "Event",
+          Event.One(12)                 -> "Event",
+          Event.Two(12, Some("twelve")) -> "Event",
+          Event.Two(12, None)           -> "Event",
+          TheCommand(12)                -> "Command"
+        )
 
         forAll(mapping.toList) {
           case (data, manifest) =>

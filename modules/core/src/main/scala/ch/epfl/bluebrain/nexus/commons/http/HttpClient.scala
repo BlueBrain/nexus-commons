@@ -50,7 +50,8 @@ trait HttpClient[F[_], A] {
   def toString(entity: HttpEntity): F[String]
 
   private[http] def handleError(req: HttpRequest, resp: HttpResponse, log: Logger)(
-      implicit F: MonadError[F, Throwable]): F[A] =
+      implicit F: MonadError[F, Throwable]
+  ): F[A] =
     toString(resp.entity).flatMap { body =>
       resp.status match {
         case _: ServerError =>
@@ -117,13 +118,15 @@ object HttpClient {
     * @tparam F the effect type
     * @tparam A the specific type to which the response entity should be unmarshalled into
     */
-  final def withUnmarshaller[F[_], A: ClassTag](implicit
-                                                L: LiftIO[F],
-                                                F: MonadError[F, Throwable],
-                                                ec: ExecutionContext,
-                                                mt: Materializer,
-                                                cl: UntypedHttpClient[F],
-                                                um: FromEntityUnmarshaller[A]): HttpClient[F, A] =
+  final def withUnmarshaller[F[_], A: ClassTag](
+      implicit
+      L: LiftIO[F],
+      F: MonadError[F, Throwable],
+      ec: ExecutionContext,
+      mt: Materializer,
+      cl: UntypedHttpClient[F],
+      um: FromEntityUnmarshaller[A]
+  ): HttpClient[F, A] =
     new HttpClient[F, A] {
 
       private val logger = Logger(s"TypedHttpClient[${implicitly[ClassTag[A]]}]")

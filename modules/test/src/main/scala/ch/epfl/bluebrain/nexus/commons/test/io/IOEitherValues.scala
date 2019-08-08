@@ -22,7 +22,8 @@ trait IOEitherValues extends IOValues with EitherValues {
         case EE(value) => value
         case other =>
           fail(
-            s"Wrong throwable type caught, expected: '${EE.runtimeClass.getName}', actual: '${other.getClass.getName}'")
+            s"Wrong throwable type caught, expected: '${EE.runtimeClass.getName}', actual: '${other.getClass.getName}'"
+          )
       }
     }
   }

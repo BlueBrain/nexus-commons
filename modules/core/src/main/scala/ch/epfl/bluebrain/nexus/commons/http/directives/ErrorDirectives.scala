@@ -37,8 +37,10 @@ object ErrorDirectives {
     Marshaller.withFixedContentType(RdfMediaTypes.`application/ld+json`) { value =>
       HttpResponse(
         status = statusFrom(value),
-        entity = HttpEntity(RdfMediaTypes.`application/ld+json`,
-                            printer.pretty(encoder.mapJson(_.addContext(context)).apply(value).sortKeys))
+        entity = HttpEntity(
+          RdfMediaTypes.`application/ld+json`,
+          printer.pretty(encoder.mapJson(_.addContext(context)).apply(value).sortKeys)
+        )
       )
     }
 }
