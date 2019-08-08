@@ -156,12 +156,11 @@ object KeyValueStore {
     * @tparam E the error type
     * @tparam V the value type
     */
-  final def distributed[F[_]: Async: Timer, K, V, E <: Throwable](id: String,
-                                                                  clock: (Long, V) => Long,
-                                                                  mapError: KeyValueStoreError => E)(
-      implicit as: ActorSystem,
-      F: MonadError[F, E],
-      config: KeyValueStoreConfig): KeyValueStore[F, K, V] = {
+  final def distributed[F[_]: Async: Timer, K, V, E <: Throwable](
+      id: String,
+      clock: (Long, V) => Long,
+      mapError: KeyValueStoreError => E
+  )(implicit as: ActorSystem, F: MonadError[F, E], config: KeyValueStoreConfig): KeyValueStore[F, K, V] = {
     implicit val retry: Retry[F, E] = Retry(config.retry.retryStrategy)
     new DDataKeyValueStore(id, clock, mapError, config.askTimeout, config.consistencyTimeout)
   }

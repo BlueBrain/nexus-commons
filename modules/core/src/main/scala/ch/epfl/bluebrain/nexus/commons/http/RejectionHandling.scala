@@ -232,8 +232,9 @@ object RejectionHandling {
     * @see [[RejectionHandling.rejectRequestEntityAndComplete()]]
     * @param f the function to use for handling rejections of type A
     */
-  def apply[A <: Rejection: ClassTag](f: A => ToResponseMarshallable)(
-      implicit J: ToEntityMarshaller[Json]): RejectionHandler =
+  def apply[A <: Rejection: ClassTag](
+      f: A => ToResponseMarshallable
+  )(implicit J: ToEntityMarshaller[Json]): RejectionHandler =
     handle(f) withFallback apply
 
   // $COVERAGE-ON$

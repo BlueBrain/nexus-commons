@@ -22,8 +22,8 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     implicit F: MonadError[F, Throwable],
     cl: UntypedHttpClient[F],
     rsJson: HttpClient[F, SparqlResults],
-    ec: ExecutionContext)
-    extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
+    ec: ExecutionContext
+) extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
 
   /**
     * @param base        the base uri of the blazegraph endpoint
@@ -31,9 +31,11 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     * @param credentials the credentials to use when communicating with the sparql endpoint
     * @return a new [[BlazegraphClient]] with the provided parameters
     */
-  def copy(base: Uri = this.base,
-           namespace: String = this.namespace,
-           credentials: Option[HttpCredentials] = this.credentials): BlazegraphClient[F] =
+  def copy(
+      base: Uri = this.base,
+      namespace: String = this.namespace,
+      credentials: Option[HttpCredentials] = this.credentials
+  ): BlazegraphClient[F] =
     new BlazegraphClient[F](base, namespace, credentials)
 
   /**
@@ -93,6 +95,7 @@ object BlazegraphClient {
       implicit F: MonadError[F, Throwable],
       cl: UntypedHttpClient[F],
       rsJson: HttpClient[F, SparqlResults],
-      ec: ExecutionContext): BlazegraphClient[F] =
+      ec: ExecutionContext
+  ): BlazegraphClient[F] =
     new BlazegraphClient[F](base, namespace, credentials)
 }

@@ -34,7 +34,8 @@ class ErrorDirectivesSpec
       val jsonString = s"""{"@context":"${contextUri.value}","message":"${error.message}"}"""
       Marshal(error).to[HttpResponse].futureValue shouldEqual HttpResponse(
         status = StatusCodes.NotFound,
-        entity = HttpEntity.Strict(RdfMediaTypes.`application/ld+json`, ByteString(jsonString, "UTF-8")))
+        entity = HttpEntity.Strict(RdfMediaTypes.`application/ld+json`, ByteString(jsonString, "UTF-8"))
+      )
     }
   }
 

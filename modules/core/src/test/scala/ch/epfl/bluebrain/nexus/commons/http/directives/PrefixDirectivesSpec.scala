@@ -20,7 +20,8 @@ class PrefixDirectivesSpec extends WordSpecLike with Matchers with Inspectors wi
           "/dev/"    -> "/dev",
           "/dev///"  -> "/dev",
           "/dev/sn/" -> "/dev/sn"
-        ).toList) {
+        ).toList
+      ) {
         case (suffix, prefix) =>
           val uri = Uri("http://localhost:80" + suffix)
           val route = uriPrefix(uri) {

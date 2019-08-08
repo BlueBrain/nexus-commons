@@ -9,10 +9,12 @@ class SparqlResultsSpec extends WordSpecLike with Matchers with Resources with E
   "A Sparql Json result" should {
     val json = jsonContentOf("/results/query-result.json")
 
-    val blurb = Binding("literal",
-                        "<p xmlns=\"http://www.w3.org/1999/xhtml\">My name is <b>alice</b></p>",
-                        None,
-                        Some("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral"))
+    val blurb = Binding(
+      "literal",
+      "<p xmlns=\"http://www.w3.org/1999/xhtml\">My name is <b>alice</b></p>",
+      None,
+      Some("http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
+    )
 
     val map1 = Map(
       "x"      -> Binding("bnode", "r1"),
@@ -31,8 +33,10 @@ class SparqlResultsSpec extends WordSpecLike with Matchers with Resources with E
       "friend" -> Binding("bnode", "r1")
     )
 
-    val head = Head(List("x", "hpage", "name", "mbox", "age", "blurb", "friend"),
-                    Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq")))
+    val head = Head(
+      List("x", "hpage", "name", "mbox", "age", "blurb", "friend"),
+      Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq"))
+    )
 
     val qr = SparqlResults(head, Bindings(map1, map2))
 
@@ -47,11 +51,13 @@ class SparqlResultsSpec extends WordSpecLike with Matchers with Resources with E
     "add head" in {
       head ++ Head(List("v", "hpage", "name")) shouldEqual Head(
         List("x", "hpage", "name", "mbox", "age", "blurb", "friend", "v"),
-        Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq")))
+        Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq"))
+      )
 
       (Head(List("v", "hpage", "name"), Some(List("http://example.com/b"))) ++ Head(
         List("x", "hpage", "name"),
-        Some(List("http://example.com/a")))) shouldEqual
+        Some(List("http://example.com/a"))
+      )) shouldEqual
         Head(List("v", "hpage", "name", "x"), Some(List("http://example.com/b", "http://example.com/a")))
     }
 

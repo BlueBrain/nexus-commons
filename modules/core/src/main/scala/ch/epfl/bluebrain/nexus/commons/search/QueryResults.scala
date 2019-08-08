@@ -34,11 +34,12 @@ object QueryResults {
     * @param token   the optional token used to generate the next link
     * @tparam A generic type of the response's payload
     */
-  final case class ScoredQueryResults[A](total: Long,
-                                         maxScore: Float,
-                                         results: List[QueryResult[A]],
-                                         token: Option[String] = None)
-      extends QueryResults[A] {
+  final case class ScoredQueryResults[A](
+      total: Long,
+      maxScore: Float,
+      results: List[QueryResult[A]],
+      token: Option[String] = None
+  ) extends QueryResults[A] {
     override def copyWith[B](res: List[QueryResult[B]]): QueryResults[B] = ScoredQueryResults[B](total, maxScore, res)
   }
 
@@ -80,9 +81,11 @@ object QueryResults {
         }
     }
 
-  final implicit def queryResultEncoder[A](implicit
-                                           S: Encoder[ScoredQueryResults[A]],
-                                           U: Encoder[UnscoredQueryResults[A]]): Encoder[QueryResults[A]] =
+  final implicit def queryResultEncoder[A](
+      implicit
+      S: Encoder[ScoredQueryResults[A]],
+      U: Encoder[UnscoredQueryResults[A]]
+  ): Encoder[QueryResults[A]] =
     Encoder.instance {
       case s: ScoredQueryResults[A]   => S.apply(s)
       case u: UnscoredQueryResults[A] => U.apply(u)

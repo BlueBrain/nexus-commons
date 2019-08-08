@@ -80,11 +80,11 @@ object ElasticServer extends Randomness {
   import org.elasticsearch.node.InternalSettingsPreparer
 
   private class MyNode(preparedSettings: Settings, classpathPlugins: util.Collection[Class[_ <: Plugin]])
-      extends Node(InternalSettingsPreparer.prepareEnvironment(preparedSettings,
-                                                               Map.empty[String, String].asJava,
-                                                               null,
-                                                               () => genString()),
-                   classpathPlugins,
-                   true) {}
+      extends Node(
+        InternalSettingsPreparer
+          .prepareEnvironment(preparedSettings, Map.empty[String, String].asJava, null, () => genString()),
+        classpathPlugins,
+        true
+      ) {}
 }
 // $COVERAGE-ON$

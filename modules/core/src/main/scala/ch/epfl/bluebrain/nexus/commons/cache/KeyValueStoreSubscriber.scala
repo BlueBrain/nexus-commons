@@ -121,6 +121,7 @@ object KeyValueStoreSubscriber {
     * @return an [[ActorRef]] of the [[KeyValueStoreSubscriber]] actor
     */
   final def apply[K, V](mapKey: LWWMapKey[K, V], onChange: OnKeyValueStoreChange[K, V])(
-      implicit as: ActorSystem): ActorRef =
+      implicit as: ActorSystem
+  ): ActorRef =
     as.actorOf(Props(new KeyValueStoreSubscriber(mapKey, onChange)), UUID.randomUUID().toString)
 }

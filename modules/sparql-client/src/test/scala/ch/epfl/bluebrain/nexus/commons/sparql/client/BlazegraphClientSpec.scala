@@ -119,9 +119,11 @@ class BlazegraphClientSpec
       cl.replace(graph, load(id, label, value)).futureValue
       val triple: Triple = ((url"http://example/com/$id", owl.sameAs, """{"key": "value"}"""))
       cl.replace(graph, load(id, label, value + "-updated") + triple).futureValue
-      cl.triples(graph).map(_._3) should contain theSameElementsAs Set(label,
-                                                                       value + "-updated",
-                                                                       """{"key": "value"}""")
+      cl.triples(graph).map(_._3) should contain theSameElementsAs Set(
+        label,
+        value + "-updated",
+        """{"key": "value"}"""
+      )
       cl.triples().map(_._3) should contain theSameElementsAs Set(label, value + "-updated", """{"key": "value"}""")
     }
 
@@ -143,8 +145,10 @@ class BlazegraphClientSpec
       val cl = client(namespace)
       cl.createNamespace(properties()).futureValue
       cl.replace(graph, load(id, label, value)).futureValue
-      val expected = jsonContentOf("/sparql-json.json",
-                                   Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value))
+      val expected = jsonContentOf(
+        "/sparql-json.json",
+        Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value)
+      )
       val result = cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson
       result.asObject.value("head").value.removeKeys("link") shouldEqual expected.asObject.value("head").value
       val bindings =
@@ -184,7 +188,8 @@ class BlazegraphClientSpec
         Set(
           "http://schema.org/value",
           "http://www.w3.org/2000/01/rdf-schema#label"
-        ))
+        )
+      )
       cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).futureValue
       cl.triples() should have size 4
       val results = cl.triples(graph)

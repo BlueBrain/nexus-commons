@@ -44,8 +44,10 @@ class KeyValueStoreSpec
     implicit val config =
       KeyValueStoreConfig(4 seconds, 3 seconds, RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0.0, 0 millis))
     val store =
-      KeyValueStore.distributed[IO, String, RevisionedValue[String], Throwable]("spec", { case (_, rv) => rv.rev },
-                                                                                ErrorWrapper)
+      KeyValueStore.distributed[IO, String, RevisionedValue[String], Throwable](
+        "spec", { case (_, rv) => rv.rev },
+        ErrorWrapper
+      )
 
     var subscription: Subscription = null
     val probe                      = TestProbe()

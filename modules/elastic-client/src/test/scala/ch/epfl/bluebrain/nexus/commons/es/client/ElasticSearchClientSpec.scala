@@ -126,35 +126,47 @@ class ElasticSearchClientSpec
 
       "search for some specific keys and values" in {
         val (_, json) = list.head
-        val query = jsonContentOf("/query.json",
-                                  Map(Pattern.quote("{{value1}}") -> getValue("key", json),
-                                      Pattern.quote("{{value2}}") -> getValue("key2", json)))
-        val qrs = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, json)))
+        val query = jsonContentOf(
+          "/query.json",
+          Map(
+            Pattern.quote("{{value1}}") -> getValue("key", json),
+            Pattern.quote("{{value2}}") -> getValue("key2", json)
+          )
+        )
+        val qrs = ScoredQueryResults(1L, 1f, List(ScoredQueryResult(1f, json)))
         cl.search[Json](query, Set(indexSanitized))(p).futureValue shouldEqual qrs
       }
 
       "search for some specific keys and values with wildcard index" in {
         val (_, json) = list.head
-        val query = jsonContentOf("/query.json",
-                                  Map(Pattern.quote("{{value1}}") -> getValue("key", json),
-                                      Pattern.quote("{{value2}}") -> getValue("key2", json)))
-        val qrs = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, json)))
+        val query = jsonContentOf(
+          "/query.json",
+          Map(
+            Pattern.quote("{{value1}}") -> getValue("key", json),
+            Pattern.quote("{{value2}}") -> getValue("key2", json)
+          )
+        )
+        val qrs = ScoredQueryResults(1L, 1f, List(ScoredQueryResult(1f, json)))
         cl.search[Json](query, Set(indexSanitized.take(5) + "*"))(p).futureValue shouldEqual qrs
       }
 
       "search on an index which does not exist" in {
-        val qrs = ScoredQueryResults(0L, 0F, List.empty)
+        val qrs = ScoredQueryResults(0L, 0f, List.empty)
 
         cl.search[Json](matchAll, Set("non_exists"))(p).futureValue shouldEqual qrs
       }
 
       "search which returns only specified fields" in {
         val (_, json) = list.head
-        val query = jsonContentOf("/query.json",
-                                  Map(Pattern.quote("{{value1}}") -> getValue("key", json),
-                                      Pattern.quote("{{value2}}") -> getValue("key2", json)))
+        val query = jsonContentOf(
+          "/query.json",
+          Map(
+            Pattern.quote("{{value1}}") -> getValue("key", json),
+            Pattern.quote("{{value2}}") -> getValue("key2", json)
+          )
+        )
         val expectedJson = Json.obj("key" -> Json.fromString(getValue("key", json)))
-        val qrs          = ScoredQueryResults(1L, 1F, List(ScoredQueryResult(1F, expectedJson)))
+        val qrs          = ScoredQueryResults(1L, 1f, List(ScoredQueryResult(1f, expectedJson)))
         cl.search[Json](query)(p, fields = Set("key")).futureValue shouldEqual qrs
       }
 
@@ -193,9 +205,11 @@ class ElasticSearchClientSpec
         val searchAfterPagination = Pagination(sort, 3)
         val token2                = Json.arr(Json.fromString(getValue("key", elems(5))))
 
-        val qrs2 = UnscoredQueryResults(elems.length.toLong,
-                                        elems.slice(3, 6).map(UnscoredQueryResult.apply),
-                                        Some(token2.noSpaces))
+        val qrs2 = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.slice(3, 6).map(UnscoredQueryResult.apply),
+          Some(token2.noSpaces)
+        )
 
         val results2 = cl
           .search[Json](matchAll, Set(indexSanitized))(searchAfterPagination, sort = SortList(List(Sort("key"))))
@@ -219,9 +233,11 @@ class ElasticSearchClientSpec
         val searchAfterPagination = Pagination(3, 3)
         val token2                = Json.arr(Json.fromString(getValue("key", elems(5))))
 
-        val qrs2 = UnscoredQueryResults(elems.length.toLong,
-                                        elems.slice(3, 6).map(UnscoredQueryResult.apply),
-                                        Some(token2.noSpaces))
+        val qrs2 = UnscoredQueryResults(
+          elems.length.toLong,
+          elems.slice(3, 6).map(UnscoredQueryResult.apply),
+          Some(token2.noSpaces)
+        )
 
         val results2 = cl
           .search[Json](matchAll, Set(indexSanitized))(searchAfterPagination, sort = SortList(List(Sort("key"))))
@@ -231,8 +247,10 @@ class ElasticSearchClientSpec
       }
 
       "search which returns 0 values" in {
-        val query = jsonContentOf("/simple_query.json",
-                                  Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> genString()))
+        val query = jsonContentOf(
+          "/simple_query.json",
+          Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> genString())
+        )
         val qrs = UnscoredQueryResults(0L, List.empty)
         cl.search[Json](query, Set(indexSanitized))(p).futureValue shouldEqual qrs
 
@@ -240,13 +258,16 @@ class ElasticSearchClientSpec
 
       "search raw all elements sorted in order ascending" in {
 
-        val sortedMatchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()),
-                                      "sort" -> Json.arr(
-                                        Json.obj(
-                                          "key" -> Json.obj(
-                                            "order" -> Json.fromString("asc")
-                                          ))
-                                      ))
+        val sortedMatchAll = Json.obj(
+          "query" -> Json.obj("match_all" -> Json.obj()),
+          "sort" -> Json.arr(
+            Json.obj(
+              "key" -> Json.obj(
+                "order" -> Json.fromString("asc")
+              )
+            )
+          )
+        )
         val elems =
           list.sortWith((e1, e2) => getValue("key", e1._2) < getValue("key", e2._2))
 
@@ -279,13 +300,16 @@ class ElasticSearchClientSpec
       }
 
       "search raw all elements sorted in order descending" in {
-        val sortedMatchAll = Json.obj("query" -> Json.obj("match_all" -> Json.obj()),
-                                      "sort" -> Json.arr(
-                                        Json.obj(
-                                          "key" -> Json.obj(
-                                            "order" -> Json.fromString("desc")
-                                          ))
-                                      ))
+        val sortedMatchAll = Json.obj(
+          "query" -> Json.obj("match_all" -> Json.obj()),
+          "sort" -> Json.arr(
+            Json.obj(
+              "key" -> Json.obj(
+                "order" -> Json.fromString("desc")
+              )
+            )
+          )
+        )
         val elems =
           list.sortWith((e1, e2) => getValue("key", e1._2) > getValue("key", e2._2))
 
@@ -357,8 +381,10 @@ class ElasticSearchClientSpec
         forAll(listModified) {
           case (id, json) =>
             val query =
-              jsonContentOf("/simple_query.json",
-                            Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
+              jsonContentOf(
+                "/simple_query.json",
+                Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json))
+              )
             val updateScript =
               jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", mapModified(id))))
 
@@ -379,8 +405,10 @@ class ElasticSearchClientSpec
         forAll(mapModified.toList.drop(3)) {
           case (id, json) =>
             val query =
-              jsonContentOf("/simple_query.json",
-                            Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json)))
+              jsonContentOf(
+                "/simple_query.json",
+                Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json))
+              )
             cl.deleteDocuments(Set(indexSanitized), query).futureValue shouldEqual (())
             cl.get[Json](index, id).futureValue shouldEqual None
         }
@@ -395,11 +423,13 @@ class ElasticSearchClientSpec
         cl.bulk(ops).futureValue shouldEqual (())
 
         val updated = Json.obj("key1" -> Json.fromString("updated"))
-        cl.bulk(List(
-            BulkOp.Delete(indexSanitized, toDelete._1),
-            BulkOp.Index(indexSanitized, toOverride._1, updated),
-            BulkOp.Update(indexSanitized, toUpdate._1, Json.obj("doc" -> updated))
-          ))
+        cl.bulk(
+            List(
+              BulkOp.Delete(indexSanitized, toDelete._1),
+              BulkOp.Index(indexSanitized, toOverride._1, updated),
+              BulkOp.Update(indexSanitized, toUpdate._1, Json.obj("doc" -> updated))
+            )
+          )
           .futureValue shouldEqual (())
         eventually {
           cl.get[Json](index, toUpdate._1).futureValue.value shouldEqual toUpdate._2.deepMerge(updated)
@@ -437,7 +467,8 @@ class ElasticSearchClientSpec
           case (id, json) =>
             eventually {
               cl.get[Json](index, id).futureValue.value shouldEqual json.deepMerge(
-                Json.obj("id" -> Json.fromString(id)))
+                Json.obj("id" -> Json.fromString(id))
+              )
             }
         }
 
@@ -458,7 +489,8 @@ class ElasticSearchClientSpec
             List(
               BulkOp.Delete(indexSanitized, toDelete._1),
               BulkOp.Update(genString(), toUpdate._1, Json.obj("doc" -> updated))
-            ))
+            )
+          )
           .failed
           .futureValue shouldBe a[ElasticUnexpectedError]
       }

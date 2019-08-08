@@ -76,10 +76,12 @@ object ShaclEngine {
     * @param reportDetails  true to also include the sh:detail (more verbose) and false to omit them
     * @return an option of [[ValidationReport]] with the validation results
     */
-  def apply(dataModel: Model,
-            shapesModel: Model,
-            validateShapes: Boolean,
-            reportDetails: Boolean): Option[ValidationReport] = {
+  def apply(
+      dataModel: Model,
+      shapesModel: Model,
+      validateShapes: Boolean,
+      reportDetails: Boolean
+  ): Option[ValidationReport] = {
 
     val finalShapesModel = ValidationUtil.ensureToshTriplesExist(shapesModel)
     // Make sure all sh:Functions are registered
@@ -87,10 +89,12 @@ object ShaclEngine {
     applySkipShapesCheck(dataModel, finalShapesModel, validateShapes, reportDetails)
   }
 
-  private def applySkipShapesCheck(dataModel: Model,
-                                   finalShapesModel: Model,
-                                   validateShapes: Boolean,
-                                   reportDetails: Boolean): Option[ValidationReport] = {
+  private def applySkipShapesCheck(
+      dataModel: Model,
+      finalShapesModel: Model,
+      validateShapes: Boolean,
+      reportDetails: Boolean
+  ): Option[ValidationReport] = {
     // Create Dataset that contains both the data model and the shapes model
     // (here, using a temporary URI for the shapes graph)
     val shapesGraphURI = URI.create("urn:x-shacl-shapes-graph:" + UUID.randomUUID.toString)
@@ -99,7 +103,8 @@ object ShaclEngine {
     val shapesGraph = new ShapesGraph(finalShapesModel)
     val engine      = new ShaclEngine(dataset, shapesGraphURI, shapesGraph)
     engine.setConfiguration(
-      new ValidationEngineConfiguration().setReportDetails(reportDetails).setValidateShapes(validateShapes))
+      new ValidationEngineConfiguration().setReportDetails(reportDetails).setValidateShapes(validateShapes)
+    )
     Try {
       engine.applyEntailments()
       engine.validateAll()

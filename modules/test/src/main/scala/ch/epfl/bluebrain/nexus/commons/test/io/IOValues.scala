@@ -18,8 +18,11 @@ trait IOValues extends ScalaFutures {
           {
             case Ex(ex) => IO.pure(ex)
             case other =>
-              IO(fail(
-                s"Wrong throwable type caught, expected: '${Ex.runtimeClass.getName}', actual: '${other.getClass.getName}'"))
+              IO(
+                fail(
+                  s"Wrong throwable type caught, expected: '${Ex.runtimeClass.getName}', actual: '${other.getClass.getName}'"
+                )
+              )
           },
           a => IO(fail(s"The IO did not fail as expected, but computed the value '$a'"))
         )

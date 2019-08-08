@@ -76,10 +76,12 @@ object SparqlResults {
     * @param `xml:lang` the language tag (when the term is a literal)
     * @param datatype   the data type information of the term
     */
-  final case class Binding(`type`: String,
-                           value: String,
-                           `xml:lang`: Option[String] = None,
-                           datatype: Option[String] = None) {
+  final case class Binding(
+      `type`: String,
+      value: String,
+      `xml:lang`: Option[String] = None,
+      datatype: Option[String] = None
+  ) {
     def isLiteral: Boolean = `type` == "literal"
   }
 

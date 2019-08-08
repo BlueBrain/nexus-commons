@@ -28,7 +28,8 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
         (jsonContentOf("/kg_json/activity_schema.json")   -> jsonContentOf("/kg_json/activity_schema_ordered.json")),
         (jsonContentOf("/kg_json/activity_instance.json") -> jsonContentOf("/kg_json/activity_instance_ordered.json")),
         (jsonContentOf("/kg_json/activity_instance_att.json") -> jsonContentOf(
-          "/kg_json/activity_instance_att_ordered.json"))
+          "/kg_json/activity_instance_att_ordered.json"
+        ))
       )
       implicit val _ = OrderedKeys(
         List(
@@ -48,7 +49,8 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
           "nxv:published",
           "nxv:deprecated",
           "links"
-        ))
+        )
+      )
 
       "order jsonLD input" in {
         forAll(list) {
@@ -69,7 +71,8 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
               "https://bbp-nexus.epfl.ch/dev/v0/schemas/bbp/core/schema/v0.1.0",
               false,
               "owl:Ontology"
-            ))
+            )
+          )
         }
         Get("/") ~> route ~> check {
           contentType shouldEqual RdfMediaTypes.`application/ld+json`.toContentType
@@ -93,7 +96,8 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
           "permissions",
           "realm",
           ""
-        ))
+        )
+      )
 
       "order jsonLD input" in {
         forAll(list) {
@@ -105,15 +109,20 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
       "generated jsonLD HTTP" in {
         val route = get {
           complete(
-            AuthenticatedUser(LinkedHashSet(
-              GroupRef("bbp-user-one", "BBP", "https://nexus.example.com/v0/realms/BBP/groups/bbp-user-one"),
-              GroupRef("bbp-svc-two", "BBP", "https://nexus.example.com/v0/realms/BBP/groups/bbp-svc-two"),
-              Anonymous("https://nexus.example.com/v0/anonymous"),
-              UserRef("f:434t3-134e-4444-aa74-bdf00f48dfce:some",
-                      "BBP",
-                      "https://nexus.example.com/v0/realms/BBP/users/f:434t3-134e-4444-aa74-bdf00f48dfce:some"),
-              AuthenticatedRef(Some("BBP"), "https://nexus.example.com/v0/realms/BBP/authenticated")
-            )): User)
+            AuthenticatedUser(
+              LinkedHashSet(
+                GroupRef("bbp-user-one", "BBP", "https://nexus.example.com/v0/realms/BBP/groups/bbp-user-one"),
+                GroupRef("bbp-svc-two", "BBP", "https://nexus.example.com/v0/realms/BBP/groups/bbp-svc-two"),
+                Anonymous("https://nexus.example.com/v0/anonymous"),
+                UserRef(
+                  "f:434t3-134e-4444-aa74-bdf00f48dfce:some",
+                  "BBP",
+                  "https://nexus.example.com/v0/realms/BBP/users/f:434t3-134e-4444-aa74-bdf00f48dfce:some"
+                ),
+                AuthenticatedRef(Some("BBP"), "https://nexus.example.com/v0/realms/BBP/authenticated")
+              )
+            ): User
+          )
         }
         Get("/") ~> route ~> check {
           contentType shouldEqual RdfMediaTypes.`application/ld+json`.toContentType
@@ -128,38 +137,50 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
 
       val mapping = List(
         Json.obj("@id"        -> Json.fromString("foo-id"), "nxv:rev" -> Json.fromLong(1)) ->
-          Json.obj("@context" -> contextString, "@id" -> Json.fromString("foo-id"), "nxv:rev" -> Json.fromLong(1)),
-        Json.obj("@context"   -> Json.fromString("http://foo.domain/some/context"),
-                 "@id"        -> Json.fromString("foo-id"),
-                 "nxv:rev"    -> Json.fromLong(1)) ->
+          Json.obj("@context" -> contextString, "@id"                 -> Json.fromString("foo-id"), "nxv:rev" -> Json.fromLong(1)),
+        Json.obj(
+          "@context" -> Json.fromString("http://foo.domain/some/context"),
+          "@id"      -> Json.fromString("foo-id"),
+          "nxv:rev"  -> Json.fromLong(1)
+        ) ->
           Json.obj(
             "@context" -> Json.arr(Json.fromString("http://foo.domain/some/context"), contextString),
             "@id"      -> Json.fromString("foo-id"),
             "nxv:rev"  -> Json.fromLong(1)
           ),
         Json.obj(
-          "@context" -> Json.arr(Json.fromString("http://foo.domain/some/context"),
-                                 Json.fromString("http://bar.domain/another/context")),
+          "@context" -> Json.arr(
+            Json.fromString("http://foo.domain/some/context"),
+            Json.fromString("http://bar.domain/another/context")
+          ),
           "@id"     -> Json.fromString("foo-id"),
           "nxv:rev" -> Json.fromLong(1)
         ) ->
           Json.obj(
-            "@context" -> Json.arr(Json.fromString("http://foo.domain/some/context"),
-                                   Json.fromString("http://bar.domain/another/context"),
-                                   contextString),
+            "@context" -> Json.arr(
+              Json.fromString("http://foo.domain/some/context"),
+              Json.fromString("http://bar.domain/another/context"),
+              contextString
+            ),
             "@id"     -> Json.fromString("foo-id"),
             "nxv:rev" -> Json.fromLong(1)
           ),
         Json.obj(
-          "@context" -> Json.obj("foo" -> Json.fromString("http://foo.domain/some/context"),
-                                 "bar" -> Json.fromString("http://bar.domain/another/context")),
+          "@context" -> Json.obj(
+            "foo" -> Json.fromString("http://foo.domain/some/context"),
+            "bar" -> Json.fromString("http://bar.domain/another/context")
+          ),
           "@id"     -> Json.fromString("foo-id"),
           "nxv:rev" -> Json.fromLong(1)
         ) ->
           Json.obj(
-            "@context" -> Json.arr(Json.obj("foo" -> Json.fromString("http://foo.domain/some/context"),
-                                            "bar" -> Json.fromString("http://bar.domain/another/context")),
-                                   contextString),
+            "@context" -> Json.arr(
+              Json.obj(
+                "foo" -> Json.fromString("http://foo.domain/some/context"),
+                "bar" -> Json.fromString("http://bar.domain/another/context")
+              ),
+              contextString
+            ),
             "@id"     -> Json.fromString("foo-id"),
             "nxv:rev" -> Json.fromLong(1)
           )
@@ -183,14 +204,16 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
 }
 
 object JsonSyntaxSpec {
-  final case class KgResponse(c: String,
-                              `nxv:published`: Boolean,
-                              `nxv:rev`: Long,
-                              a: String,
-                              links: Map[String, String],
-                              `@id`: String,
-                              `nxv:deprecated`: Boolean,
-                              `@type`: String)
+  final case class KgResponse(
+      c: String,
+      `nxv:published`: Boolean,
+      `nxv:rev`: Long,
+      a: String,
+      links: Map[String, String],
+      `@id`: String,
+      `nxv:deprecated`: Boolean,
+      `@type`: String
+  )
 
   sealed trait User extends Product with Serializable {
     def identities: LinkedHashSet[Identity]
