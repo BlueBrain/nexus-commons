@@ -32,16 +32,10 @@ object PathToAkkaSyntax {
   }
 
   final class IriPathSyntax(private val path: Iri.Path) extends AnyVal {
-    @tailrec
-    private def inner(acc: Uri.Path, remaining: Iri.Path): Uri.Path = remaining match {
-      case Slash(rest)         => inner(acc ++ Uri.Path./, rest)
-      case Iri.Path.Empty      => acc
-      case Segment(head, tail) => inner(acc + head, tail)
-    }
 
     /**
       * Convert this [[Iri.Path]] to [[Uri.Path]]
       */
-    def toUriPath: Uri.Path = inner(Uri.Path.Empty, path.reverse)
+    def toUriPath: Uri.Path = Uri.Path(path.pctEncoded)
   }
 }

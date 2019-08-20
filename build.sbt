@@ -44,7 +44,7 @@ val log4jVersion          = "2.12.0"
 val commonsIOVersion      = "1.3.2"
 val pureconfigVersion     = "0.11.1"
 
-val rdfVersion         = "0.3.13"
+val rdfVersion         = "0.3.14"
 val sourcingVersion    = "0.16.4"
 val topQuadrantVersion = "1.2.0-nexus4"
 

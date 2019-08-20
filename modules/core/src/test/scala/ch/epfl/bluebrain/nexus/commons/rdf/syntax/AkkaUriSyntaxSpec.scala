@@ -10,8 +10,9 @@ class AkkaUriSyntaxSpec extends WordSpecLike with Matchers with EitherValues {
   "An Iri" should {
 
     "be converted to a Uri" in {
-      val expected = Uri("http://user:password@host/test")
-      Iri("http://user:password@host/test").right.value.toAkkaUri shouldEqual expected
+      val expected = Uri("http://user:password@host/%C3%86Screenshot%202019-06-14%20at%2010.13.31.png")
+      val iri: Iri = Iri.absolute("http://user:password@host").right.value + "ÆScreenshot 2019-06-14 at 10.13.31.png"
+      iri.toAkkaUri shouldEqual expected
     }
   }
 
@@ -26,7 +27,7 @@ class AkkaUriSyntaxSpec extends WordSpecLike with Matchers with EitherValues {
 
   "An Iri.Path" should {
     "be converted to Uri.Path" in {
-      Path("/a/b/c").right.value.toUriPath shouldEqual Uri.Path("/a/b/c")
+      Path("/a/b/Æ").right.value.toUriPath shouldEqual Uri.Path("/a/b/%C3%86")
       Path("/a/b/c/d/").right.value.toUriPath shouldEqual Uri.Path("/a/b/c/d/")
       Path("/").right.value.toUriPath shouldEqual Uri.Path("/")
       Path("").right.value.toUriPath shouldEqual Uri.Path("")

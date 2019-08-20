@@ -1,7 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.rdf.akka
 
 import _root_.akka.http.scaladsl.model.Uri
-import cats.syntax.show._
 import ch.epfl.bluebrain.nexus.rdf.Iri
 import IriToAkkaSyntax._
 
@@ -17,7 +16,7 @@ object IriToAkkaSyntax extends IriToAkkaSyntax {
     * Syntactic sugar for constructing a [[Uri]] from the [[Iri]]
     */
   final class IriOps(private val iri: Iri) extends AnyVal {
-    def toAkkaUri: Uri = Uri(iri.show)
+    def toAkkaUri: Uri = Uri(iri.asUri)
 
   }
 }
