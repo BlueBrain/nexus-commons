@@ -18,7 +18,7 @@ class AkkaUriSyntaxSpec extends WordSpecLike with Matchers with EitherValues {
 
   "An Uri.Path" should {
     "be converted to Iri.Path" in {
-      Uri.Path("/a/b/c").toIriPath shouldEqual Path("/a/b/c").right.value
+      Uri.Path("/a/b/c/ Æ").toIriPath shouldEqual Path("/a/b/c/%20Æ").right.value
       Uri.Path("/a/b/c/d/").toIriPath shouldEqual Path("/a/b/c/d/").right.value
       Uri.Path("/").toIriPath shouldEqual Path("/").right.value
       Uri.Path("").toIriPath shouldEqual Path("").right.value
