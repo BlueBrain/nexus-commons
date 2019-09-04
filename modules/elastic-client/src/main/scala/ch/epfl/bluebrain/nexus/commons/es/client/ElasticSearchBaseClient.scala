@@ -61,7 +61,7 @@ abstract class ElasticSearchBaseClient[F[_]](
     * @param index the index name to sanitize
     * @param allowWildCard flag to allow wildcard (*) or not.
     */
-  private[client] def sanitize(index: String, allowWildCard: Boolean = false): String = {
+  private[client] def sanitize(index: String, allowWildCard: Boolean): String = {
     val regex = if (allowWildCard) """[\s|"|\\|<|>|\||,|/|?]""" else """[\s|"|*|\\|<|>|\||,|/|?]"""
     index.replaceAll(regex, "_").dropWhile(_ == '_')
   }

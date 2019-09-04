@@ -38,7 +38,7 @@ class ElasticSearchClientSpec
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(15 seconds, 300 milliseconds)
 
   private def genIndexString(): String =
-    genString(length = 10, pool = Vector.range('a', 'f') ++ """ "*\<>|,/?""")
+    genString(length = 10, pool = Vector.range('a', 'f') ++ """ "\<>|,/?""")
 
   private implicit val uc: UntypedHttpClient[Future] = untyped[Future]
 
@@ -55,7 +55,7 @@ class ElasticSearchClientSpec
     "sanitilizing index names" should {
       "succeed" in {
         forAll(""" "*\<>|,/?""") { ch =>
-          cl.sanitize(s"a${ch}a") shouldEqual "a_a"
+          cl.sanitize(s"a${ch}a", allowWildCard = false) shouldEqual "a_a"
         }
         cl.sanitize(s"a*a", allowWildCard = true) shouldEqual "a*a"
       }
@@ -102,7 +102,7 @@ class ElasticSearchClientSpec
       implicit val rsGet: HttpClient[Future, Json]                  = withUnmarshaller[Future, Json]
 
       val index          = genIndexString()
-      val indexSanitized = cl.sanitize(index)
+      val indexSanitized = cl.sanitize(index, allowWildCard = false)
       val list           = List.fill(10)(genString() -> genJson("key", "key2"))
 
       "add documents" in {
@@ -284,7 +284,7 @@ class ElasticSearchClientSpec
                 "hits" -> Json.arr(
                   elems.map { e =>
                     Json.obj(
-                      "_index"  -> Json.fromString(cl.sanitize(index)),
+                      "_index"  -> Json.fromString(cl.sanitize(index, allowWildCard = false)),
                       "_type"   -> Json.fromString("_doc"),
                       "_id"     -> Json.fromString(e._1),
                       "_score"  -> Json.Null,
@@ -325,7 +325,7 @@ class ElasticSearchClientSpec
                 "hits" -> Json.arr(
                   elems.map { e =>
                     Json.obj(
-                      "_index"  -> Json.fromString(cl.sanitize(index)),
+                      "_index"  -> Json.fromString(cl.sanitize(index, allowWildCard = false)),
                       "_type"   -> Json.fromString("_doc"),
                       "_id"     -> Json.fromString(e._1),
                       "_score"  -> Json.Null,
