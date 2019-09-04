@@ -43,7 +43,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @return ''true'' wrapped in ''F'' when the index exists and ''false'' wrapped in ''F'' when the index does not exist
     */
   def existsIndex(index: String): F[Boolean] =
-    execute(Get(base / sanitize(index)), Set(OK), Set(NotFound), "get index")
+    execute(Get(base / sanitize(index, allowWildCard = false)), Set(OK), Set(NotFound), "get index")
 
   /**
     * Attempts to create an index recovering gracefully when the index already exists.
@@ -52,12 +52,14 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param payload the payload to attach to the index when it does not exist
     * @return ''true'' wrapped in ''F'' when index has been created and ''false'' wrapped in ''F'' when it already existed
     */
-  def createIndex(index: String, payload: Json = Json.obj()): F[Boolean] =
-    existsIndex(sanitize(index)) flatMap {
+  def createIndex(index: String, payload: Json = Json.obj()): F[Boolean] = {
+    val sanitized = sanitize(index, allowWildCard = false)
+    existsIndex(sanitized) flatMap {
       case false =>
-        execute(Put(base / sanitize(index), payload), Set(OK, Created), Set.empty, "create index")
+        execute(Put(base / sanitized, payload), Set(OK, Created), Set.empty, "create index")
       case true => F.pure(false)
     }
+  }
 
   /**
     * Attempts to update the mappings of a given index recovering gracefully when the index does not exists.
@@ -66,7 +68,12 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @return ''true'' wrapped in ''F'' when the mappings have been updated and ''false'' wrapped in ''F'' when the index does not exist
     */
   def updateMapping(index: String, payload: Json): F[Boolean] =
-    execute(Put(base / sanitize(index) / "_mapping", payload), Set(OK, Created), Set(NotFound), "update index mappings")
+    execute(
+      Put(base / sanitize(index, allowWildCard = false) / "_mapping", payload),
+      Set(OK, Created),
+      Set(NotFound),
+      "update index mappings"
+    )
 
   /**
     * Attempts to delete an index recovering gracefully when the index is not found.
@@ -75,7 +82,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @return ''true'' when the index has been deleted and ''false'' when the index does not exist. The response is wrapped in an effect type ''F''
     */
   def deleteIndex(index: String): F[Boolean] =
-    execute(Delete(base / sanitize(index)), Set(OK), Set(NotFound), "delete index")
+    execute(Delete(base / sanitize(index, allowWildCard = true)), Set(OK), Set(NotFound), "delete index")
 
   /**
     * Creates a new document inside the ''index'' with the provided ''payload''
@@ -85,7 +92,11 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param payload the document's payload
     */
   def create(index: String, id: String, payload: Json): F[Unit] =
-    execute(Put(base / sanitize(index) / urlEncode(id), payload), Set(OK, Created), "create document")
+    execute(
+      Put(base / sanitize(index, allowWildCard = false) / urlEncode(id), payload),
+      Set(OK, Created),
+      "create document"
+    )
 
   /**
     * Creates a bulk update with the operations defined on the provided ''ops'' argument.
@@ -126,7 +137,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     */
   def update(index: String, id: String, payload: Json, qp: Query = Query.Empty): F[Unit] =
     execute(
-      Post((base / sanitize(index) / updatePath / urlEncode(id)).withQuery(qp), payload),
+      Post((base / sanitize(index, allowWildCard = false) / updatePath / urlEncode(id)).withQuery(qp), payload),
       Set(OK, Created),
       "update index"
     )
@@ -156,7 +167,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     * @param id     the id to delete
     */
   def delete(index: String, id: String): F[Unit] =
-    execute(Delete(base / sanitize(index) / docType / urlEncode(id)), Set(OK), "delete index")
+    execute(Delete(base / sanitize(index, allowWildCard = false) / docType / urlEncode(id)), Set(OK), "delete document")
 
   /**
     * Deletes every document with that matches the provided ''query''
@@ -182,7 +193,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
       if (include.isEmpty) Map.empty else Map(includeFieldsQueryParam -> include.mkString(","))
     val excludeMap: Map[String, String] =
       if (exclude.isEmpty) Map.empty else Map(excludeFieldsQueryParam -> exclude.mkString(","))
-    val uri = base / sanitize(index) / source / urlEncode(id)
+    val uri = base / sanitize(index, allowWildCard = false) / source / urlEncode(id)
     rs(Get(uri.withQuery(Query(includeMap ++ excludeMap)))).map(Option.apply).handleErrorWith {
       case UnexpectedUnsuccessfulHttpResponse(r, _) if r.status == StatusCodes.NotFound => F.pure[Option[A]](None)
       case UnexpectedUnsuccessfulHttpResponse(r, body) =>
