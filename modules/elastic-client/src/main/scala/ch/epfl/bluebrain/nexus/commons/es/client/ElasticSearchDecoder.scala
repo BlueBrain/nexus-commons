@@ -24,8 +24,11 @@ class ElasticSearchDecoder[A](implicit D: Decoder[A]) {
       .map(_.reverse)
   }
 
-  private def token(json: Json): Option[String] =
-    json.hcursor.downField("hits").downField("hits").downArray.last.get[Json]("sort").toOption.map(_.noSpaces)
+  private def token(json: Json): Option[String] = {
+    val hits   = json.hcursor.downField("hits").downField("hits")
+    val length = hits.values.fold(1)(_.size)
+    hits.downN(length - 1).downField("sort").focus.map(_.noSpaces)
+  }
 
   private def decodeScoredQueryResults(maxScore: Float): Decoder[QueryResults[A]] =
     Decoder.decodeJson.emap { json =>

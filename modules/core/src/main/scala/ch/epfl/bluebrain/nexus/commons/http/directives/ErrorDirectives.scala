@@ -39,7 +39,7 @@ object ErrorDirectives {
         status = statusFrom(value),
         entity = HttpEntity(
           RdfMediaTypes.`application/ld+json`,
-          printer.pretty(encoder.mapJson(_.addContext(context)).apply(value).sortKeys)
+          printer.print(encoder.mapJson(_.addContext(context)).apply(value).sortKeys)
         )
       )
     }

@@ -47,7 +47,7 @@ trait JsonLdCirceSupport extends FailFastCirceSupport {
       keys: OrderedKeys = OrderedKeys()
   ): ToEntityMarshaller[Json] =
     Marshaller.withFixedContentType(RdfMediaTypes.`application/ld+json`) { json =>
-      HttpEntity(RdfMediaTypes.`application/ld+json`, printer.pretty(json.sortKeys))
+      HttpEntity(RdfMediaTypes.`application/ld+json`, printer.print(json.sortKeys))
     }
 }
 

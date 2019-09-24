@@ -28,8 +28,8 @@ trait CirceEq {
       val leftSorted  = sortKeys(left)
       val rightSorted = sortKeys(json)
       MatchResult(
-        leftSorted == rightSorted || printer.pretty(leftSorted) == printer.pretty(rightSorted),
-        s"Both Json are not equal (ignoring array order)\n${printer.pretty(leftSorted)}\ndid not equal\n${printer.pretty(rightSorted)}",
+        leftSorted == rightSorted || printer.print(leftSorted) == printer.print(rightSorted),
+        s"Both Json are not equal (ignoring array order)\n${printer.print(leftSorted)}\ndid not equal\n${printer.print(rightSorted)}",
         ""
       )
     }
