@@ -97,7 +97,7 @@ object CoproductSerializer {
     override def toBinary(x: Any): Option[Array[Byte]] =
       headTypeable
         .cast(x)
-        .map(h => headEncoder(h).pretty(printer).getBytes(UTF_8))
+        .map(h => headEncoder(h).printWith(printer).getBytes(UTF_8))
         .orElse(tailSerializer.toBinary(x))
 
     override def fromBinary(bytes: Array[Byte], manifest: String): Option[H :+: T] =

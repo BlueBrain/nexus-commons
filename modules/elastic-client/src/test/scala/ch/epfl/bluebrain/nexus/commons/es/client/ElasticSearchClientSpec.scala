@@ -272,7 +272,6 @@ class ElasticSearchClientSpec
           list.sortWith((e1, e2) => getValue("key", e1._2) < getValue("key", e2._2))
 
         val json = cl.searchRaw(sortedMatchAll, Set(indexSanitized)).futureValue
-        println(json.asObject.value("took").value)
         val expectedResponse = jsonContentOf("/elastic_search_response.json").mapObject { obj =>
           obj
             .add("took", json.asObject.value("took").value)

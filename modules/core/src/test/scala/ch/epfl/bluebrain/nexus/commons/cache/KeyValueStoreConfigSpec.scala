@@ -8,7 +8,7 @@ import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{Matchers, OptionValues, WordSpecLike}
 import pureconfig.generic.auto._
-import pureconfig.loadConfigOrThrow
+import pureconfig.ConfigSource
 
 import scala.concurrent.duration._
 
@@ -28,7 +28,7 @@ class KeyValueStoreConfigSpec
 
     "read from config file" in {
       val readConfig = ConfigFactory.parseFile(new File(getClass.getResource("/example-store.conf").toURI))
-      loadConfigOrThrow[KeyValueStoreConfig](readConfig, "key-value-store") shouldEqual config
+      ConfigSource.fromConfig(readConfig).at("key-value-store").loadOrThrow[KeyValueStoreConfig]
     }
   }
 }

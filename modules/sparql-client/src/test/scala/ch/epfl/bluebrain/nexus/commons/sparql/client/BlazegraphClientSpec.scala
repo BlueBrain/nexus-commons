@@ -1,5 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
+import java.io.File
 import java.util.regex.Pattern.quote
 
 import akka.actor.ActorSystem
@@ -26,9 +27,11 @@ import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest._
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
 import io.circe.Printer
+import org.apache.commons.io.FileUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 //noinspection TypeAnnotation
 class BlazegraphClientSpec
@@ -56,6 +59,7 @@ class BlazegraphClientSpec
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    val _ = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
     server.start()
   }
 
@@ -152,9 +156,9 @@ class BlazegraphClientSpec
       val result = cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson
       result.asObject.value("head").value.removeKeys("link") shouldEqual expected.asObject.value("head").value
       val bindings =
-        result.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.pretty)
+        result.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.print)
       bindings should contain theSameElementsAs
-        expected.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.pretty)
+        expected.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.print)
     }
 
     "fail the query" in new BlazegraphClientFixture {

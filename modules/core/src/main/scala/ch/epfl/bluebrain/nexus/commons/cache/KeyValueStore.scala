@@ -7,7 +7,7 @@ import akka.cluster.ddata.Replicator._
 import akka.cluster.ddata.{DistributedData, LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.pattern.ask
 import akka.util.Timeout
-import cats.effect.{Async, IO, Timer}
+import cats.effect.{Async, ContextShift, IO, Timer}
 import cats.implicits._
 import cats.{Functor, Monad, MonadError}
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStore.Subscription
@@ -174,10 +174,11 @@ object KeyValueStore {
   )(implicit as: ActorSystem, retry: Retry[F, E])
       extends KeyValueStore[F, K, V] {
 
-    private implicit val node: Cluster           = Cluster(as)
-    private val uniqueAddr: SelfUniqueAddress    = SelfUniqueAddress(node.selfUniqueAddress)
-    private implicit val registerClock: Clock[V] = (currentTimestamp: Long, value: V) => clock(currentTimestamp, value)
-    private implicit val timeout: Timeout        = Timeout(askTimeout)
+    private implicit val node: Cluster                  = Cluster(as)
+    private val uniqueAddr: SelfUniqueAddress           = SelfUniqueAddress(node.selfUniqueAddress)
+    private implicit val registerClock: Clock[V]        = (currentTimestamp: Long, value: V) => clock(currentTimestamp, value)
+    private implicit val timeout: Timeout               = Timeout(askTimeout)
+    private implicit val contextShift: ContextShift[IO] = IO.contextShift(as.dispatcher)
 
     private val F                       = implicitly[Async[F]]
     private val replicator              = DistributedData(as).replicator

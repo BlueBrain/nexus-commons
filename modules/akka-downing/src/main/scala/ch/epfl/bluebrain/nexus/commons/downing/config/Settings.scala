@@ -16,8 +16,8 @@ import scala.concurrent.duration._
 @SuppressWarnings(Array("LooksLikeInterpolatedString", "OptionGet"))
 class Settings(config: Config) extends Extension {
 
-  val downingConfig: DowningConfig = loadConfigOrThrow[DowningConfig](config, "akka.custom-downing.keep-oldest")
-
+  val downingConfig: DowningConfig =
+    ConfigSource.fromConfig(config).at("akka.custom-downing.keep-oldest").loadOrThrow[DowningConfig]
 }
 
 object Settings extends ExtensionId[Settings] with ExtensionIdProvider {
