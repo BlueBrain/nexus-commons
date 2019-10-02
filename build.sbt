@@ -47,11 +47,11 @@ val pureconfigVersion     = "0.12.0"
 
 val rdfVersion         = "0.3.18"
 val sourcingVersion    = "0.16.6"
-val topQuadrantVersion = "1.2.0-nexus4"
+val topQuadrantVersion = "1.3.0"
 
-lazy val rdf              = "ch.epfl.bluebrain.nexus"              %% "rdf"           % rdfVersion
-lazy val sourcingCore     = "ch.epfl.bluebrain.nexus"              %% "sourcing-core" % sourcingVersion
-lazy val topQuadrantShacl = "ch.epfl.bluebrain.nexus.org.topbraid" % "shacl"          % topQuadrantVersion
+lazy val rdf              = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
+lazy val sourcingCore     = "ch.epfl.bluebrain.nexus" %% "sourcing-core" % sourcingVersion
+lazy val topQuadrantShacl = "org.topbraid"            % "shacl"          % topQuadrantVersion
 
 lazy val catsCore           = "org.typelevel"              %% "cats-core"            % catsVersion
 lazy val catsEffect         = "org.typelevel"              %% "cats-effect"          % catsEffectVersion
