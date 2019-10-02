@@ -82,7 +82,7 @@ object ElasticServer extends Randomness {
   private class MyNode(preparedSettings: Settings, classpathPlugins: util.Collection[Class[_ <: Plugin]])
       extends Node(
         InternalSettingsPreparer
-          .prepareEnvironment(preparedSettings, Map.empty[String, String].asJava, null, () => genString()),
+          .prepareEnvironment(preparedSettings, Map.empty[String, String].asJava, null, () => "elasticsearch"),
         classpathPlugins,
         true
       ) {}

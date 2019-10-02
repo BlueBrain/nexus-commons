@@ -5,11 +5,12 @@ import java.io.File
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
-import cats.instances.future._
+import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
+import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
 import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
@@ -19,9 +20,7 @@ import org.apache.commons.io.FileUtils
 import org.eclipse.jetty.server.Server
 import org.openjdk.jmh.annotations._
 import org.scalatest.EitherValues
-import org.scalatest.concurrent.ScalaFutures
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -41,12 +40,12 @@ import scala.util.Try
   * BulkInsertBenchmark.bulk100  thrpt   10  1,769 ± 0,496  ops/s
   */
 @State(Scope.Thread)
-class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness with EitherValues {
+class BulkInsertBenchmark extends IOValues with Resources with Randomness with EitherValues {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 2 milliseconds)
 
-  var dataList: Seq[Graph]             = Seq.empty
-  var client: BlazegraphClient[Future] = _
+  var dataList: Seq[Graph]         = Seq.empty
+  var client: BlazegraphClient[IO] = _
 
   def graphUri: Uri = s"http://nexus.example.com/graphs/${genString(length = 5)}"
 
@@ -59,8 +58,8 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
     system = ActorSystem(s"BulkInsertBenchmark")
     implicit val ec = system.dispatcher
     implicit val mt = ActorMaterializer()
-    implicit val uc = untyped[Future]
-    implicit val jc = withUnmarshaller[Future, SparqlResults]
+    implicit val uc = untyped[IO]
+    implicit val jc = withUnmarshaller[IO, SparqlResults]
     val _           = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
 
     server = {
@@ -71,7 +70,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
     server.start()
     client = BlazegraphClient(s"http://$localhost:$port/blazegraph", "namespace", None)
     val json = jsonContentOf("/resource.json")
-    client.createNamespace(properties()).futureValue
+    client.createNamespace(properties()).ioValue
 
     dataList = List.fill(100)(json.asGraph(blank).right.value)
   }
@@ -86,14 +85,14 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
   @Benchmark
   def bulk1(): Unit =
     dataList.foreach { data =>
-      client.bulk(replace(graphUri, data)).futureValue
+      client.bulk(replace(graphUri, data)).ioValue
     }
   @Benchmark
   def bulk10(): Unit = {
     val iter = dataList.iterator
     (0 until 10).foreach { _ =>
       val bulked = Seq.fill(10)(iter.next()).map(data => replace(graphUri, data))
-      client.bulk(bulked: _*).futureValue
+      client.bulk(bulked: _*).ioValue
     }
   }
 
@@ -102,7 +101,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
     val iter = dataList.iterator
     (0 until 5).foreach { _ =>
       val bulked = Seq.fill(20)(iter.next()).map(data => replace(graphUri, data))
-      client.bulk(bulked: _*).futureValue
+      client.bulk(bulked: _*).ioValue
     }
   }
 
@@ -111,13 +110,13 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness wi
     val iter = dataList.iterator
     (0 until 2).foreach { _ =>
       val bulked = Seq.fill(50)(iter.next()).map(data => replace(graphUri, data))
-      client.bulk(bulked: _*).futureValue
+      client.bulk(bulked: _*).ioValue
     }
   }
 
   @Benchmark
   def bulk100(): Unit = {
     val bulked: Seq[SparqlWriteQuery] = dataList.map(data => replace(graphUri, data))
-    val _                             = client.bulk(bulked: _*).futureValue
+    val _                             = client.bulk(bulked: _*).ioValue
   }
 }

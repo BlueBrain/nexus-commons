@@ -6,12 +6,14 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
+import akka.stream.Materializer
 import cats.MonadError
+import cats.effect.Effect
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUnexpectedError
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, withUnmarshaller}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -32,9 +34,16 @@ import scala.util.control.NonFatal
 class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient[F])(
     implicit
     cl: UntypedHttpClient[F],
+    serviceDescClient: HttpClient[F, ServiceDescription],
     ec: ExecutionContext,
     F: MonadError[F, Throwable]
 ) extends ElasticSearchBaseClient[F] {
+
+  /**
+    * Fetches the service description information (name and version)
+    */
+  def serviceDescription: F[ServiceDescription] =
+    serviceDescClient(Get(base))
 
   /**
     * Verifies if an index exists, recovering gracefully when the index does not exists.
@@ -305,12 +314,14 @@ object ElasticSearchClient {
     * @param base        the base uri of the ElasticSearch endpoint
     * @tparam F the monadic effect type
     */
-  final def apply[F[_]](base: Uri)(
+  final def apply[F[_]: Effect](base: Uri)(
       implicit
       cl: UntypedHttpClient[F],
       ec: ExecutionContext,
-      F: MonadError[F, Throwable]
-  ): ElasticSearchClient[F] =
+      mt: Materializer
+  ): ElasticSearchClient[F] = {
+    implicit val serviceDesc: HttpClient[F, ServiceDescription] = withUnmarshaller[F, ServiceDescription]
     new ElasticSearchClient(base, ElasticSearchQueryClient(base))
+  }
 
 }
