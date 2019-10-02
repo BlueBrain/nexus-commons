@@ -12,13 +12,13 @@ import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers._
 final case class ServiceDescription(name: String, version: String)
 
 object ServiceDescription {
-  private val regex = """buildVersion[^,<]*""".r
+  private val regex = """(buildVersion">)([^<]*)""".r
   private val name  = "blazegraph"
 
   implicit val serviceDescDecoder: FromEntityUnmarshaller[ServiceDescription] = stringUnmarshaller.map {
-    regex.findFirstIn(_) match {
+    regex.findFirstMatchIn(_).map(_.group(2)) match {
       case None          => throw new IllegalArgumentException(s"'version' not found using regex $regex")
-      case Some(version) => ServiceDescription(name, version.replace("""buildVersion">""", ""))
+      case Some(version) => ServiceDescription(name, version)
     }
   }
 
