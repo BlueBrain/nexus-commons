@@ -32,7 +32,7 @@ final class ShaclEngine private (dataset: Dataset, shapesGraphURI: URI, shapesGr
     extends ValidationEngine(dataset, shapesGraphURI, shapesGraph, null) {
   private var targetedNodes = 0
 
-  override def validateNodesAgainstConstraint(focusNodes: util.List[RDFNode], constraint: Constraint): Unit = {
+  override def validateNodesAgainstConstraint(focusNodes: util.Collection[RDFNode], constraint: Constraint): Unit = {
     super.validateNodesAgainstConstraint(focusNodes, constraint)
     targetedNodes += 1
   }
