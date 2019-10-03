@@ -7,30 +7,31 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
-import cats.instances.future._
+import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.{SparqlClientError, SparqlServerError}
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
-import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, Randomness}
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
+import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
+import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, Randomness}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
-import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
 import ch.epfl.bluebrain.nexus.rdf.instances._
+import ch.epfl.bluebrain.nexus.rdf.syntax._
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
+import io.circe.Printer
 import io.circe.parser._
 import io.circe.syntax._
-import org.scalatest.concurrent.{Eventually, ScalaFutures}
-import org.scalatest._
-import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
-import io.circe.Printer
 import org.apache.commons.io.FileUtils
+import org.scalatest._
+import org.scalatest.concurrent.Eventually
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 //noinspection TypeAnnotation
@@ -38,7 +39,7 @@ class BlazegraphClientSpec
     extends TestKit(ActorSystem("BlazegraphClientSpec"))
     with WordSpecLike
     with Matchers
-    with ScalaFutures
+    with IOValues
     with EitherValues
     with BeforeAndAfterAll
     with Randomness
@@ -72,57 +73,61 @@ class BlazegraphClientSpec
   private implicit val ec = system.dispatcher
   private implicit val mt = ActorMaterializer()
 
-  private implicit val uc = untyped[Future]
-  private implicit val jc = withUnmarshaller[Future, SparqlResults]
+  private implicit val uc = untyped[IO]
+  private implicit val jc = withUnmarshaller[IO, SparqlResults]
 
   "A BlazegraphClient" should {
-    def client(ns: String) = BlazegraphClient[Future](s"http://$localhost:$port/blazegraph", ns, None)
+    def client(ns: String) = BlazegraphClient[IO](s"http://$localhost:$port/blazegraph", ns, None)
+
+    "fetch the service description" in new BlazegraphClientFixture {
+      client(genString()).serviceDescription.ioValue shouldEqual ServiceDescription("blazegraph", "2.1.5")
+    }
 
     "verify if a namespace exists" in new BlazegraphClientFixture {
-      client(namespace).namespaceExists.futureValue shouldEqual false
+      client(namespace).namespaceExists.ioValue shouldEqual false
     }
 
     "create an index" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue shouldEqual true
-      cl.namespaceExists.futureValue shouldEqual true
-      cl.createNamespace(properties()).futureValue shouldEqual false
+      cl.createNamespace(properties()).ioValue shouldEqual true
+      cl.namespaceExists.ioValue shouldEqual true
+      cl.createNamespace(properties()).ioValue shouldEqual false
     }
 
     "create index with wrong payload" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      whenReady(cl.createNamespace(properties("/wrong.properties")).failed)(_ shouldBe a[SparqlServerError])
+      cl.createNamespace(properties("/wrong.properties")).failed[SparqlServerError]
     }
 
     "delete an index" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.deleteNamespace.futureValue shouldEqual false
-      cl.createNamespace(properties()).futureValue shouldEqual true
-      cl.deleteNamespace.futureValue shouldEqual true
+      cl.deleteNamespace.ioValue shouldEqual false
+      cl.createNamespace(properties()).ioValue shouldEqual true
+      cl.deleteNamespace.ioValue shouldEqual true
     }
 
     "create a new named graph" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
-      cl.replace(graph, load(id, label, value)).futureValue
+      cl.createNamespace(properties()).ioValue
+      cl.replace(graph, load(id, label, value)).ioValue
       cl.copy(namespace = namespace).triples(graph) should have size 2
       cl.triples() should have size 2
     }
 
     "drop a named graph" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
-      cl.replace(graph, load(id, label, value)).futureValue
-      cl.drop(graph).futureValue
+      cl.createNamespace(properties()).ioValue
+      cl.replace(graph, load(id, label, value)).ioValue
+      cl.drop(graph).ioValue
       cl.triples() shouldBe empty
     }
 
     "replace a named graph" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
-      cl.replace(graph, load(id, label, value)).futureValue
+      cl.createNamespace(properties()).ioValue
+      cl.replace(graph, load(id, label, value)).ioValue
       val triple: Triple = ((url"http://example/com/$id", owl.sameAs, """{"key": "value"}"""))
-      cl.replace(graph, load(id, label, value + "-updated") + triple).futureValue
+      cl.replace(graph, load(id, label, value + "-updated") + triple).ioValue
       cl.triples(graph).map(_._3) should contain theSameElementsAs Set(
         label,
         value + "-updated",
@@ -138,8 +143,8 @@ class BlazegraphClientSpec
       val graph2: Uri    = s"http://$localhost:8080/graphs/${genString()}"
 
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
-      cl.bulk(replace(graph, load(id, label, value)), replace(graph2, load(id2, label2, value2))).futureValue
+      cl.createNamespace(properties()).ioValue
+      cl.bulk(replace(graph, load(id, label, value)), replace(graph2, load(id2, label2, value2))).ioValue
       cl.triples(graph).map(_._3) should contain theSameElementsAs Set(label, value)
       cl.triples(graph2).map(_._3) should contain theSameElementsAs Set(label2, value2)
       cl.triples().map(_._3) should contain theSameElementsAs Set(label, value) ++ Set(label2, value2)
@@ -147,13 +152,13 @@ class BlazegraphClientSpec
 
     "return the JSON response from query" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
-      cl.replace(graph, load(id, label, value)).futureValue
+      cl.createNamespace(properties()).ioValue
+      cl.replace(graph, load(id, label, value)).ioValue
       val expected = jsonContentOf(
         "/sparql-json.json",
         Map(quote("{id}") -> id, quote("{label}") -> label, quote("{value}") -> value)
       )
-      val result = cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue.asJson
+      val result = cl.queryRaw(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").ioValue.asJson
       result.asObject.value("head").value.removeKeys("link") shouldEqual expected.asObject.value("head").value
       val bindings =
         result.asObject.value("results").value.asObject.value("bindings").value.asArray.value.map(printer.print)
@@ -163,14 +168,14 @@ class BlazegraphClientSpec
 
     "fail the query" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
-      cl.replace(graph, load(id, label, value)).futureValue
-      whenReady(cl.queryRaw(s"SELECT somethingwrong").failed)(_ shouldBe a[SparqlClientError])
+      cl.createNamespace(properties()).ioValue
+      cl.replace(graph, load(id, label, value)).ioValue
+      cl.queryRaw(s"SELECT somethingwrong").failed[SparqlClientError]
     }
 
     "patch a named graph removing matching predicates" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
+      cl.createNamespace(properties()).ioValue
       val json = parse(
         s"""
            |{
@@ -187,14 +192,14 @@ class BlazegraphClientSpec
            |  }
            |}""".stripMargin
       ).right.value
-      cl.replace(graph, load(id, label, value)).futureValue
+      cl.replace(graph, load(id, label, value)).ioValue
       val strategy = PatchStrategy.removePredicates(
         Set(
           "http://schema.org/value",
           "http://www.w3.org/2000/01/rdf-schema#label"
         )
       )
-      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).futureValue
+      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).ioValue
       cl.triples() should have size 4
       val results = cl.triples(graph)
       results should have size 4
@@ -209,7 +214,7 @@ class BlazegraphClientSpec
 
     "patch a named graph retaining matching predicates" in new BlazegraphClientFixture {
       val cl = client(namespace)
-      cl.createNamespace(properties()).futureValue
+      cl.createNamespace(properties()).ioValue
       val json = parse(
         s"""
            |{
@@ -227,16 +232,16 @@ class BlazegraphClientSpec
            |}
            """.stripMargin
       ).right.value
-      cl.replace(graph, load(id, label, value)).futureValue
+      cl.replace(graph, load(id, label, value)).ioValue
       val strategy = PatchStrategy.removeButPredicates(Set("http://schema.org/value"))
-      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).futureValue
+      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).ioValue
       val results = cl.triples(graph)
       results should have size 5
       results.map(_._3).toSet should contain allOf (label + "-updated", value, "name", "title")
     }
   }
 
-  implicit class BlazegraphClientOps(cl: BlazegraphClient[Future])(implicit ec: ExecutionContext) {
+  implicit class BlazegraphClientOps(cl: BlazegraphClient[IO])(implicit ec: ExecutionContext) {
     private def triplesFor(query: String) =
       cl.queryRaw(query).map {
         case SparqlResults(_, Bindings(mapList)) =>
@@ -246,10 +251,10 @@ class BlazegraphClientSpec
       }
 
     def triples(graph: Uri): List[(String, String, String)] =
-      triplesFor(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").futureValue
+      triplesFor(s"SELECT * WHERE { GRAPH <$graph> { ?s ?p ?o } }").ioValue
 
     def triples(): List[(String, String, String)] =
-      triplesFor("SELECT * { ?s ?p ?o }").futureValue
+      triplesFor("SELECT * { ?s ?p ?o }").ioValue
   }
 
   private def load(id: String, label: String, value: String): Graph =

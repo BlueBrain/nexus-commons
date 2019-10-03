@@ -3,10 +3,12 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
+import akka.stream.Materializer
 import cats.MonadError
+import cats.effect.Effect
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, withUnmarshaller}
 
 import scala.concurrent.ExecutionContext
 
@@ -22,8 +24,15 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     implicit F: MonadError[F, Throwable],
     cl: UntypedHttpClient[F],
     rsJson: HttpClient[F, SparqlResults],
+    serviceDescClient: HttpClient[F, ServiceDescription],
     ec: ExecutionContext
 ) extends HttpSparqlClient[F](s"$base/namespace/$namespace/sparql", credentials) {
+
+  /**
+    * Fetches the service description information (name and version)
+    */
+  def serviceDescription: F[ServiceDescription] =
+    serviceDescClient(Get(s"$base/status"))
 
   /**
     * @param base        the base uri of the blazegraph endpoint
@@ -91,11 +100,13 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
 }
 
 object BlazegraphClient {
-  def apply[F[_]](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
-      implicit F: MonadError[F, Throwable],
+  def apply[F[_]: Effect](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
+      implicit mt: Materializer,
       cl: UntypedHttpClient[F],
       rsJson: HttpClient[F, SparqlResults],
       ec: ExecutionContext
-  ): BlazegraphClient[F] =
+  ): BlazegraphClient[F] = {
+    implicit val serviceDescClient: HttpClient[F, ServiceDescription] = withUnmarshaller[F, ServiceDescription]
     new BlazegraphClient[F](base, namespace, credentials)
+  }
 }

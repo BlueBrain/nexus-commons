@@ -2,16 +2,15 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import cats.instances.future._
+import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
+import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
 import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
 import io.circe.Json
 import org.openjdk.jmh.annotations._
-import org.scalatest.concurrent.ScalaFutures
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 //noinspection TypeAnnotation
@@ -30,13 +29,13 @@ import scala.concurrent.duration._
   * BulkInsertBenchmark.bulk200  thrpt   10  3,662 ± 0,276  ops/s
   */
 @State(Scope.Thread)
-class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
+class BulkInsertBenchmark extends IOValues with Resources with Randomness {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 2 milliseconds)
 
-  var dataList: Seq[Json]                 = Seq.empty
-  var client: ElasticSearchClient[Future] = _
-  val index: String                       = genString()
+  var dataList: Seq[Json]             = Seq.empty
+  var client: ElasticSearchClient[IO] = _
+  val index: String                   = genString()
 
   private implicit var system: ActorSystem = _
   private var server: ElasticServer        = _
@@ -46,12 +45,12 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
     system = ActorSystem(s"BulkInsertBenchmark")
     implicit val ec = system.dispatcher
     implicit val mt = ActorMaterializer()
-    implicit val uc = untyped[Future]
+    implicit val uc = untyped[IO]
 
     server = new ElasticServer() {}
     server.startElastic()
 
-    client = ElasticSearchClient[Future](server.esUri)
+    client = ElasticSearchClient[IO](server.esUri)
     val indexPayload = jsonContentOf("/index_payload.json")
     client.createIndex(index, indexPayload)
     dataList = List.fill(200)(jsonContentOf("/resource.json"))
@@ -68,7 +67,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
   @Benchmark
   def bulk1(): Unit =
     dataList.foreach { data =>
-      client.create(index, genString(), data).futureValue
+      client.create(index, genString(), data).ioValue
     }
 
   @Benchmark
@@ -76,7 +75,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
     val iter = dataList.iterator
     (0 until 20).foreach { _ =>
       val bulk = List.fill(10)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
-      client.bulk(bulk).futureValue
+      client.bulk(bulk).ioValue
     }
   }
 
@@ -85,7 +84,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
     val iter = dataList.iterator
     (0 until 10).foreach { _ =>
       val bulk = List.fill(20)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
-      client.bulk(bulk).futureValue
+      client.bulk(bulk).ioValue
     }
   }
 
@@ -94,7 +93,7 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
     val iter = dataList.iterator
     (0 until 4).foreach { _ =>
       val bulk = List.fill(50)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
-      client.bulk(bulk).futureValue
+      client.bulk(bulk).ioValue
     }
   }
 
@@ -103,13 +102,13 @@ class BulkInsertBenchmark extends ScalaFutures with Resources with Randomness {
     val iter = dataList.iterator
     (0 until 2).foreach { _ =>
       val bulk = List.fill(100)(iter.next()).map(data => BulkOp.Index(index, genString(), data))
-      client.bulk(bulk).futureValue
+      client.bulk(bulk).ioValue
     }
   }
 
   @Benchmark
   def bulk200(): Unit = {
     val bulk = dataList.map(data => BulkOp.Index(index, genString(), data))
-    client.bulk(bulk.toList).futureValue
+    client.bulk(bulk.toList).ioValue
   }
 }
