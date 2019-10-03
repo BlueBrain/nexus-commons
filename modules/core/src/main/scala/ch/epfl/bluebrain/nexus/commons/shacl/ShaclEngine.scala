@@ -2,18 +2,15 @@ package ch.epfl.bluebrain.nexus.commons.shacl
 
 import java.net.URI
 import java.util
-import java.util.UUID
 
 import ch.epfl.bluebrain.nexus.commons.shacl.Vocabulary._
-import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
 import org.apache.jena.query.Dataset
 import org.apache.jena.rdf.model._
-import org.apache.jena.riot.system.StreamRDFLib
-import org.apache.jena.riot.{Lang, RDFParser}
 import org.topbraid.jenax.util.{ARQFactory, JenaDatatypes}
 import org.topbraid.shacl.arq.SHACLFunctions
 import org.topbraid.shacl.engine.{Constraint, ShapesGraph}
+import org.topbraid.shacl.util.{SHACLSystemModel, SHACLUtil}
 import org.topbraid.shacl.validation.{ValidationEngine, ValidationEngineConfiguration, ValidationUtil}
 
 import scala.util.Try
@@ -48,14 +45,7 @@ final class ShaclEngine private (dataset: Dataset, shapesGraphURI: URI, shapesGr
 
 object ShaclEngine {
 
-  private val shaclModel = {
-    val m      = ModelFactory.createDefaultModel
-    val stream = StreamRDFLib.graph(m.getGraph)
-    RDFParser.create.fromString(contentOf("/shacl-shacl.ttl")).base("").lang(Lang.TTL).parse(stream)
-    val finalModel = ValidationUtil.ensureToshTriplesExist(m)
-    SHACLFunctions.registerFunctions(finalModel)
-    finalModel
-  }
+  private val shaclModel = SHACLSystemModel.getSHACLModel
 
   /**
     * Validates a given data Model against the SHACL shapes spec.
@@ -97,7 +87,7 @@ object ShaclEngine {
   ): Option[ValidationReport] = {
     // Create Dataset that contains both the data model and the shapes model
     // (here, using a temporary URI for the shapes graph)
-    val shapesGraphURI = URI.create("urn:x-shacl-shapes-graph:" + UUID.randomUUID.toString)
+    val shapesGraphURI = SHACLUtil.createRandomShapesGraphURI()
     val dataset        = ARQFactory.get.getDataset(dataModel)
     dataset.addNamedModel(shapesGraphURI.toString, finalShapesModel)
     val shapesGraph = new ShapesGraph(finalShapesModel)
