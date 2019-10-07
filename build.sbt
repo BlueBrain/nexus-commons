@@ -24,7 +24,6 @@ scalafmt: {
 }
  */
 
-val kamonVersion          = "2.0.0"
 val jenaVersion           = "3.12.0"
 val blazegraphVersion     = "2.1.5"
 val jacksonVersion        = "2.9.9"
@@ -215,20 +214,19 @@ lazy val kamon = project
     moduleName      := "commons-kamon",
     coverageEnabled := false,
     libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.0",
-      "io.kamon"      % "kanela-agent"                  % "1.0.0",
-      "io.kamon"      %% "kamon-status-page"            % kamonVersion,
-      "io.kamon"      %% "kamon-instrumentation-common" % kamonVersion,
-      "io.kamon"      %% "kamon-executors"              % kamonVersion,
-      "io.kamon"      %% "kamon-scala-future"           % kamonVersion,
-      "io.kamon"      %% "kamon-akka"                   % kamonVersion,
-      "io.kamon"      %% "kamon-akka-remote"            % "2.0.0-RC2",
-      "io.kamon"      %% "kamon-logback"                % kamonVersion,
-      "io.kamon"      %% "kamon-system-metrics"         % kamonVersion,
-      "io.kamon"      %% "kamon-core"                   % kamonVersion,
-      "io.kamon"      %% "kamon-akka-http"              % kamonVersion,
-      "io.kamon"      %% "kamon-prometheus"             % kamonVersion,
-      "io.kamon"      %% "kamon-jaeger"                 % kamonVersion
+      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.1",
+      "io.kamon"      % "kanela-agent"                  % "1.0.1",
+      "io.kamon"      %% "kamon-status-page"            % "2.0.1",
+      "io.kamon"      %% "kamon-instrumentation-common" % "2.0.0",
+      "io.kamon"      %% "kamon-executors"              % "2.0.1",
+      "io.kamon"      %% "kamon-scala-future"           % "2.0.1",
+      "io.kamon"      %% "kamon-akka"                   % "2.0.0",
+      "io.kamon"      %% "kamon-logback"                % "2.0.1",
+      "io.kamon"      %% "kamon-system-metrics"         % "2.0.0",
+      "io.kamon"      %% "kamon-core"                   % "2.0.1",
+      "io.kamon"      %% "kamon-akka-http"              % "2.0.2",
+      "io.kamon"      %% "kamon-prometheus"             % "2.0.0",
+      "io.kamon"      %% "kamon-jaeger"                 % "2.0.0"
     )
   )
 
@@ -258,4 +256,4 @@ inThisBuild(
   )
 )
 
-addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")
+addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;multi-jvm:test;coverageReport;coverageAggregate")
