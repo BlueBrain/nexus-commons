@@ -38,7 +38,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlServerError(status: StatusCode, body: String)
-      extends SparqlServerOrUnexpectedFailure(s"Server error with status code '$status'")
+      extends SparqlServerOrUnexpectedFailure(s"Server error with status code '$status' and body '$body'")
 
   /**
     * A client failure when attempting to communicate with a sparql endpoint.
@@ -47,7 +47,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlClientError(status: StatusCode, body: String)
-      extends SparqlFailure(s"Client error with status code '$status'")
+      extends SparqlFailure(s"Client error with status code '$status' and body '$body'")
 
   /**
     * An unexpected failure when attempting to communicate with a sparql endpoint.
@@ -56,7 +56,7 @@ object SparqlFailure {
     * @param body   the response body returned by the sparql endpoint
     */
   final case class SparqlUnexpectedError(status: StatusCode, body: String)
-      extends SparqlServerOrUnexpectedFailure(s"Unexpected status code '$status'")
+      extends SparqlServerOrUnexpectedFailure(s"Unexpected status code '$status' and body '$body'")
 
 }
 // $COVERAGE-ON$
