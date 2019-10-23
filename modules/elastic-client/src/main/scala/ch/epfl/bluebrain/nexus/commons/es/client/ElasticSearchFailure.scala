@@ -50,7 +50,7 @@ object ElasticSearchFailure {
     * @param body   the response body returned by the ElasticSearch endpoint
     */
   final case class ElasticServerError(status: StatusCode, body: String)
-      extends ElasticSearchServerOrUnexpectedFailure(s"Server error with status code '$status'")
+      extends ElasticSearchServerOrUnexpectedFailure(s"Server error with status code '$status' and body '$body'")
 
   /**
     * An unexpected client failure when attempting to communicate with a ElasticSearch endpoint.
@@ -59,7 +59,7 @@ object ElasticSearchFailure {
     * @param body   the response body returned by the ElasticSearch endpoint
     */
   final case class ElasticSearchClientError(status: StatusCode, body: String)
-      extends ElasticSearchFailure(s"Client error with status code '$status'")
+      extends ElasticSearchFailure(s"Client error with status code '$status' and body '$body'")
 
   /**
     * An unexpected failure when attempting to communicate with a ElasticSearch endpoint.
@@ -68,5 +68,5 @@ object ElasticSearchFailure {
     * @param body   the response body returned by the ElasticSearch endpoint
     */
   final case class ElasticUnexpectedError(status: StatusCode, body: String)
-      extends ElasticSearchServerOrUnexpectedFailure(s"Unexpected error with status code '$status'")
+      extends ElasticSearchServerOrUnexpectedFailure(s"Unexpected error with status code '$status' and body '$body'")
 }
