@@ -2,7 +2,12 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import akka.http.scaladsl.model.Uri
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults._
+import ch.epfl.bluebrain.nexus.rdf.{Graph, Iri, Node}
+import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
+import ch.epfl.bluebrain.nexus.rdf.Node.{BNode, IriNode, IriOrBNode, Literal}
+import ch.epfl.bluebrain.nexus.rdf.Node.Literal.LanguageTag
 import io.circe.generic.semiauto._
+import cats.implicits._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 
@@ -16,11 +21,32 @@ import scala.util.Try
   */
 final case class SparqlResults(head: Head, results: Bindings) {
 
+  private val s   = "subject"
+  private val p   = "predicate"
+  private val o   = "object"
+  private val spo = Set(s, p, o)
+
   /**
     * Creates a new sparql result which is a merge of the provided results and the current results
     * @param that the provided head
     */
   def ++(that: SparqlResults): SparqlResults = SparqlResults(head ++ that.head, results ++ that.results)
+
+  /**
+    * Attempts to convert the Query Results JSON Format into a Graph.
+    * This is useful for results of CONSTRUCT queries
+    */
+  def asGraph: Option[Graph] =
+    if (spo.subsetOf(head.vars.toSet)) {
+      val totalTriples = results.bindings.foldLeft(Set.empty[Triple]) {
+        case (triples, map) if spo.subsetOf(map.keySet) =>
+          triples ++ (map(s).asIriOrBNode, map(p).asIri, map(o).asNode).mapN((_, _, _))
+        case (triples, _) =>
+          triples
+      }
+      Some(Graph(totalTriples))
+    } else
+      None
 }
 
 object SparqlResults {
@@ -82,7 +108,55 @@ object SparqlResults {
       `xml:lang`: Option[String] = None,
       datatype: Option[String] = None
   ) {
+
+    /**
+      * @return true when the current binding is a literal, false otherwise
+      */
     def isLiteral: Boolean = `type` == "literal"
+
+    /**
+      * @return true when the current binding is an iri, false otherwise
+      */
+    def isIri: Boolean = `type` == "uri"
+
+    /**
+      * @return true when the current binding is a blank node, false otherwise
+      */
+    def isBNode: Boolean = `type` == "bnode"
+
+    /**
+      * Attempts to convert the current binding to a literal
+      */
+    def asLiteral: Option[Literal] =
+      if (isLiteral)
+        (datatype.flatMap(Iri.absolute(_).toOption), `xml:lang`.flatMap(LanguageTag(_).toOption)) match {
+          case (Some(dt), _) => Some(Node.literal(value, dt))
+          case (_, Some(lt)) => Some(Node.literal(value, lt))
+          case _             => Some(Node.literal(value))
+        } else
+        None
+
+    /**
+      * Attempts to convert the current binding to a blank node
+      */
+    def asBNode: Option[BNode] =
+      if (isBNode) Node.blank(value).toOption else None
+
+    /**
+      * Attempts to convert the current binding to an iri
+      */
+    def asIri: Option[IriNode] =
+      if (isIri) Iri.absolute(value).map(IriNode(_)).toOption else None
+
+    /**
+      * Attempts to convert the current binding to an iri or a blank node
+      */
+    def asIriOrBNode: Option[IriOrBNode] = asIri orElse asBNode
+
+    /**
+      * Attempts to convert the current binding to an iri, a blank node or a literal
+      */
+    def asNode: Option[Node] = asLiteral orElse asIriOrBNode
   }
 
   private implicit val uriEncoder: Encoder[Uri] = Encoder.encodeString.contramap(_.toString)
