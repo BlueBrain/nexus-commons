@@ -244,7 +244,7 @@ class BlazegraphClientSpec
   implicit class BlazegraphClientOps(cl: BlazegraphClient[IO])(implicit ec: ExecutionContext) {
     private def triplesFor(query: String) =
       cl.queryRaw(query).map {
-        case SparqlResults(_, Bindings(mapList)) =>
+        case SparqlResults(_, Bindings(mapList), _) =>
           mapList.map { triples =>
             (triples("s").value, triples("p").value, triples("o").value)
           }

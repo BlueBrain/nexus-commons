@@ -1,13 +1,13 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import akka.http.scaladsl.model.Uri
-import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults._
-import ch.epfl.bluebrain.nexus.rdf.{Graph, Iri, Node}
-import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
-import ch.epfl.bluebrain.nexus.rdf.Node.{BNode, IriNode, IriOrBNode, Literal}
-import ch.epfl.bluebrain.nexus.rdf.Node.Literal.LanguageTag
-import io.circe.generic.semiauto._
 import cats.implicits._
+import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults._
+import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
+import ch.epfl.bluebrain.nexus.rdf.Node.Literal.LanguageTag
+import ch.epfl.bluebrain.nexus.rdf.Node.{BNode, IriNode, IriOrBNode, Literal}
+import ch.epfl.bluebrain.nexus.rdf.{Graph, Iri, Node}
+import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
 
@@ -17,9 +17,10 @@ import scala.util.Try
   * Sparql query results representation.
   *
   * @param head    the variables mentioned in the results and may contain a "link" member
+  * @param boolean an optional evaluator for the ASK query
   * @param results a collection of bindings
   */
-final case class SparqlResults(head: Head, results: Bindings) {
+final case class SparqlResults(head: Head, results: Bindings, boolean: Option[Boolean] = None) {
 
   private val s   = "subject"
   private val p   = "predicate"
@@ -65,7 +66,7 @@ object SparqlResults {
     * @param link an array of URIs, as strings, to refer for further information.
     *              The format and content of these link references is not defined by this document.
     */
-  final case class Head(vars: List[String], link: Option[List[Uri]] = None) {
+  final case class Head(vars: List[String] = List.empty, link: Option[List[Uri]] = None) {
 
     /**
       * Creates a new head which is a merge of the provided head and the current head
@@ -163,5 +164,15 @@ object SparqlResults {
   private implicit val uriDecoder: Decoder[Uri] = Decoder.decodeString.emapTry(uri => Try(Uri(uri)))
 
   final implicit val sparqlResultsEncoder: Encoder[SparqlResults] = deriveEncoder[SparqlResults]
-  final implicit val sparqlResultsDecoder: Decoder[SparqlResults] = deriveDecoder[SparqlResults]
+
+  private val askResultDecoder: Decoder[SparqlResults] =
+    Decoder.instance(_.get[Boolean]("boolean").map { boolean =>
+      SparqlResults(Head(), Bindings(), Some(boolean))
+    })
+
+  final implicit val sparqlResultsDecoder: Decoder[SparqlResults] = {
+    val default = deriveDecoder[SparqlResults]
+    Decoder.instance(hc => default(hc) orElse askResultDecoder(hc))
+
+  }
 }
