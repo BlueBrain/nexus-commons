@@ -20,6 +20,8 @@ class SparqlResultsSpec
   "A Sparql Json result" should {
     val json          = jsonContentOf("/results/query-result.json")
     val constructJson = jsonContentOf("/results/construct-result.json")
+    val askJson       = jsonContentOf("/results/ask-result.json")
+    val askJson2      = jsonContentOf("/results/ask-result-2.json")
 
     val blurb = Binding(
       "literal",
@@ -50,14 +52,18 @@ class SparqlResultsSpec
       Some(List("http://www.w3.org/TR/rdf-sparql-XMLres/example.rq"))
     )
 
-    val qr = SparqlResults(head, Bindings(map1, map2))
+    val qr    = SparqlResults(head, Bindings(map1, map2))
+    val qrAsk = SparqlResults(Head(), Bindings(), Some(true))
 
     "be encoded" in {
       qr.asJson should equalIgnoreArrayOrder(json)
+      qrAsk.asJson should equalIgnoreArrayOrder(askJson2)
     }
 
     "be decoded" in {
       json.as[SparqlResults].right.value shouldEqual qr
+      askJson.as[SparqlResults].right.value shouldEqual qrAsk
+      askJson2.as[SparqlResults].right.value shouldEqual qrAsk
     }
 
     "add head" in {
