@@ -102,7 +102,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     */
   def create(index: String, id: String, payload: Json): F[Unit] =
     execute(
-      Put(base / sanitize(index, allowWildCard = false) / urlEncode(id), payload),
+      Put(base / sanitize(index, allowWildCard = false) / createPath / urlEncode(id), payload),
       Set(OK, Created),
       "create document"
     )
@@ -300,6 +300,7 @@ object ElasticSearchClient {
   }
 
   private[client] val updatePath              = "_update"
+  private[client] val createPath              = "_create"
   private[client] val updateByQueryPath       = "_update_by_query"
   private[client] val deleteByQueryPath       = "_delete_by_query"
   private[client] val includeFieldsQueryParam = "_source_includes"
