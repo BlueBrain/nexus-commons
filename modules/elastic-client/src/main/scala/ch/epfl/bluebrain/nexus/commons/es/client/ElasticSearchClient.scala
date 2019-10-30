@@ -172,11 +172,17 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
   /**
     * Deletes the document with the provided ''id''
     *
-    * @param index  the index to use
-    * @param id     the id to delete
+    * @param index the index to use
+    * @param id    the id to delete
+    * @return ''true'' when the document has been deleted and ''false'' when the document does not exist. The response is wrapped in an effect type ''F''
     */
-  def delete(index: String, id: String): F[Unit] =
-    execute(Delete(base / sanitize(index, allowWildCard = false) / docType / urlEncode(id)), Set(OK), "delete document")
+  def delete(index: String, id: String): F[Boolean] =
+    execute(
+      Delete(base / sanitize(index, allowWildCard = false) / docType / urlEncode(id)),
+      Set(OK),
+      Set(NotFound),
+      "delete document"
+    )
 
   /**
     * Deletes every document with that matches the provided ''query''
@@ -253,7 +259,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     queryClient.searchRaw(query, indices, qp)
 
   private def urlEncode(value: String): String =
-    Try(URLEncoder.encode(value, "UTF-8")).getOrElse(value)
+    Try(URLEncoder.encode(value, "UTF-8").replace("+", "%20")).getOrElse(value)
 }
 
 object ElasticSearchClient {
