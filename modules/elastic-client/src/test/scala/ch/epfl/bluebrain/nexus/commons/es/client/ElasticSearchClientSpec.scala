@@ -61,7 +61,7 @@ class ElasticSearchClientSpec
     }
 
     "fetching service descrption" in {
-      cl.serviceDescription.ioValue shouldEqual ServiceDescription("elasticsearch", "7.3.2")
+      cl.serviceDescription.ioValue shouldEqual ServiceDescription("elasticsearch", "7.4.1")
     }
 
     "performing index operations" should {
@@ -391,9 +391,13 @@ class ElasticSearchClientSpec
       "delete documents" in {
         forAll(mapModified.toList.take(3)) {
           case (id, _) =>
-            cl.delete(index, id).ioValue shouldEqual (())
+            cl.delete(index, id).ioValue shouldEqual true
             cl.get[Json](index, id).ioValue shouldEqual None
         }
+      }
+
+      "delete not existing document" in {
+        cl.delete(index, genString()).ioValue shouldEqual false
       }
 
       "delete documents from query" in {
