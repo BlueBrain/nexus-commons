@@ -259,7 +259,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
     queryClient.searchRaw(query, indices, qp)
 
   private def urlEncode(value: String): String =
-    Try(URLEncoder.encode(value, "UTF-8")).getOrElse(value)
+    Try(URLEncoder.encode(value, "UTF-8").replace("+", "%20")).getOrElse(value)
 }
 
 object ElasticSearchClient {
