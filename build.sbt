@@ -44,7 +44,7 @@ val log4jVersion          = "2.12.1"
 val commonsIOVersion      = "1.3.2"
 val pureconfigVersion     = "0.12.0"
 
-val rdfVersion         = "0.3.19"
+val rdfVersion         = "0.3.20"
 val sourcingVersion    = "0.16.6"
 val topQuadrantVersion = "1.3.0"
 

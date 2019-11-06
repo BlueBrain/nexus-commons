@@ -5,7 +5,7 @@ import java.util.regex.Pattern
 import akka.http.scaladsl.model.StatusCodes
 import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.{ElasticSearchClientError, ElasticUnexpectedError}
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticSearchClientError
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
@@ -476,7 +476,7 @@ class ElasticSearchClientSpec
         }
       }
 
-      "fail bulking" in {
+      "fail on bulk operation" in {
         val toUpdate = genString() -> genJson("key", "key1")
         val toDelete = genString() -> genJson("key", "key3")
         val list     = List(toUpdate, toDelete)
@@ -490,7 +490,7 @@ class ElasticSearchClientSpec
               BulkOp.Update(genString(), toUpdate._1, Json.obj("doc" -> updated))
             )
           )
-          .failed[ElasticUnexpectedError]
+          .failed[ElasticSearchClientError]
       }
     }
   }

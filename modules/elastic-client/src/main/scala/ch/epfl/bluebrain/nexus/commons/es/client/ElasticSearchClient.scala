@@ -12,7 +12,7 @@ import cats.effect.Effect
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUnexpectedError
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.{ElasticSearchClientError, ElasticUnexpectedError}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, withUnmarshaller}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
@@ -125,12 +125,16 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
         cl.toString(resp.entity).flatMap { body =>
           parse(body).flatMap(_.hcursor.get[Boolean]("errors")) match {
             case Right(false) => F.unit
-            case _            => F.raiseError(ElasticUnexpectedError(BadRequest, body))
+            case _ =>
+              log.error(
+                s"Errors on ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nResponse: '${resp.status}', '$body'"
+              )
+              F.raiseError(ElasticSearchClientError(BadRequest, body))
           }
         } else
         ElasticSearchFailure.fromResponse(resp).flatMap { f =>
           log.error(
-            s"Unexpected ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nBody: '${f.body}'\nStatus: '${resp.status}'\nResponse: '${f.body}'"
+            s"Unexpected ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nResponse: '${resp.status}', '${f.body}'"
           )
           F.raiseError(f)
         }
