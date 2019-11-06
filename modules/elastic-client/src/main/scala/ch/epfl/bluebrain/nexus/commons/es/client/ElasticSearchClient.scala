@@ -125,7 +125,7 @@ class ElasticSearchClient[F[_]](base: Uri, queryClient: ElasticSearchQueryClient
         cl.toString(resp.entity).flatMap { body =>
           parse(body).flatMap(_.hcursor.get[Boolean]("errors")) match {
             case Right(false) => F.unit
-            case _            =>
+            case _ =>
               log.error(
                 s"Errors on ElasticSearch response for intent 'bulk update':\nRequest: '${req.method} ${req.uri}' \nResponse: '${resp.status}', '$body'"
               )
