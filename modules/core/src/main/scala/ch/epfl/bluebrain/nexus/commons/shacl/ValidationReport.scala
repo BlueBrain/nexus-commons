@@ -36,10 +36,10 @@ final case class ValidationReport(conforms: Boolean, targetedNodes: Int, json: J
 object ValidationReport {
 
   private trait ErrorMessage[A] extends (A => String)
-  implicit val errorMessageMarshalling: ErrorMessage[MarshallingError] = _.message
-  implicit val errorMessageString: ErrorMessage[String]                = identity(_)
-  implicit val errorMessageNodeEncoder: ErrorMessage[NodeEncoderError] = _.message
-  implicit val errorMessageThrowable: ErrorMessage[Throwable]          = _.getMessage
+  private implicit val errorMessageMarshalling: ErrorMessage[MarshallingError] = _.message
+  private implicit val errorMessageString: ErrorMessage[String]                = identity(_)
+  private implicit val errorMessageNodeEncoder: ErrorMessage[NodeEncoderError] = _.message
+  private implicit val errorMessageThrowable: ErrorMessage[Throwable]          = _.getMessage
 
   private implicit class ErrorMessageSyntax[A, B](private val value: Either[A, B]) extends AnyVal {
     def logged(implicit toMessage: ErrorMessage[A]): Either[String, B] = value.left.map(toMessage(_))
