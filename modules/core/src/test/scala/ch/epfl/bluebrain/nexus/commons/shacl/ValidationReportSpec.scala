@@ -27,11 +27,11 @@ class ValidationReportSpec
     val conforms = jsonContentOf("/shacl/conforms.json")
     val failed   = jsonContentOf("/shacl/failed.json")
     "be constructed correctly when conforms" in {
-      ValidationReport(resource(conforms deepMerge ctx)).value shouldEqual ValidationReport(true, 1, conforms)
+      ValidationReport(resource(conforms deepMerge ctx)).right.value shouldEqual ValidationReport(true, 1, conforms)
     }
 
     "be constructed correctly when fails" in {
-      val report = ValidationReport(resource(failed deepMerge ctx)).value
+      val report = ValidationReport(resource(failed deepMerge ctx)).right.value
       report.conforms shouldEqual false
       report.targetedNodes shouldEqual 1
       report.isValid() shouldEqual false
@@ -43,7 +43,7 @@ class ValidationReportSpec
     }
 
     "be encoded as json" in {
-      val report = ValidationReport(resource(failed deepMerge ctx)).value
+      val report = ValidationReport(resource(failed deepMerge ctx)).right.value
       report.asJson shouldEqual report.json
     }
   }

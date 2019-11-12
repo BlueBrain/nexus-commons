@@ -5,6 +5,7 @@ import java.util
 
 import ch.epfl.bluebrain.nexus.commons.shacl.Vocabulary._
 import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
+import journal.Logger
 import org.apache.jena.query.Dataset
 import org.apache.jena.rdf.model._
 import org.topbraid.jenax.util.{ARQFactory, JenaDatatypes}
@@ -13,7 +14,7 @@ import org.topbraid.shacl.engine.{Constraint, ShapesGraph}
 import org.topbraid.shacl.util.{SHACLSystemModel, SHACLUtil}
 import org.topbraid.shacl.validation.{ValidationEngine, ValidationEngineConfiguration, ValidationUtil}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 /**
   * Extend the [[ValidationEngine]] form TopQuadrant in order to add triples to the report
@@ -47,6 +48,8 @@ object ShaclEngine {
 
   private val shaclModel = SHACLSystemModel.getSHACLModel
 
+  private val log = Logger[this.type]
+
   /**
     * Validates a given data Model against the SHACL shapes spec.
     *
@@ -54,7 +57,7 @@ object ShaclEngine {
     * @param reportDetails true to also include the sh:detail (more verbose) and false to omit them
     * @return an option of [[ValidationReport]] with the validation results
     */
-  def apply(shapesModel: Model, reportDetails: Boolean): Option[ValidationReport] =
+  def apply(shapesModel: Model, reportDetails: Boolean): Either[String, ValidationReport] =
     applySkipShapesCheck(shapesModel, shaclModel, validateShapes = true, reportDetails = reportDetails)
 
   /**
@@ -71,7 +74,7 @@ object ShaclEngine {
       shapesModel: Model,
       validateShapes: Boolean,
       reportDetails: Boolean
-  ): Option[ValidationReport] = {
+  ): Either[String, ValidationReport] = {
 
     val finalShapesModel = ValidationUtil.ensureToshTriplesExist(shapesModel)
     // Make sure all sh:Functions are registered
@@ -84,7 +87,7 @@ object ShaclEngine {
       finalShapesModel: Model,
       validateShapes: Boolean,
       reportDetails: Boolean
-  ): Option[ValidationReport] = {
+  ): Either[String, ValidationReport] = {
     // Create Dataset that contains both the data model and the shapes model
     // (here, using a temporary URI for the shapes graph)
     val shapesGraphURI = SHACLUtil.createRandomShapesGraphURI()
@@ -98,7 +101,12 @@ object ShaclEngine {
     Try {
       engine.applyEntailments()
       engine.validateAll()
-    }.toOption.flatMap(ValidationReport.apply)
+    } match {
+      case Failure(ex) =>
+        log.error("Unexpected exception on validation", ex)
+        Left(ex.getMessage)
+      case Success(resource) => ValidationReport(resource)
+    }
   }
 }
 // $COVERAGE-ON$
