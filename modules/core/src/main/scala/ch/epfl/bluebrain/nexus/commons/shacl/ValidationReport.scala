@@ -3,7 +3,9 @@ package ch.epfl.bluebrain.nexus.commons.shacl
 import ch.epfl.bluebrain.nexus.commons.shacl.Vocabulary._
 import ch.epfl.bluebrain.nexus.commons.test.Resources.jsonContentOf
 import ch.epfl.bluebrain.nexus.rdf.Iri.AbsoluteIri
+import ch.epfl.bluebrain.nexus.rdf.MarshallingError
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
+import ch.epfl.bluebrain.nexus.rdf.encoder.NodeEncoderError
 import ch.epfl.bluebrain.nexus.rdf.instances._
 import ch.epfl.bluebrain.nexus.rdf.jena.JenaConversions._
 import ch.epfl.bluebrain.nexus.rdf.syntax._
@@ -33,16 +35,28 @@ final case class ValidationReport(conforms: Boolean, targetedNodes: Int, json: J
 
 object ValidationReport {
 
-  final def apply(report: Resource): Option[ValidationReport] =
+  private trait ErrorMessage[A] extends (A => String)
+  private implicit val errorMessageMarshalling: ErrorMessage[MarshallingError] = _.message
+  private implicit val errorMessageString: ErrorMessage[String]                = identity(_)
+  private implicit val errorMessageNodeEncoder: ErrorMessage[NodeEncoderError] = _.message
+  private implicit val errorMessageThrowable: ErrorMessage[Throwable]          = _.getMessage
+
+  private implicit class ErrorMessageSyntax[A, B](private val value: Either[A, B]) extends AnyVal {
+    def logged(implicit toMessage: ErrorMessage[A]): Either[String, B] = value.left.map(toMessage(_))
+  }
+
+  final def apply(report: Resource): Either[String, ValidationReport] =
+    // format: off
     for {
-      res     <- Try(report.getModel.listSubjectsWithProperty(iriNodeToProperty(sh.conforms)).asScala.next()).toOption
-      subject <- toIriOrBNode(res).toOption
-      graph   <- report.getModel.asGraph(subject).toOption
-      cursor = graph.cursor()
-      conforms <- cursor.downField(sh.conforms).focus.as[Boolean].toOption
-      targeted <- cursor.downField(nxsh.targetedNodes).focus.as[Int].left.map(_.message).toOption
-      json     <- graph.as[Json](shaclCtx).left.map(_.message).toOption
+      res     <- Try(report.getModel.listSubjectsWithProperty(iriNodeToProperty(sh.conforms)).asScala.next()).toEither.logged
+      subject <- toIriOrBNode(res).logged
+      graph   <- report.getModel.asGraph(subject).logged
+      cursor   = graph.cursor()
+      conforms <- cursor.downField(sh.conforms).focus.as[Boolean].logged
+      targeted <- cursor.downField(nxsh.targetedNodes).focus.as[Int].logged
+      json     <- graph.as[Json](shaclCtx).logged
     } yield ValidationReport(conforms, targeted, json.removeKeys("@context", "@id").addContext(shaclCtxUri))
+  // format: on
 
   private val shaclCtxUri: AbsoluteIri = url"https://bluebrain.github.io/nexus/contexts/shacl-20170720.json"
   private val shaclCtx: Json           = jsonContentOf("/shacl-context-resp.json")
