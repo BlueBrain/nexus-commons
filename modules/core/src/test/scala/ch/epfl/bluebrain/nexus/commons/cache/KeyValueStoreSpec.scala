@@ -27,6 +27,8 @@ class KeyValueStoreSpec
   private implicit val ec = system.dispatcher
   private implicit val t  = timer(ec)
 
+  override implicit def patienceConfig = PatienceConfig(6 seconds, 100 millis)
+
   "A KeyValueStore" should {
 
     val expectedChanges = Set[KeyValueStoreChanges[String, RevisionedValue[String]]](
@@ -43,11 +45,10 @@ class KeyValueStoreSpec
       (value: KeyValueStoreChanges[String, RevisionedValue[String]]) => changes += value
 
     implicit val config =
-      KeyValueStoreConfig(4 seconds, 3 seconds, RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0.0, 0 millis))
+      KeyValueStoreConfig(4 seconds, 3 seconds, RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0 millis))
     val store =
       KeyValueStore.distributed[IO, String, RevisionedValue[String], Throwable](
-        "spec", { case (_, rv) => rv.rev },
-        ErrorWrapper
+        "spec", { case (_, rv) => rv.rev }
       )
 
     var subscription: Subscription = null
@@ -143,7 +144,7 @@ class KeyValueStoreSpec
     "return empty entries" in {
       val store = KeyValueStore.distributed[IO, String, RevisionedValue[String], Throwable]("empty", {
         case (_, rv) => rv.rev
-      }, ErrorWrapper)
+      })
       store.entries.ioValue shouldEqual Map.empty[String, RevisionedValue[String]]
     }
 
@@ -157,11 +158,8 @@ class KeyValueStoreSpec
     }
 
   }
-
-  override implicit def patienceConfig = PatienceConfig(6 seconds, 100 millis)
 }
 
 object KeyValueStoreSpec {
   final case class RevisionedValue[A](rev: Long, value: A)
-  final case class ErrorWrapper(err: KeyValueStoreError) extends Exception
 }
