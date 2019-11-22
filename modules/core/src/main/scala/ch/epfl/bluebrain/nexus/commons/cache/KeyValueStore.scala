@@ -7,13 +7,15 @@ import akka.cluster.ddata.Replicator._
 import akka.cluster.ddata.{DistributedData, LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.pattern.ask
 import akka.util.Timeout
-import cats.effect.{Async, ContextShift, IO, Timer}
+import cats.effect.{Async, ContextShift, Effect, IO, Timer}
 import cats.implicits._
-import cats.{Functor, Monad, MonadError}
+import cats.{Functor, Monad}
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStore.Subscription
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreError._
-import ch.epfl.bluebrain.nexus.sourcing.retry.Retry
-import ch.epfl.bluebrain.nexus.sourcing.retry.syntax._
+import journal.Logger
+import retry.CatsEffect._
+import retry._
+import retry.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -134,6 +136,12 @@ trait KeyValueStore[F[_], K, V] {
 }
 
 object KeyValueStore {
+  private val log = Logger[KeyValueStore.type]
+
+  private val worthRetryingOnWriteErrors: Throwable => Boolean = {
+    case _: ReadWriteConsistencyTimeout | _: DistributedDataError => true
+    case _                                                        => false
+  }
 
   /**
     * A subscription reference
@@ -146,33 +154,36 @@ object KeyValueStore {
     * Constructs a key value store backed by Akka Distributed Data with WriteAll and ReadLocal consistency
     * configuration. The store is backed by a LWWMap.
     *
-    * @param id       the ddata key
-    * @param clock    a clock function that determines the next timestamp for a provided value
-    * @param mapError a function to convert ''KeyValueStoreError'' into ''E''
-    * @param as       the implicitly underlying actor system
-    * @param config   the key value store configuration
+    * @param id              the ddata key
+    * @param clock           a clock function that determines the next timestamp for a provided value
+    * @param isWorthRetrying a function to decide when it is needed to retry
+    * @param as              the implicitly underlying actor system
+    * @param config          the key value store configuration
     * @tparam F the effect type
     * @tparam K the key type
     * @tparam E the error type
     * @tparam V the value type
     */
-  final def distributed[F[_]: Async: Timer, K, V, E <: Throwable](
+  final def distributed[F[_]: Effect: Timer, K, V, E <: Throwable](
       id: String,
       clock: (Long, V) => Long,
-      mapError: KeyValueStoreError => E
-  )(implicit as: ActorSystem, F: MonadError[F, E], config: KeyValueStoreConfig): KeyValueStore[F, K, V] = {
-    implicit val retry: Retry[F, E] = Retry(config.retry.retryStrategy)
-    new DDataKeyValueStore(id, clock, mapError, config.askTimeout, config.consistencyTimeout)
+      isWorthRetrying: Throwable => Boolean = worthRetryingOnWriteErrors
+  )(implicit as: ActorSystem, config: KeyValueStoreConfig): KeyValueStore[F, K, V] = {
+    implicit val policy: RetryPolicy[F] = config.retry.retryPolicy[F]
+    new DDataKeyValueStore(id, clock, isWorthRetrying, config.askTimeout, config.consistencyTimeout)
   }
 
-  private class DDataKeyValueStore[F[_]: Async, K, V, E <: Throwable](
+  private class DDataKeyValueStore[F[_]: Effect: Timer, K, V, E <: Throwable](
       id: String,
       clock: (Long, V) => Long,
-      mapError: KeyValueStoreError => E,
+      isWorthRetrying: Throwable => Boolean,
       askTimeout: FiniteDuration,
       consistencyTimeout: FiniteDuration
-  )(implicit as: ActorSystem, retry: Retry[F, E])
+  )(implicit policy: RetryPolicy[F], as: ActorSystem)
       extends KeyValueStore[F, K, V] {
+
+    implicit def logErrors: (Throwable, RetryDetails) => F[Unit] =
+      (err, details) => Effect[F].pure(log.warn(s"Retrying on cache with id '$id' on retry details '$details'", err))
 
     private implicit val node: Cluster                  = Cluster(as)
     private val uniqueAddr: SelfUniqueAddress           = SelfUniqueAddress(node.selfUniqueAddress)
@@ -184,7 +195,7 @@ object KeyValueStore {
     private val replicator              = DistributedData(as).replicator
     private val mapKey                  = LWWMapKey[K, V](id)
     private val consistencyTimeoutError = ReadWriteConsistencyTimeout(consistencyTimeout)
-
+    private val distributeWriteError    = DistributedDataError("Failed to distribute write")
     override def subscribe(value: OnKeyValueStoreChange[K, V]): F[Subscription] = {
       val subscriberActor = KeyValueStoreSubscriber(mapKey, value)
       replicator ! Subscribe(mapKey, subscriberActor)
@@ -205,25 +216,25 @@ object KeyValueStore {
       fa.flatMap[Unit] {
           case _: UpdateSuccess[_] => F.unit
           // $COVERAGE-OFF$
-          case _: UpdateTimeout[_] => F.raiseError(mapError(consistencyTimeoutError))
-          case _: UpdateFailure[_] => F.raiseError(mapError(DistributedDataError("Failed to distribute write")))
+          case _: UpdateTimeout[_] => F.raiseError(consistencyTimeoutError)
+          case _: UpdateFailure[_] => F.raiseError(distributeWriteError)
           // $COVERAGE-ON$
         }
-        .retry
+        .retryingOnSomeErrors(isWorthRetrying)
     }
 
-    override def remove(key: K) = {
+    override def remove(key: K): F[Unit] = {
       val msg    = Update(mapKey, LWWMap.empty[K, V], WriteAll(consistencyTimeout))(_.remove(uniqueAddr, key))
       val future = IO(replicator ? msg)
       val fa     = IO.fromFuture(future).to[F]
       fa.flatMap[Unit] {
           case _: UpdateSuccess[_] => F.unit
           // $COVERAGE-OFF$
-          case _: UpdateTimeout[_] => F.raiseError(mapError(consistencyTimeoutError))
-          case _: UpdateFailure[_] => F.raiseError(mapError(DistributedDataError("Failed to distribute write")))
+          case _: UpdateTimeout[_] => F.raiseError(consistencyTimeoutError)
+          case _: UpdateFailure[_] => F.raiseError(distributeWriteError)
           // $COVERAGE-ON$
         }
-        .retry
+        .retryingOnSomeErrors(isWorthRetrying)
     }
 
     override def entries: F[Map[K, V]] = {
@@ -234,10 +245,10 @@ object KeyValueStore {
           case g @ GetSuccess(`mapKey`, _) => F.pure(g.get(mapKey).entries)
           case _: NotFound[_]              => F.pure(Map.empty)
           // $COVERAGE-OFF$
-          case _: GetFailure[_] => F.raiseError(mapError(consistencyTimeoutError))
+          case _: GetFailure[_] => F.raiseError(consistencyTimeoutError)
           // $COVERAGE-ON$
         }
-        .retry
+        .retryingOnSomeErrors(isWorthRetrying)
     }
   }
 }
