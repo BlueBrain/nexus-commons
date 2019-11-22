@@ -5,7 +5,6 @@ import java.util.Arrays._
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
-import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer.MyNode
 import ch.epfl.bluebrain.nexus.commons.test.Randomness
@@ -43,7 +42,6 @@ abstract class ElasticServer
   val endPort   = startPort + 100
 
   val esUri       = Uri(s"http://localhost:$startPort")
-  implicit val mt = ActorMaterializer()
   implicit val ec = system.dispatcher
 
   private val clusterName = "elasticsearch"

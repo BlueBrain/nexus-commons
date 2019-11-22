@@ -9,7 +9,7 @@ import akka.remote.DefaultFailureDetectorRegistry
 import akka.remote.testconductor.RoleName
 import akka.remote.testkit.{MultiNodeSpec, MultiNodeSpecCallbacks}
 import akka.remote.transport.ThrottlerTransportAdapter.Direction
-import akka.stream.{ActorMaterializer, StreamTcpException}
+import akka.stream.{StreamTcpException}
 import akka.testkit.TestEvent.Mute
 import akka.testkit.{EventFilter, ImplicitSender}
 import cats.implicits._
@@ -41,7 +41,6 @@ abstract class MultiNodeClusterSpec(config: DowningConfig)
     with OptionValues {
 
   private implicit val ec  = system.dispatcher
-  private implicit val mat = ActorMaterializer()
   private implicit val ul  = HttpClient.untyped[Future]
   private implicit val nodeDec: Decoder[Set[NodeMember]] =
     Decoder.instance(_.get[List[NodeMember]]("members").map(_.toSet))

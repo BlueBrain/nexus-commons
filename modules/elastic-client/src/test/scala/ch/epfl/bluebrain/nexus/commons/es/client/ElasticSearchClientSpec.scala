@@ -61,7 +61,7 @@ class ElasticSearchClientSpec
     }
 
     "fetching service descrption" in {
-      cl.serviceDescription.ioValue shouldEqual ServiceDescription("elasticsearch", "7.4.1")
+      cl.serviceDescription.ioValue shouldEqual ServiceDescription("elasticsearch", "7.4.2")
     }
 
     "performing index operations" should {

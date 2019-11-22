@@ -24,80 +24,90 @@ scalafmt: {
 }
  */
 
-val jenaVersion           = "3.12.0"
-val blazegraphVersion     = "2.1.5"
-val jacksonVersion        = "2.9.9"
-val jacksonBindVersion    = "2.9.9.3"
-val catsVersion           = "2.0.0"
-val catsEffectVersion     = "2.0.0"
-val circeVersion          = "0.12.1"
-val circeGenericVersion   = "0.12.2"
-val scalaTestVersion      = "3.0.8"
-val shapelessVersion      = "2.3.3"
-val journalVersion        = "3.0.19"
-val akkaVersion           = "2.5.25"
-val akkaManagementVersion = "1.0.3"
+val rdfVersion      = "0.4.0"
+val sourcingVersion = "0.17.0"
+
+lazy val rdf          = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
+lazy val sourcingCore = "ch.epfl.bluebrain.nexus" %% "sourcing-core" % sourcingVersion
+
+val akkaVersion           = "2.6.0"
+val akkaManagementVersion = "1.0.5"
 val akkaHttpVersion       = "10.1.10"
 val akkaHttpCirceVersion  = "1.29.1"
-val elasticSearchVersion  = "7.4.1"
+val asmVersion            = "7.2"
+val jenaVersion           = "3.13.1"
+val blazegraphVersion     = "2.1.5"
+val catsVersion           = "2.0.0"
+val catsEffectVersion     = "2.0.0"
+val circeVersion          = "0.12.3"
+val circeGenericVersion   = "0.12.2"
+val elasticSearchVersion  = "7.4.2"
+val jacksonVersion        = "2.10.1"
+val jacksonBindVersion    = "2.10.1"
+val journalVersion        = "3.0.19"
+val kryoVersion           = "1.0.0"
 val log4jVersion          = "2.12.1"
 val commonsIOVersion      = "1.3.2"
-val pureconfigVersion     = "0.12.0"
+val pureconfigVersion     = "0.12.1"
+val scalaTestVersion      = "3.0.8"
+val shapelessVersion      = "2.3.3"
+val topQuadrantVersion    = "1.3.0"
 
-val rdfVersion         = "0.3.21"
-val sourcingVersion    = "0.16.6"
-val topQuadrantVersion = "1.3.0"
-
-lazy val rdf              = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
-lazy val sourcingCore     = "ch.epfl.bluebrain.nexus" %% "sourcing-core" % sourcingVersion
-lazy val topQuadrantShacl = "org.topbraid"            % "shacl"          % topQuadrantVersion
-
-lazy val catsCore           = "org.typelevel"              %% "cats-core"            % catsVersion
-lazy val catsEffect         = "org.typelevel"              %% "cats-effect"          % catsEffectVersion
-lazy val circeCore          = "io.circe"                   %% "circe-core"           % circeVersion
-lazy val circeParser        = "io.circe"                   %% "circe-parser"         % circeVersion
-lazy val circeGenericExtras = "io.circe"                   %% "circe-generic-extras" % circeGenericVersion
-lazy val scalaTest          = "org.scalatest"              %% "scalatest"            % scalaTestVersion
-lazy val shapeless          = "com.chuusai"                %% "shapeless"            % shapelessVersion
-lazy val journal            = "io.verizon.journal"         %% "core"                 % journalVersion
-lazy val jenaArq            = "org.apache.jena"            % "jena-arq"              % jenaVersion
-lazy val blazegraph         = "com.blazegraph"             % "blazegraph-jar"        % blazegraphVersion
-lazy val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations"   % jacksonVersion
-lazy val jacksonCore        = "com.fasterxml.jackson.core" % "jackson-core"          % jacksonVersion
-lazy val jacksonDatabind    = "com.fasterxml.jackson.core" % "jackson-databind"      % jacksonBindVersion
-
-lazy val akkaActor           = "com.typesafe.akka" %% "akka-actor"            % akkaVersion
-lazy val akkaCluster         = "com.typesafe.akka" %% "akka-cluster"          % akkaVersion
-lazy val akkaClusterSharding = "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion
-lazy val akkaDistributedData = "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion
-lazy val akkaTestKit         = "com.typesafe.akka" %% "akka-testkit"          % akkaVersion
-lazy val akkaSlf4j           = "com.typesafe.akka" %% "akka-slf4j"            % akkaVersion
-lazy val akkaStream          = "com.typesafe.akka" %% "akka-stream"           % akkaVersion
-
+lazy val akkaActor                 = "com.typesafe.akka"                 %% "akka-actor"                   % akkaVersion
+lazy val akkaCluster               = "com.typesafe.akka"                 %% "akka-cluster"                 % akkaVersion
+lazy val akkaClusterManagement     = "com.lightbend.akka.management"     %% "akka-management"              % akkaManagementVersion
+lazy val akkaClusterManagementHttp = "com.lightbend.akka.management"     %% "akka-management-cluster-http" % akkaManagementVersion
+lazy val akkaClusterSharding       = "com.typesafe.akka"                 %% "akka-cluster-sharding"        % akkaVersion
+lazy val akkaDistributedData       = "com.typesafe.akka"                 %% "akka-distributed-data"        % akkaVersion
 lazy val akkaHttp                  = "com.typesafe.akka"                 %% "akka-http"                    % akkaHttpVersion
 lazy val akkaHttpTestKit           = "com.typesafe.akka"                 %% "akka-http-testkit"            % akkaHttpVersion
 lazy val akkaHttpCirce             = "de.heikoseeberger"                 %% "akka-http-circe"              % akkaHttpCirceVersion
 lazy val akkaHttpCore              = "com.typesafe.akka"                 %% "akka-http-core"               % akkaHttpVersion
+lazy val akkaTestKit               = "com.typesafe.akka"                 %% "akka-testkit"                 % akkaVersion
+lazy val akkaSlf4j                 = "com.typesafe.akka"                 %% "akka-slf4j"                   % akkaVersion
+lazy val akkaStream                = "com.typesafe.akka"                 %% "akka-stream"                  % akkaVersion
 lazy val akkaMultiNodeTestKit      = "com.typesafe.akka"                 %% "akka-multi-node-testkit"      % akkaVersion
-lazy val akkaClusterManagement     = "com.lightbend.akka.management"     %% "akka-management"              % akkaManagementVersion
-lazy val akkaClusterManagementHttp = "com.lightbend.akka.management"     %% "akka-management-cluster-http" % akkaManagementVersion
-lazy val log4jCore                 = "org.apache.logging.log4j"          % "log4j-core"                    % log4jVersion
-lazy val log4jApi                  = "org.apache.logging.log4j"          % "log4j-api"                     % log4jVersion
+lazy val asm                       = "org.ow2.asm"                       % "asm"                           % asmVersion
+lazy val blazegraph                = "com.blazegraph"                    % "blazegraph-jar"                % blazegraphVersion
+lazy val catsCore                  = "org.typelevel"                     %% "cats-core"                    % catsVersion
+lazy val catsEffect                = "org.typelevel"                     %% "cats-effect"                  % catsEffectVersion
+lazy val circeCore                 = "io.circe"                          %% "circe-core"                   % circeVersion
+lazy val circeParser               = "io.circe"                          %% "circe-parser"                 % circeVersion
+lazy val circeGenericExtras        = "io.circe"                          %% "circe-generic-extras"         % circeGenericVersion
+lazy val commonsIO                 = "org.apache.commons"                % "commons-io"                    % commonsIOVersion
 lazy val esCore                    = "org.elasticsearch"                 % "elasticsearch"                 % elasticSearchVersion
 lazy val esPainless                = "org.codelibs.elasticsearch.module" % "lang-painless"                 % elasticSearchVersion
 lazy val esReindex                 = "org.codelibs.elasticsearch.module" % "reindex"                       % elasticSearchVersion
 lazy val esRestClient              = "org.elasticsearch.client"          % "elasticsearch-rest-client"     % elasticSearchVersion
 lazy val esTransportClient         = "org.elasticsearch.plugin"          % "transport-netty4-client"       % elasticSearchVersion
-lazy val commonsIO                 = "org.apache.commons"                % "commons-io"                    % commonsIOVersion
+lazy val jacksonAnnotations        = "com.fasterxml.jackson.core"        % "jackson-annotations"           % jacksonVersion
+lazy val jacksonCore               = "com.fasterxml.jackson.core"        % "jackson-core"                  % jacksonVersion
+lazy val jacksonDatabind           = "com.fasterxml.jackson.core"        % "jackson-databind"              % jacksonBindVersion
+lazy val jenaArq                   = "org.apache.jena"                   % "jena-arq"                      % jenaVersion
+lazy val journal                   = "io.verizon.journal"                %% "core"                         % journalVersion
+lazy val kryo                      = "io.altoo"                          %% "akka-kryo-serialization"      % kryoVersion
+lazy val log4jCore                 = "org.apache.logging.log4j"          % "log4j-core"                    % log4jVersion
+lazy val log4jApi                  = "org.apache.logging.log4j"          % "log4j-api"                     % log4jVersion
 lazy val pureconfig                = "com.github.pureconfig"             %% "pureconfig"                   % pureconfigVersion
+lazy val scalaTest                 = "org.scalatest"                     %% "scalatest"                    % scalaTestVersion
+lazy val shapeless                 = "com.chuusai"                       %% "shapeless"                    % shapelessVersion
+lazy val topQuadrantShacl          = "org.topbraid"                      % "shacl"                         % topQuadrantVersion
 
 lazy val test = project
   .in(file("modules/test"))
   .settings(
-    name                := "commons-test",
-    moduleName          := "commons-test",
-    coverageEnabled     := false,
-    libraryDependencies ++= Seq(akkaTestKit, akkaClusterSharding, catsEffect, circeCore, circeParser, scalaTest)
+    name            := "commons-test",
+    moduleName      := "commons-test",
+    coverageEnabled := false,
+    libraryDependencies ++= Seq(
+      akkaTestKit,
+      akkaClusterSharding,
+      catsEffect,
+      circeCore,
+      circeParser,
+      kryo,
+      scalaTest
+    )
   )
 
 lazy val core = project
@@ -125,6 +135,7 @@ lazy val core = project
       akkaHttpTestKit % Test,
       akkaTestKit     % Test,
       akkaSlf4j       % Test,
+      kryo            % Test,
       scalaTest       % Test
     )
   )
@@ -140,6 +151,7 @@ lazy val elasticSearchClient = project
       akkaStream,
       circeCore,
       akkaSlf4j          % Test,
+      asm                % Test,
       circeParser        % Test,
       circeGenericExtras % Test,
       esCore             % Test,
@@ -175,7 +187,8 @@ lazy val akkaDowning = project
       akkaClusterManagementHttp % Test,
       akkaHttp                  % Test,
       akkaTestKit               % Test,
-      scalaTest                 % Test
+      scalaTest                 % Test,
+      "com.github.ghik"         % "silencer-lib" % scalacSilencerVersion.value % Test cross CrossVersion.full // should have been brought in by copying the Test config... but it wasn't
     )
   )
 
@@ -214,16 +227,16 @@ lazy val kamon = project
     moduleName      := "commons-kamon",
     coverageEnabled := false,
     libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.1",
-      "io.kamon"      % "kanela-agent"                  % "1.0.1",
-      "io.kamon"      %% "kamon-status-page"            % "2.0.1",
+      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.3",
+      "io.kamon"      % "kanela-agent"                  % "1.0.3",
+      "io.kamon"      %% "kamon-status-page"            % "2.0.2",
       "io.kamon"      %% "kamon-instrumentation-common" % "2.0.0",
-      "io.kamon"      %% "kamon-executors"              % "2.0.1",
+      "io.kamon"      %% "kamon-executors"              % "2.0.2",
       "io.kamon"      %% "kamon-scala-future"           % "2.0.1",
-      "io.kamon"      %% "kamon-akka"                   % "2.0.0",
-      "io.kamon"      %% "kamon-logback"                % "2.0.1",
-      "io.kamon"      %% "kamon-system-metrics"         % "2.0.0",
-      "io.kamon"      %% "kamon-core"                   % "2.0.1",
+      "io.kamon"      %% "kamon-akka"                   % "2.0.1",
+      "io.kamon"      %% "kamon-logback"                % "2.0.2",
+      "io.kamon"      %% "kamon-system-metrics"         % "2.0.1",
+      "io.kamon"      %% "kamon-core"                   % "2.0.2",
       "io.kamon"      %% "kamon-akka-http"              % "2.0.2",
       "io.kamon"      %% "kamon-prometheus"             % "2.0.0",
       "io.kamon"      %% "kamon-jaeger"                 % "2.0.0"

@@ -4,7 +4,6 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
-import akka.stream.ActorMaterializer
 import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
@@ -57,7 +56,6 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
     val port = freePort()
     system = ActorSystem(s"BulkInsertBenchmark")
     implicit val ec = system.dispatcher
-    implicit val mt = ActorMaterializer()
     implicit val uc = untyped[IO]
     implicit val jc = withUnmarshaller[IO, SparqlResults]
     val _           = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
