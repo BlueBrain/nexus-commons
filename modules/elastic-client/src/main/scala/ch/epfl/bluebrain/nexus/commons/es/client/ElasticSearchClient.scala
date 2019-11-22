@@ -13,7 +13,7 @@ import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.{ElasticSearchClientError, ElasticUnexpectedError}
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, withUnmarshaller}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{withUnmarshaller, UntypedHttpClient}
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, SortList}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._

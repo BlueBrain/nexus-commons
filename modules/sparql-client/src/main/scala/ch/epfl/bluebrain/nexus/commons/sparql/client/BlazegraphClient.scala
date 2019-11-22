@@ -8,7 +8,7 @@ import cats.MonadError
 import cats.effect.Effect
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
-import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{UntypedHttpClient, withUnmarshaller}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{withUnmarshaller, UntypedHttpClient}
 
 import scala.concurrent.ExecutionContext
 

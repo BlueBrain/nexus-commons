@@ -10,6 +10,7 @@ import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreSubscriber.KeyValueSto
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreSubscriber.KeyValueStoreChanges
 import ch.epfl.bluebrain.nexus.commons.test.ActorSystemFixture
 import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import com.typesafe.config.ConfigFactory
 import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
 
@@ -17,7 +18,7 @@ import scala.collection.mutable.{Set => SetBuffer}
 import scala.concurrent.duration._
 
 class KeyValueStoreSpec
-    extends ActorSystemFixture("KeyValueStoreSpec", true)
+    extends ActorSystemFixture("KeyValueStoreSpec", true, Vector(ConfigFactory.parseResources("bindings.conf")))
     with Matchers
     with IOEitherValues
     with IOOptionValues

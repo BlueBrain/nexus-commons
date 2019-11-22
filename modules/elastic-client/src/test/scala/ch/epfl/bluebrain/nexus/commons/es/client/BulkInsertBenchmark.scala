@@ -1,7 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
@@ -44,7 +43,6 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness {
 
     system = ActorSystem(s"BulkInsertBenchmark")
     implicit val ec = system.dispatcher
-    implicit val mt = ActorMaterializer()
     implicit val uc = untyped[IO]
 
     server = new ElasticServer() {}

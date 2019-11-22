@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.test
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.testkit._
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.concurrent.ScalaFutures._
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
@@ -11,8 +11,15 @@ import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 
-class ActorSystemFixture(name: String, startCluster: Boolean = false)
-    extends TestKit(ActorSystem(name, ConfigFactory.load("service-test.conf")))
+class ActorSystemFixture(name: String, startCluster: Boolean = false, configs: Vector[Config] = Vector.empty)
+    extends TestKit(
+      ActorSystem(
+        name,
+        (configs :+ ConfigFactory.load("service-test.conf"))
+          .foldLeft(ConfigFactory.empty()) { case (c, e) => c withFallback e }
+          .resolve()
+      )
+    )
     with WordSpecLike
     with PatienceConfiguration
     with BeforeAndAfterAll {

@@ -5,7 +5,6 @@ import java.util.regex.Pattern.quote
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
-import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
@@ -71,7 +70,6 @@ class BlazegraphClientSpec
   }
 
   private implicit val ec = system.dispatcher
-  private implicit val mt = ActorMaterializer()
 
   private implicit val uc = untyped[IO]
   private implicit val jc = withUnmarshaller[IO, SparqlResults]

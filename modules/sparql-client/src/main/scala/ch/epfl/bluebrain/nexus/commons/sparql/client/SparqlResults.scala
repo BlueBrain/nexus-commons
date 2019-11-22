@@ -134,7 +134,8 @@ object SparqlResults {
           case (Some(dt), _) => Some(Node.literal(value, dt))
           case (_, Some(lt)) => Some(Node.literal(value, lt))
           case _             => Some(Node.literal(value))
-        } else
+        }
+      else
         None
 
     /**
