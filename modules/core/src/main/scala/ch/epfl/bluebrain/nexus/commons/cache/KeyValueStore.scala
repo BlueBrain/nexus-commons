@@ -161,10 +161,9 @@ object KeyValueStore {
     * @param config          the key value store configuration
     * @tparam F the effect type
     * @tparam K the key type
-    * @tparam E the error type
     * @tparam V the value type
     */
-  final def distributed[F[_]: Effect: Timer, K, V, E <: Throwable](
+  final def distributed[F[_]: Effect: Timer, K, V](
       id: String,
       clock: (Long, V) => Long,
       isWorthRetrying: Throwable => Boolean = worthRetryingOnWriteErrors
@@ -173,7 +172,7 @@ object KeyValueStore {
     new DDataKeyValueStore(id, clock, isWorthRetrying, config.askTimeout, config.consistencyTimeout)
   }
 
-  private class DDataKeyValueStore[F[_]: Effect: Timer, K, V, E <: Throwable](
+  private class DDataKeyValueStore[F[_]: Effect: Timer, K, V](
       id: String,
       clock: (Long, V) => Long,
       isWorthRetrying: Throwable => Boolean,
