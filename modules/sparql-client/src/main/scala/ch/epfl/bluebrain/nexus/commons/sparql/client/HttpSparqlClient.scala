@@ -4,13 +4,17 @@ import akka.http.scaladsl.client.RequestBuilding.Post
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Accept, HttpCredentials}
-import cats.MonadError
+import cats.effect.{Effect, Timer}
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.SparqlUnexpectedError
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import journal.Logger
 import org.apache.jena.query.ParameterizedSparqlString
+import retry.CatsEffect._
+import retry._
+import retry.syntax.all._
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -21,32 +25,40 @@ import scala.util.control.NonFatal
   * @param endpoint    the sparql endpoint
   * @param credentials the credentials to use when communicating with the sparql endpoint
   */
-class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(
-    implicit F: MonadError[F, Throwable],
+class HttpSparqlClient[F[_]: Timer](endpoint: Uri, credentials: Option[HttpCredentials])(
+    implicit F: Effect[F],
+    retryConfig: RetryStrategyConfig,
     cl: UntypedHttpClient[F],
     rsJson: HttpClient[F, SparqlResults],
     ec: ExecutionContext
 ) extends SparqlClient[F] {
 
-  private val log = Logger[this.type]
+  private val log                             = Logger[this.type]
+  private implicit val policy: RetryPolicy[F] = retryConfig.retryPolicy[F]
+  private implicit val logErrors: (Throwable, RetryDetails) => F[Unit] =
+    (err, details) => F.pure(log.warn(s"Retrying on query details '$details'", err))
 
-  def query[A](query: String)(implicit rs: HttpClient[F, A]): F[A] = {
+  def query[A](query: String, isWorthRetry: (Throwable => Boolean) = defaultWorthRetry)(
+      implicit rs: HttpClient[F, A]
+  ): F[A] = {
     val accept   = Accept(MediaRange.One(RdfMediaTypes.`application/sparql-results+json`, 1f))
     val formData = FormData("query" -> query)
     val req      = Post(endpoint, formData).withHeaders(accept)
-    rs(addCredentials(req)).handleErrorWith {
-      case UnexpectedUnsuccessfulHttpResponse(resp, body) =>
-        error(req, body, resp.status, "sparql query")
-      case NonFatal(th) =>
-        log.error(s"""Unexpected Sparql response for sparql query:
+    rs(addCredentials(req))
+      .handleErrorWith {
+        case UnexpectedUnsuccessfulHttpResponse(resp, body) =>
+          error(req, body, resp.status, "sparql query")
+        case NonFatal(th) =>
+          log.error(s"""Unexpected Sparql response for sparql query:
                      |Request: '${req.method} ${req.uri}'
                      |Query: '$query'
            """.stripMargin)
-        F.raiseError(SparqlUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
-    }
+          F.raiseError(SparqlUnexpectedError(StatusCodes.InternalServerError, th.getMessage))
+      }
+      .retryingOnSomeErrors(isWorthRetry)
   }
 
-  def bulk(queries: SparqlWriteQuery*): F[Unit] = {
+  def bulk(queries: Seq[SparqlWriteQuery], isWorthRetry: (Throwable => Boolean) = defaultWorthRetry): F[Unit] = {
     val queryString = queries.map(_.value).mkString("\n")
     val pss         = new ParameterizedSparqlString
     pss.setCommandText(queryString)
@@ -99,8 +111,8 @@ class HttpSparqlClient[F[_]](endpoint: Uri, credentials: Option[HttpCredentials]
 
 object HttpSparqlClient {
 
-  def apply[F[_]](endpoint: Uri, credentials: Option[HttpCredentials])(
-      implicit F: MonadError[F, Throwable],
+  def apply[F[_]: Effect: Timer](endpoint: Uri, credentials: Option[HttpCredentials])(
+      implicit retryConfig: RetryStrategyConfig,
       cl: UntypedHttpClient[F],
       rsJson: HttpClient[F, SparqlResults],
       ec: ExecutionContext

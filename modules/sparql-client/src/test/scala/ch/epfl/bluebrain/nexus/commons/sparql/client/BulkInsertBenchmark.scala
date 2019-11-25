@@ -14,6 +14,7 @@ import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
 import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import org.apache.commons.io.FileUtils
 import org.eclipse.jetty.server.Server
@@ -55,10 +56,12 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
 
     val port = freePort()
     system = ActorSystem(s"BulkInsertBenchmark")
-    implicit val ec = system.dispatcher
-    implicit val uc = untyped[IO]
-    implicit val jc = withUnmarshaller[IO, SparqlResults]
-    val _           = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
+    implicit val ec          = system.dispatcher
+    implicit val uc          = untyped[IO]
+    implicit val jc          = withUnmarshaller[IO, SparqlResults]
+    implicit val timer       = IO.timer(ec)
+    implicit val retryConfig = RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0 millis)
+    val _                    = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
 
     server = {
       System.setProperty("jetty.home", getClass.getResource("/war").toExternalForm)
@@ -83,14 +86,14 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
   @Benchmark
   def bulk1(): Unit =
     dataList.foreach { data =>
-      client.bulk(replace(graphUri, data)).ioValue
+      client.bulk(Seq(replace(graphUri, data))).ioValue
     }
   @Benchmark
   def bulk10(): Unit = {
     val iter = dataList.iterator
     (0 until 10).foreach { _ =>
       val bulked = Seq.fill(10)(iter.next()).map(data => replace(graphUri, data))
-      client.bulk(bulked: _*).ioValue
+      client.bulk(bulked).ioValue
     }
   }
 
@@ -99,7 +102,7 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
     val iter = dataList.iterator
     (0 until 5).foreach { _ =>
       val bulked = Seq.fill(20)(iter.next()).map(data => replace(graphUri, data))
-      client.bulk(bulked: _*).ioValue
+      client.bulk(bulked).ioValue
     }
   }
 
@@ -108,13 +111,13 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
     val iter = dataList.iterator
     (0 until 2).foreach { _ =>
       val bulked = Seq.fill(50)(iter.next()).map(data => replace(graphUri, data))
-      client.bulk(bulked: _*).ioValue
+      client.bulk(bulked).ioValue
     }
   }
 
   @Benchmark
   def bulk100(): Unit = {
     val bulked: Seq[SparqlWriteQuery] = dataList.map(data => replace(graphUri, data))
-    val _                             = client.bulk(bulked: _*).ioValue
+    val _                             = client.bulk(bulked).ioValue
   }
 }
