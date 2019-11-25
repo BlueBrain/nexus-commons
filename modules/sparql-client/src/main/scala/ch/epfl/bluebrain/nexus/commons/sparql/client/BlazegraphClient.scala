@@ -4,11 +4,11 @@ import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.stream.Materializer
-import cats.MonadError
-import cats.effect.Effect
+import cats.effect.{Effect, Timer}
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.{withUnmarshaller, UntypedHttpClient}
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 
 import scala.concurrent.ExecutionContext
 
@@ -20,8 +20,9 @@ import scala.concurrent.ExecutionContext
   * @param namespace   the namespace that this client targets
   * @param credentials the credentials to use when communicating with the sparql endpoint
   */
-class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
-    implicit F: MonadError[F, Throwable],
+class BlazegraphClient[F[_]: Timer](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
+    implicit retryConfig: RetryStrategyConfig,
+    F: Effect[F],
     cl: UntypedHttpClient[F],
     rsJson: HttpClient[F, SparqlResults],
     serviceDescClient: HttpClient[F, ServiceDescription],
@@ -33,6 +34,17 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
     */
   def serviceDescription: F[ServiceDescription] =
     serviceDescClient(Get(s"$base/status"))
+
+  /**
+    * Change the retry policy of the current BlazegraphClient.
+    *
+    * @param config the configuration that instantiates the policy
+    * @return a new [[BlazegraphClient]] with the passed retry policy
+    */
+  def withRetryPolicy(config: RetryStrategyConfig): BlazegraphClient[F] = {
+    implicit val retryConfig: RetryStrategyConfig = config
+    new BlazegraphClient(base, namespace, credentials)
+  }
 
   /**
     * @param base        the base uri of the blazegraph endpoint
@@ -100,8 +112,9 @@ class BlazegraphClient[F[_]](base: Uri, namespace: String, credentials: Option[H
 }
 
 object BlazegraphClient {
-  def apply[F[_]: Effect](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
-      implicit mt: Materializer,
+  def apply[F[_]: Effect: Timer](base: Uri, namespace: String, credentials: Option[HttpCredentials])(
+      implicit retryConfig: RetryStrategyConfig,
+      mt: Materializer,
       cl: UntypedHttpClient[F],
       rsJson: HttpClient[F, SparqlResults],
       ec: ExecutionContext

@@ -7,6 +7,7 @@ import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
 import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import io.circe.Json
 import org.openjdk.jmh.annotations._
 
@@ -42,8 +43,10 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness {
   @Setup(Level.Trial) def doSetup(): Unit = {
 
     system = ActorSystem(s"BulkInsertBenchmark")
-    implicit val ec = system.dispatcher
-    implicit val uc = untyped[IO]
+    implicit val ec          = system.dispatcher
+    implicit val uc          = untyped[IO]
+    implicit val timer       = IO.timer(ec)
+    implicit val retryConfig = RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0 millis)
 
     server = new ElasticServer() {}
     server.startElastic()

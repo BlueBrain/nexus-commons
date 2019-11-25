@@ -1,12 +1,17 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
+import akka.http.scaladsl.model.StatusCodes.GatewayTimeout
 import akka.http.scaladsl.model.{HttpRequest, StatusCode, StatusCodes}
-import cats.MonadError
+import cats.effect.{Effect, Timer}
 import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
-import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticUnexpectedError
+import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.{ElasticServerError, ElasticUnexpectedError}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import journal.Logger
+import retry.CatsEffect._
+import retry.syntax.all._
+import retry.{RetryDetails, RetryPolicy}
 
 import scala.util.control.NonFatal
 
@@ -15,16 +20,31 @@ import scala.util.control.NonFatal
   *
   * @tparam F the monadic effect type
   */
-abstract class ElasticSearchBaseClient[F[_]](
-    implicit
+abstract class ElasticSearchBaseClient[F[_]: Timer](
+    implicit retryConfig: RetryStrategyConfig,
     cl: UntypedHttpClient[F],
-    F: MonadError[F, Throwable]
+    F: Effect[F]
 ) {
 
   private[client] val log = Logger[this.type]
 
-  private[client] def execute(req: HttpRequest, expectedCodes: Set[StatusCode], intent: String): F[Unit] =
-    execute(req, expectedCodes, Set.empty, intent).map(_ => ())
+  private[client] implicit val retryPolicy: RetryPolicy[F] = retryConfig.retryPolicy[F]
+  private[client] implicit val logErrors: (Throwable, RetryDetails) => F[Unit] =
+    (err, details) => F.pure(log.warn(s"Retrying on query details '$details'", err))
+
+  private[client] val defaultWorthRetry: Throwable => Boolean = {
+    case ElasticServerError(code, _) if code != GatewayTimeout     => true
+    case ElasticUnexpectedError(code, _) if code != GatewayTimeout => true
+    case _                                                         => false
+  }
+
+  private[client] def execute(
+      req: HttpRequest,
+      expectedCodes: Set[StatusCode],
+      intent: String,
+      isWorthRetry: (Throwable => Boolean)
+  ): F[Unit] =
+    execute(req, expectedCodes, Set.empty, intent, isWorthRetry).map(_ => ())
 
   private[client] def handleError[A](req: HttpRequest, intent: String): Throwable => F[A] = {
     case NonFatal(th) =>
@@ -36,9 +56,10 @@ abstract class ElasticSearchBaseClient[F[_]](
       req: HttpRequest,
       expectedCodes: Set[StatusCode],
       ignoredCodes: Set[StatusCode],
-      intent: String
-  ): F[Boolean] =
-    cl(req).handleErrorWith(handleError(req, intent)).flatMap { resp =>
+      intent: String,
+      isWorthRetry: (Throwable => Boolean)
+  ): F[Boolean] = {
+    val response: F[Boolean] = cl(req).handleErrorWith(handleError(req, intent)).flatMap { resp =>
       if (expectedCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => true)
       else if (ignoredCodes.contains(resp.status)) cl.discardBytes(resp.entity).map(_ => false)
       else
@@ -49,6 +70,8 @@ abstract class ElasticSearchBaseClient[F[_]](
           F.raiseError(f)
         }
     }
+    response.retryingOnSomeErrors(isWorthRetry)
+  }
 
   private[client] def indexPath(indices: Set[String]): String =
     if (indices.isEmpty) anyIndexPath

@@ -21,6 +21,7 @@ import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
 import ch.epfl.bluebrain.nexus.rdf.instances._
 import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.Printer
 import io.circe.parser._
@@ -69,10 +70,11 @@ class BlazegraphClientSpec
     super.afterAll()
   }
 
-  private implicit val ec = system.dispatcher
-
-  private implicit val uc = untyped[IO]
-  private implicit val jc = withUnmarshaller[IO, SparqlResults]
+  private implicit val ec          = system.dispatcher
+  private implicit val timer       = IO.timer(ec)
+  private implicit val uc          = untyped[IO]
+  private implicit val jc          = withUnmarshaller[IO, SparqlResults]
+  private implicit val retryConfig = RetryStrategyConfig("once", 100 millis, 0 millis, 0, 0 millis)
 
   "A BlazegraphClient" should {
     def client(ns: String) = BlazegraphClient[IO](s"http://$localhost:$port/blazegraph", ns, None)
@@ -142,7 +144,7 @@ class BlazegraphClientSpec
 
       val cl = client(namespace)
       cl.createNamespace(properties()).ioValue
-      cl.bulk(replace(graph, load(id, label, value)), replace(graph2, load(id2, label2, value2))).ioValue
+      cl.bulk(Seq(replace(graph, load(id, label, value)), replace(graph2, load(id2, label2, value2)))).ioValue
       cl.triples(graph).map(_._3) should contain theSameElementsAs Set(label, value)
       cl.triples(graph2).map(_._3) should contain theSameElementsAs Set(label2, value2)
       cl.triples().map(_._3) should contain theSameElementsAs Set(label, value) ++ Set(label2, value2)

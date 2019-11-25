@@ -14,6 +14,7 @@ import ch.epfl.bluebrain.nexus.commons.search.QueryResults._
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, Sort, SortList}
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.parser.parse
 import io.circe.{Decoder, Json}
@@ -40,6 +41,8 @@ class ElasticSearchClientSpec
     genString(length = 10, pool = Vector.range('a', 'f') ++ """ "\<>|,/?""")
 
   private implicit val uc: UntypedHttpClient[IO] = untyped[IO]
+  private implicit val timer                     = IO.timer(ec)
+  private implicit val retryConfig               = RetryStrategyConfig("once", 100 millis, 0 millis, 0, 0 millis)
 
   "An ElasticSearchClient" when {
     val cl: ElasticSearchClient[IO] = ElasticSearchClient[IO](esUri)

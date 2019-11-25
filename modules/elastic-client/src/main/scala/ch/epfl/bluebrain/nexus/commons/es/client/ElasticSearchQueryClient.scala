@@ -3,7 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 import akka.http.scaladsl.client.RequestBuilding._
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import cats.MonadError
+import cats.effect.{Effect, Timer}
 import cats.syntax.applicativeError._
 import cats.syntax.functor._
 import cats.syntax.show._
@@ -11,11 +11,13 @@ import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchQueryClient._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
-import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, Sort, SortList}
-import ch.epfl.bluebrain.nexus.commons.search._
+import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, Sort, SortList, _}
+import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
+import retry.CatsEffect._
+import retry.syntax.all._
 
 import scala.concurrent.ExecutionContext
 
@@ -25,11 +27,11 @@ import scala.concurrent.ExecutionContext
   * @param base the base uri of the ElasticSearch endpoint
   * @tparam F the monadic effect type
   */
-private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(
-    implicit
+private[client] class ElasticSearchQueryClient[F[_]: Timer](base: Uri)(
+    implicit retryConfig: RetryStrategyConfig,
     cl: UntypedHttpClient[F],
     ec: ExecutionContext,
-    F: MonadError[F, Throwable]
+    F: Effect[F]
 ) extends ElasticSearchBaseClient[F] {
 
   private[client] val searchPath = "_search"
@@ -44,18 +46,20 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(
   /**
     * Search for the provided ''query'' inside the ''indices''
     *
-    * @param query   the initial search query
-    * @param indices the indices to use on search (if empty, searches in all the indices)
-    * @param page    the pagination information
-    * @param fields  the fields to be returned
-    * @param sort    the sorting criteria
-    * @param qp      the optional query parameters
+    * @param query        the initial search query
+    * @param indices      the indices to use on search (if empty, searches in all the indices)
+    * @param page         the pagination information
+    * @param fields       the fields to be returned
+    * @param sort         the sorting criteria
+    * @param qp           the optional query parameters
+    * @param isWorthRetry a function to decide if it is needed to retry
     * @tparam A the generic type to be returned
     */
   def apply[A](
       query: Json,
       indices: Set[String] = Set.empty,
-      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true")
+      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"),
+      isWorthRetry: (Throwable => Boolean) = defaultWorthRetry
   )(page: Pagination, fields: Set[String] = Set.empty, sort: SortList = SortList.Empty, totalHits: Boolean = true)(
       implicit
       rs: HttpClient[F, QueryResults[A]]
@@ -65,20 +69,22 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(
         (base / indexPath(indices) / searchPath).withQuery(qp),
         query.addPage(page).addSources(fields).addSort(sort).addTotalHits(totalHits)
       )
-    )
+    ).retryingOnSomeErrors(isWorthRetry)
 
   /**
     * Search ElasticSearch using provided query and return ES response with ''_shards'' information removed
     *
-    * @param query search query
-    * @param indices indices to search
-    * @param qp the optional query parameters
+    * @param query        search query
+    * @param indices      indices to search
+    * @param qp           the optional query parameters
+    * @param isWorthRetry a function to decide if it is needed to retry
     * @return ES response JSON
     */
   def searchRaw(
       query: Json,
       indices: Set[String] = Set.empty,
-      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true")
+      qp: Query = Query(ignoreUnavailable -> "true", allowNoIndices -> "true"),
+      isWorthRetry: (Throwable => Boolean) = defaultWorthRetry
   )(
       implicit
       rs: HttpClient[F, Json]
@@ -92,6 +98,7 @@ private[client] class ElasticSearchQueryClient[F[_]](base: Uri)(
           F.raiseError(ElasticSearchFailure.fromStatusCode(r.status, body))
         case other => F.raiseError(other)
       }
+      .retryingOnSomeErrors(isWorthRetry)
 }
 object ElasticSearchQueryClient {
 
@@ -101,11 +108,10 @@ object ElasticSearchQueryClient {
     * @param base        the base uri of the ElasticSearch endpoint
     * @tparam F the monadic effect type
     */
-  final def apply[F[_]](base: Uri)(
-      implicit
+  final def apply[F[_]: Effect: Timer](base: Uri)(
+      implicit retryConfig: RetryStrategyConfig,
       cl: UntypedHttpClient[F],
-      ec: ExecutionContext,
-      F: MonadError[F, Throwable]
+      ec: ExecutionContext
   ): ElasticSearchQueryClient[F] =
     new ElasticSearchQueryClient(base)
 
