@@ -48,6 +48,17 @@ class ElasticSearchClient[F[_]: Timer](base: Uri, queryClient: ElasticSearchQuer
     serviceDescClient(Get(base))
 
   /**
+    * Change the retry policy of the current ElasticSearchClient.
+    *
+    * @param config the configuration that instantiates the policy
+    * @return a new [[ElasticSearchClient]] with the passed retry policy
+    */
+  def withRetryPolicy(config: RetryStrategyConfig): ElasticSearchClient[F] = {
+    implicit val retryConfig: RetryStrategyConfig = config
+    new ElasticSearchClient(base, queryClient)
+  }
+
+  /**
     * Verifies if an index exists, recovering gracefully when the index does not exists.
     *
     * @param index        the index to verify

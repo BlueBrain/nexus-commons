@@ -36,6 +36,17 @@ class BlazegraphClient[F[_]: Timer](base: Uri, namespace: String, credentials: O
     serviceDescClient(Get(s"$base/status"))
 
   /**
+    * Change the retry policy of the current BlazegraphClient.
+    *
+    * @param config the configuration that instantiates the policy
+    * @return a new [[BlazegraphClient]] with the passed retry policy
+    */
+  def withRetryPolicy(config: RetryStrategyConfig): BlazegraphClient[F] = {
+    implicit val retryConfig: RetryStrategyConfig = config
+    new BlazegraphClient(base, namespace, credentials)
+  }
+
+  /**
     * @param base        the base uri of the blazegraph endpoint
     * @param namespace   the namespace that this client targets
     * @param credentials the credentials to use when communicating with the sparql endpoint
