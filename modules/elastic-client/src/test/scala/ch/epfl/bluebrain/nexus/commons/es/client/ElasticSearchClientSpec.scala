@@ -117,6 +117,12 @@ class ElasticSearchClientSpec
         cl.bulk(ops).ioValue shouldEqual (())
       }
 
+      "override documents" in {
+        val (id, json) = list(0)
+        cl.create(indexSanitized, id, json, overrideIfExists = false).failed[Throwable]
+        cl.create(indexSanitized, id, json).ioValue
+      }
+
       "fetch documents" in {
         forAll(list) {
           case (id, json) =>
