@@ -45,13 +45,13 @@ val elasticSearchVersion  = "7.4.2"
 val jacksonVersion        = "2.10.1"
 val jacksonBindVersion    = "2.10.1"
 val journalVersion        = "3.0.19"
-val kryoVersion           = "1.0.0"
+val kryoVersion           = "1.1.0"
 val log4jVersion          = "2.12.1"
 val commonsIOVersion      = "1.3.2"
 val pureconfigVersion     = "0.12.1"
 val scalaTestVersion      = "3.0.8"
 val shapelessVersion      = "2.3.3"
-val topQuadrantVersion    = "1.3.0"
+val topQuadrantVersion    = "1.3.1"
 
 lazy val akkaActor                 = "com.typesafe.akka"                 %% "akka-actor"                   % akkaVersion
 lazy val akkaCluster               = "com.typesafe.akka"                 %% "akka-cluster"                 % akkaVersion

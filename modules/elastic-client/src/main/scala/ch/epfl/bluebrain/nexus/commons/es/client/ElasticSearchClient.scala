@@ -123,23 +123,23 @@ class ElasticSearchClient[F[_]: Timer](base: Uri, queryClient: ElasticSearchQuer
   /**
     * Creates a new document inside the ''index'' with the provided ''payload''
     *
-    * @param index        the index to use
-    * @param id           the id of the document to update
-    * @param payload      the document's payload
-    * @param isWorthRetry a function to decide if it is needed to retry
+    * @param index            the index to use
+    * @param id               the id of the document to update
+    * @param payload          the document's payload
+    * @param overrideIfExists flag to decide whether to override or not in case the resource we want to create already exists
+    * @param isWorthRetry     a function to decide if it is needed to retry
     */
   def create(
       index: String,
       id: String,
       payload: Json,
+      overrideIfExists: Boolean = true,
       isWorthRetry: (Throwable => Boolean) = defaultWorthRetry
-  ): F[Unit] =
-    execute(
-      Put(base / sanitize(index, allowWildCard = false) / createPath / urlEncode(id), payload),
-      Set(OK, Created),
-      "create document",
-      isWorthRetry
-    )
+  ): F[Unit] = {
+    val insertOrCreatePath = if (overrideIfExists) docPath else createPath
+    val uri                = base / sanitize(index, allowWildCard = false) / insertOrCreatePath / urlEncode(id)
+    execute(Put(uri, payload), Set(OK, Created), "create document", isWorthRetry)
+  }
 
   /**
     * Creates a bulk update with the operations defined on the provided ''ops'' argument.
@@ -382,6 +382,7 @@ object ElasticSearchClient {
 
   private[client] val updatePath              = "_update"
   private[client] val createPath              = "_create"
+  private[client] val docPath                 = "_doc"
   private[client] val updateByQueryPath       = "_update_by_query"
   private[client] val deleteByQueryPath       = "_delete_by_query"
   private[client] val includeFieldsQueryParam = "_source_includes"
