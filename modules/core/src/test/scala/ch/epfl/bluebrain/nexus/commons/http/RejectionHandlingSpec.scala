@@ -4,13 +4,16 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Rejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import ch.epfl.bluebrain.nexus.commons.test.EitherValues
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.{Json, Printer}
 import io.circe.parser._
-import org.scalatest.{EitherValues, Inspectors, Matchers, WordSpecLike}
+import org.scalatest.Inspectors
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 class RejectionHandlingSpec
-    extends WordSpecLike
+    extends AnyWordSpecLike
     with Matchers
     with Inspectors
     with ScalatestRouteTest
@@ -36,12 +39,12 @@ class RejectionHandlingSpec
              |  "reason": "The requested resource could not be found."
              |}""".stripMargin
         status shouldEqual StatusCodes.NotFound
-        responseAs[Json] shouldEqual parse(expected).right.value
+        responseAs[Json] shouldEqual parse(expected).rightValue
       }
     }
 
     "handle missing query param" in {
-      val route = handleRejections(handler)(parameter('rev.as[Long])(_ => complete("ok")))
+      val route = handleRejections(handler)(parameter("rev".as[Long])(_ => complete("ok")))
       Get("/a") ~> route ~> check {
         val expected =
           s"""{
@@ -50,7 +53,7 @@ class RejectionHandlingSpec
              |  "reason": "Request is missing required query parameter 'rev'."
              |}""".stripMargin
         status shouldEqual StatusCodes.BadRequest
-        responseAs[Json] shouldEqual parse(expected).right.value
+        responseAs[Json] shouldEqual parse(expected).rightValue
       }
     }
 
@@ -62,7 +65,7 @@ class RejectionHandlingSpec
              |  "reason": "custom"
              |}""".stripMargin
         status shouldEqual StatusCodes.InternalServerError
-        responseAs[Json] shouldEqual parse(expected).right.value
+        responseAs[Json] shouldEqual parse(expected).rightValue
       }
     }
   }

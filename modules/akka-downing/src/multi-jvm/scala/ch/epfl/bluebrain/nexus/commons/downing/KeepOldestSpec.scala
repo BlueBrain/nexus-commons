@@ -15,7 +15,7 @@ abstract class KeepOldestSpec(config: DowningConfig, survivors: Int*)
   val side1 = survivors.map(s => RoleName(s"$s")).toVector //  Vector (node1, node2, node3)
   val side2 = roles.tail.filterNot(side1.contains) //Vector (node4, node5)
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(20 seconds, 300 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(20.seconds, 300.milliseconds)
 
   "A cluster of five nodes" should {
 

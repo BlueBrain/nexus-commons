@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.Uri
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 import ch.epfl.bluebrain.nexus.commons.test.Randomness._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait BlazegraphClientFixture {
 

@@ -12,17 +12,18 @@ import ch.epfl.bluebrain.nexus.commons.http.directives.ErrorDirectivesSpec.Custo
 import ch.epfl.bluebrain.nexus.rdf.syntax.node.unsafe._
 import io.circe.generic.auto._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 
 class ErrorDirectivesSpec
     extends TestKit(ActorSystem("ErrorDirectivesSpec"))
-    with WordSpecLike
+    with AnyWordSpecLike
     with Matchers
     with ScalaFutures {
 
-  override implicit val patienceConfig = PatienceConfig(3 seconds, 100 millis)
+  override implicit val patienceConfig = PatienceConfig(3.seconds, 100.millis)
 
   "A ErrorDirectives" should {
     import system.dispatcher

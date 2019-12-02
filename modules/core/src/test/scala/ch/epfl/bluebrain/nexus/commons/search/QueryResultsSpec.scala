@@ -6,9 +6,10 @@ import ch.epfl.bluebrain.nexus.commons.search.QueryResults._
 import io.circe.Json
 import io.circe.generic.auto._
 import io.circe.syntax._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class QueryResultsSpec extends WordSpecLike with Matchers {
+class QueryResultsSpec extends AnyWordSpecLike with Matchers {
 
   "A QueryResults Functor" should {
     "transform the source and score values of the results" in {

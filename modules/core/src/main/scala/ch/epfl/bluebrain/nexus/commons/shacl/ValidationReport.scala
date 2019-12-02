@@ -12,7 +12,7 @@ import ch.epfl.bluebrain.nexus.rdf.syntax._
 import io.circe.{Encoder, Json}
 import org.apache.jena.rdf.model.Resource
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 /**

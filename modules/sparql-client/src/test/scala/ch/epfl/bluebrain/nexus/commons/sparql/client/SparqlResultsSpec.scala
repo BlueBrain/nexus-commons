@@ -2,16 +2,18 @@ package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults.{Binding, Bindings, Head}
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResultsSpec.{nxv, xsd}
-import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, Resources}
+import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, EitherValues, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
 import ch.epfl.bluebrain.nexus.rdf.Node
 import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
 import ch.epfl.bluebrain.nexus.rdf.syntax._
 import io.circe.syntax._
-import org.scalatest.{EitherValues, Matchers, OptionValues, WordSpecLike}
+import org.scalatest.OptionValues
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 class SparqlResultsSpec
-    extends WordSpecLike
+    extends AnyWordSpecLike
     with Matchers
     with Resources
     with EitherValues
@@ -61,9 +63,9 @@ class SparqlResultsSpec
     }
 
     "be decoded" in {
-      json.as[SparqlResults].right.value shouldEqual qr
-      askJson.as[SparqlResults].right.value shouldEqual qrAsk
-      askJson2.as[SparqlResults].right.value shouldEqual qrAsk
+      json.as[SparqlResults].rightValue shouldEqual qr
+      askJson.as[SparqlResults].rightValue shouldEqual qrAsk
+      askJson2.as[SparqlResults].rightValue shouldEqual qrAsk
     }
 
     "add head" in {
@@ -84,11 +86,11 @@ class SparqlResultsSpec
     }
 
     "be converted to graph" in {
-      val result      = constructJson.as[SparqlResults].right.value
+      val result      = constructJson.as[SparqlResults].rightValue
       val id: IriNode = url"http://example.com/id"
       result.asGraph.value.triples shouldEqual
         Set[Triple](
-          (id, nxv + "bnode", Node.blank("t96").right.value),
+          (id, nxv + "bnode", Node.blank("t96").rightValue),
           (id, nxv + "deprecated", Node.literal(false)),
           (id, nxv + "deprecated", Node.literal(false)),
           (id, nxv + "createdAt", Node.literal("2019-08-16T12:57:00.532Z", xsd.dateTime.value)),

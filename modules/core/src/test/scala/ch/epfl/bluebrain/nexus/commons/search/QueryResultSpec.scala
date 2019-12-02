@@ -4,9 +4,10 @@ import cats.syntax.functor._
 import ch.epfl.bluebrain.nexus.commons.search.QueryResult.ScoredQueryResult
 import io.circe.generic.auto._
 import io.circe.{Encoder, Json}
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class QueryResultSpec extends WordSpecLike with Matchers {
+class QueryResultSpec extends AnyWordSpecLike with Matchers {
 
   "A QueryResult Functor" should {
     implicit val queryResultEncoder: Encoder[ScoredQueryResult[Int]] =

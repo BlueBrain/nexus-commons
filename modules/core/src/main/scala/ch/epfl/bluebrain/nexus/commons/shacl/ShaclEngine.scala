@@ -5,7 +5,7 @@ import java.util
 
 import ch.epfl.bluebrain.nexus.commons.shacl.Vocabulary._
 import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
-import journal.Logger
+import com.typesafe.scalalogging.Logger
 import org.apache.jena.query.Dataset
 import org.apache.jena.rdf.model._
 import org.topbraid.jenax.util.{ARQFactory, JenaDatatypes}

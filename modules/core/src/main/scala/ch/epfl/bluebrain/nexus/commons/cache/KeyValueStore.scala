@@ -12,7 +12,7 @@ import cats.implicits._
 import cats.{Functor, Monad}
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStore.Subscription
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreError._
-import journal.Logger
+import com.typesafe.scalalogging.Logger
 import retry.CatsEffect._
 import retry._
 import retry.syntax.all._

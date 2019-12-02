@@ -30,7 +30,7 @@ private[downing] case class SplitDetected(state: ClusterState, downAll: Boolean)
 
 private[downing] case class TimedCancellable(value: Cancellable, timestampMillis: Long) {
   def cancel(): Boolean       = value.cancel()
-  def elapsed: FiniteDuration = (System.currentTimeMillis() - timestampMillis) millis
+  def elapsed: FiniteDuration = (System.currentTimeMillis() - timestampMillis).millis
 }
 
 private[downing] class KeepOldestAkkaDowningActor(config: DowningConfig) extends Actor with ActorLogging {
@@ -43,7 +43,7 @@ private[downing] class KeepOldestAkkaDowningActor(config: DowningConfig) extends
   // Scheduled timer to decide which members will survive and which will terminate after some members became unreachable
   private var splitDeciderTimer = Option.empty[TimedCancellable]
   // Accumulative time between the splitDeciderTimer started and it was stopped
-  private var splitDeciderTimerStopAcc: FiniteDuration = 0 millis
+  private var splitDeciderTimerStopAcc: FiniteDuration = 0.millis
 
   override def preStart(): Unit =
     cluster.subscribe(self, classOf[ClusterDomainEvent])
@@ -56,7 +56,8 @@ private[downing] class KeepOldestAkkaDowningActor(config: DowningConfig) extends
 
   override def receive: Actor.Receive = {
     case CurrentClusterState(members, unreachable, _, _, _) =>
-      val upMembers = members.filter(_.status == MemberStatus.Up).map(m => MemberInfo(m.uniqueAddress, m.roles, m))
+      val upMembers =
+        members.filter(_.status == MemberStatus.Up).unsorted.map(m => MemberInfo(m.uniqueAddress, m.roles, m))
       state = ClusterState(upMembers, unreachable.map(_.uniqueAddress))
       triggerTerminatingTimer()
     case MemberUp(m) =>
@@ -105,12 +106,12 @@ private[downing] class KeepOldestAkkaDowningActor(config: DowningConfig) extends
         t.cancel()
         t.elapsed
       }
-      .getOrElse(0 millis)
+      .getOrElse(0.millis)
 
     splitDeciderTimer = None
 
     splitDeciderTimerStopAcc =
-      if (timeFromCancellation > config.computeDownAllReset || state.unreachable.isEmpty) 0 millis
+      if (timeFromCancellation > config.computeDownAllReset || state.unreachable.isEmpty) 0.millis
       else splitDeciderTimerStopAcc + timeFromCancellation
 
     if (splitDeciderTimerStopAcc > config.computedDownAll)

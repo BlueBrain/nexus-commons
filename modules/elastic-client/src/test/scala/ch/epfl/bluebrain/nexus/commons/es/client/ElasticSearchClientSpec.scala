@@ -3,6 +3,7 @@ package ch.epfl.bluebrain.nexus.commons.es.client
 import java.util.regex.Pattern
 
 import akka.http.scaladsl.model.StatusCodes
+import cats.effect
 import cats.effect.IO
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.ElasticSearchClientError
@@ -18,8 +19,9 @@ import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.parser.parse
 import io.circe.{Decoder, Json}
-import org.scalatest._
+import org.scalatest.{Assertions, CancelAfterFailure, Inspectors, OptionValues}
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 
@@ -35,14 +37,14 @@ class ElasticSearchClientSpec
     with Eventually
     with IOValues {
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(15 seconds, 300 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(15.seconds, 300.milliseconds)
 
   private def genIndexString(): String =
     genString(length = 10, pool = Vector.range('a', 'f') ++ """ "\<>|,/?""")
 
-  private implicit val uc: UntypedHttpClient[IO] = untyped[IO]
-  private implicit val timer                     = IO.timer(ec)
-  private implicit val retryConfig               = RetryStrategyConfig("once", 100 millis, 0 millis, 0, 0 millis)
+  private implicit val uc: UntypedHttpClient[IO]        = untyped[IO]
+  private implicit val timer: effect.Timer[IO]          = IO.timer(ec)
+  private implicit val retryConfig: RetryStrategyConfig = RetryStrategyConfig("once", 100.millis, 0.millis, 0, 0.millis)
 
   "An ElasticSearchClient" when {
     val cl: ElasticSearchClient[IO] = ElasticSearchClient[IO](esUri)
@@ -368,7 +370,7 @@ class ElasticSearchClientSpec
         forAll(listModified) {
           case (id, json) =>
             val updateScript = jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", json)))
-            cl.update(index, id, updateScript).ioValue shouldEqual (())
+            cl.update(index, id, updateScript).ioValue shouldEqual ()
             cl.get[Json](index, id).ioValue.value shouldEqual json
             val jsonWithKey = Json.obj("key" -> Json.fromString(getValue("key", json)))
             cl.get[Json](index, id, include = Set("key")).ioValue.value shouldEqual jsonWithKey
@@ -392,7 +394,7 @@ class ElasticSearchClientSpec
             val updateScript =
               jsonContentOf("/update.json", Map(Pattern.quote("{{value}}") -> getValue("key", mapModified(id))))
 
-            cl.updateDocuments(Set(indexSanitized), query, updateScript).ioValue shouldEqual (())
+            cl.updateDocuments(Set(indexSanitized), query, updateScript).ioValue shouldEqual ()
             cl.get[Json](index, id).ioValue.value shouldEqual mapModified(id)
         }
       }
@@ -417,7 +419,7 @@ class ElasticSearchClientSpec
                 "/simple_query.json",
                 Map(Pattern.quote("{{k}}") -> "key", Pattern.quote("{{v}}") -> getValue("key", json))
               )
-            cl.deleteDocuments(Set(indexSanitized), query).ioValue shouldEqual (())
+            cl.deleteDocuments(Set(indexSanitized), query).ioValue shouldEqual ()
             cl.get[Json](index, id).ioValue shouldEqual None
         }
       }
@@ -428,7 +430,7 @@ class ElasticSearchClientSpec
         val toDelete   = genString() -> genJson("key", "key3")
         val list       = List(toUpdate, toOverride, toDelete)
         val ops        = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
-        cl.bulk(ops).ioValue shouldEqual (())
+        cl.bulk(ops).ioValue shouldEqual ()
 
         val updated = Json.obj("key1" -> Json.fromString("updated"))
         cl.bulk(
@@ -438,7 +440,7 @@ class ElasticSearchClientSpec
               BulkOp.Update(indexSanitized, toUpdate._1, Json.obj("doc" -> updated))
             )
           )
-          .ioValue shouldEqual (())
+          .ioValue shouldEqual ()
         eventually {
           cl.get[Json](index, toUpdate._1).ioValue.value shouldEqual toUpdate._2.deepMerge(updated)
         }
@@ -451,13 +453,13 @@ class ElasticSearchClientSpec
       }
 
       "do nothing when BulkOp list is empty" in {
-        cl.bulk(List.empty).ioValue shouldEqual (())
+        cl.bulk(List.empty).ioValue shouldEqual ()
       }
 
       "add and fetch ids with non UTF-8 characters" in {
         val list = List.fill(5)(genIndexString() -> genJson("key", "key1"))
         val ops  = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
-        cl.bulk(ops).ioValue shouldEqual (())
+        cl.bulk(ops).ioValue shouldEqual ()
 
         forAll(list) {
           case (id, json) =>
@@ -490,7 +492,7 @@ class ElasticSearchClientSpec
         val toDelete = genString() -> genJson("key", "key3")
         val list     = List(toUpdate, toDelete)
         val ops      = list.map { case (id, json) => BulkOp.Create(indexSanitized, id, json) }
-        cl.bulk(ops).ioValue shouldEqual (())
+        cl.bulk(ops).ioValue shouldEqual ()
 
         val updated = Json.obj("key1" -> Json.fromString("updated"))
         cl.bulk(

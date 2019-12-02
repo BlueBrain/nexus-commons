@@ -161,8 +161,8 @@ object SparqlResults {
     def asNode: Option[Node] = asLiteral orElse asIriOrBNode
   }
 
-  private implicit val uriEncoder: Encoder[Uri] = Encoder.encodeString.contramap(_.toString)
-  private implicit val uriDecoder: Decoder[Uri] = Decoder.decodeString.emapTry(uri => Try(Uri(uri)))
+  private[client] implicit val uriEncoder: Encoder[Uri] = Encoder.encodeString.contramap(_.toString)
+  private[client] implicit val uriDecoder: Decoder[Uri] = Decoder.decodeString.emapTry(uri => Try(Uri(uri)))
 
   final implicit val sparqlResultsEncoder: Encoder[SparqlResults] = deriveEncoder[SparqlResults]
 

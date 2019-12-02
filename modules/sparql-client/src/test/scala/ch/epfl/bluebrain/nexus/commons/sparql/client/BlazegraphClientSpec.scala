@@ -15,7 +15,7 @@ import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlResults._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
 import ch.epfl.bluebrain.nexus.commons.test.Resources._
 import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
-import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, Randomness}
+import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, EitherValues, Randomness}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
@@ -27,8 +27,10 @@ import io.circe.Printer
 import io.circe.parser._
 import io.circe.syntax._
 import org.apache.commons.io.FileUtils
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -37,7 +39,7 @@ import scala.util.Try
 //noinspection TypeAnnotation
 class BlazegraphClientSpec
     extends TestKit(ActorSystem("BlazegraphClientSpec"))
-    with WordSpecLike
+    with AnyWordSpecLike
     with Matchers
     with IOValues
     with EitherValues
@@ -56,7 +58,7 @@ class BlazegraphClientSpec
     NanoSparqlServer.newInstance(port, null, null)
   }
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 500 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10.seconds, 500.milliseconds)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -74,7 +76,7 @@ class BlazegraphClientSpec
   private implicit val timer       = IO.timer(ec)
   private implicit val uc          = untyped[IO]
   private implicit val jc          = withUnmarshaller[IO, SparqlResults]
-  private implicit val retryConfig = RetryStrategyConfig("once", 100 millis, 0 millis, 0, 0 millis)
+  private implicit val retryConfig = RetryStrategyConfig("once", 100.millis, 0.millis, 0, 0.millis)
 
   "A BlazegraphClient" should {
     def client(ns: String) = BlazegraphClient[IO](s"http://$localhost:$port/blazegraph", ns, None)
@@ -191,7 +193,7 @@ class BlazegraphClientSpec
            |     "schema:title": "title"
            |  }
            |}""".stripMargin
-      ).right.value
+      ).rightValue
       cl.replace(graph, load(id, label, value)).ioValue
       val strategy = PatchStrategy.removePredicates(
         Set(
@@ -199,7 +201,7 @@ class BlazegraphClientSpec
           "http://www.w3.org/2000/01/rdf-schema#label"
         )
       )
-      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).ioValue
+      cl.patch(graph, json.asGraph(url"http://localhost/$id").rightValue, strategy).ioValue
       cl.triples() should have size 4
       val results = cl.triples(graph)
       results should have size 4
@@ -231,10 +233,10 @@ class BlazegraphClientSpec
            |  }
            |}
            """.stripMargin
-      ).right.value
+      ).rightValue
       cl.replace(graph, load(id, label, value)).ioValue
       val strategy = PatchStrategy.removeButPredicates(Set("http://schema.org/value"))
-      cl.patch(graph, json.asGraph(url"http://localhost/$id").right.value, strategy).ioValue
+      cl.patch(graph, json.asGraph(url"http://localhost/$id").rightValue, strategy).ioValue
       val results = cl.triples(graph)
       results should have size 5
       results.map(_._3).toSet should contain allOf (label + "-updated", value, "name", "title")
@@ -260,6 +262,5 @@ class BlazegraphClientSpec
   private def load(id: String, label: String, value: String): Graph =
     jsonContentOf("/ld.json", Map(quote("{{ID}}") -> id, quote("{{LABEL}}") -> label, quote("{{VALUE}}") -> value))
       .asGraph(url"http://localhost/$id")
-      .right
-      .value
+      .rightValue
 }

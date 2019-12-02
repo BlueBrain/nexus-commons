@@ -4,9 +4,11 @@ import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.epfl.bluebrain.nexus.commons.http.directives.PrefixDirectives._
-import org.scalatest.{Inspectors, Matchers, WordSpecLike}
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.Inspectors
+import org.scalatest.matchers.should.Matchers
 
-class PrefixDirectivesSpec extends WordSpecLike with Matchers with Inspectors with ScalatestRouteTest {
+class PrefixDirectivesSpec extends AnyWordSpecLike with Matchers with Inspectors with ScalatestRouteTest {
 
   "A PrefixDirective" should {
 

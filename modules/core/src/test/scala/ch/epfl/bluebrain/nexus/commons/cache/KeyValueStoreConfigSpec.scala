@@ -6,7 +6,9 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{Matchers, OptionValues, WordSpecLike}
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.OptionValues
+import org.scalatest.matchers.should.Matchers
 import pureconfig.generic.auto._
 import pureconfig.ConfigSource
 
@@ -14,14 +16,14 @@ import scala.concurrent.duration._
 
 class KeyValueStoreConfigSpec
     extends TestKit(ActorSystem("KeyValueStoreConfigSpec"))
-    with WordSpecLike
+    with AnyWordSpecLike
     with Matchers
     with OptionValues {
 
   val config = KeyValueStoreConfig(
-    10 seconds,
-    10 seconds,
-    RetryStrategyConfig("exponential", 100 millis, 10 hours, 7, 500 millis)
+    10.seconds,
+    10.seconds,
+    RetryStrategyConfig("exponential", 100.millis, 10.hours, 7, 500.millis)
   )
 
   "KeyValueStoreConfig" should {

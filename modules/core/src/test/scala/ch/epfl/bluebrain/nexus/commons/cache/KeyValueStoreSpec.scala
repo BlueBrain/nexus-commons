@@ -11,8 +11,8 @@ import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreSubscriber.KeyValueSto
 import ch.epfl.bluebrain.nexus.commons.test.ActorSystemFixture
 import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable.{Set => SetBuffer}
 import scala.concurrent.duration._
@@ -27,7 +27,7 @@ class KeyValueStoreSpec
   private implicit val ec = system.dispatcher
   private implicit val t  = timer(ec)
 
-  override implicit def patienceConfig = PatienceConfig(6 seconds, 100 millis)
+  override implicit def patienceConfig: PatienceConfig = PatienceConfig(6.seconds, 100.millis)
 
   "A KeyValueStore" should {
 
@@ -44,8 +44,8 @@ class KeyValueStoreSpec
     val onChange: OnKeyValueStoreChange[String, RevisionedValue[String]] =
       (value: KeyValueStoreChanges[String, RevisionedValue[String]]) => changes += value
 
-    implicit val config =
-      KeyValueStoreConfig(4 seconds, 3 seconds, RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0 millis))
+    implicit val config: KeyValueStoreConfig =
+      KeyValueStoreConfig(4.seconds, 3.seconds, RetryStrategyConfig("never", 0.millis, 0.millis, 0, 0.millis))
     val store =
       KeyValueStore.distributed[IO, String, RevisionedValue[String]](
         "spec", { case (_, rv) => rv.rev }

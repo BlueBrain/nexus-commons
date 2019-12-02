@@ -1,7 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.es.client
 
 import akka.actor.ActorSystem
-import cats.effect.IO
+import cats.effect.{IO, Timer}
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchClient.BulkOp
 import ch.epfl.bluebrain.nexus.commons.es.server.embed.ElasticServer
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
@@ -11,6 +11,7 @@ import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
 import io.circe.Json
 import org.openjdk.jmh.annotations._
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 
 //noinspection TypeAnnotation
@@ -31,7 +32,7 @@ import scala.concurrent.duration._
 @State(Scope.Thread)
 class BulkInsertBenchmark extends IOValues with Resources with Randomness {
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 2 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10.seconds, 2.milliseconds)
 
   var dataList: Seq[Json]             = Seq.empty
   var client: ElasticSearchClient[IO] = _
@@ -43,10 +44,10 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness {
   @Setup(Level.Trial) def doSetup(): Unit = {
 
     system = ActorSystem(s"BulkInsertBenchmark")
-    implicit val ec          = system.dispatcher
-    implicit val uc          = untyped[IO]
-    implicit val timer       = IO.timer(ec)
-    implicit val retryConfig = RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0 millis)
+    implicit val ec: ExecutionContextExecutor     = system.dispatcher
+    implicit val uc: UntypedHttpClient[IO]        = untyped[IO]
+    implicit val timer: Timer[IO]                 = IO.timer(ec)
+    implicit val retryConfig: RetryStrategyConfig = RetryStrategyConfig("never", 0.millis, 0.millis, 0, 0.millis)
 
     server = new ElasticServer() {}
     server.startElastic()
