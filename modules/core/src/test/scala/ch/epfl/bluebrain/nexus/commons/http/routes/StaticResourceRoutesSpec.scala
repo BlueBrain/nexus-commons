@@ -6,13 +6,15 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.epfl.bluebrain.nexus.commons.http.RdfMediaTypes
 import ch.epfl.bluebrain.nexus.commons.test.Resources
-import org.scalatest.{Inspectors, Matchers, WordSpecLike}
+import org.scalatest.Inspectors
 import java.util.regex.Pattern.quote
 
 import io.circe.parser.parse
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 class StaticResourceRoutesSpec
-    extends WordSpecLike
+    extends AnyWordSpecLike
     with Matchers
     with Inspectors
     with ScalatestRouteTest

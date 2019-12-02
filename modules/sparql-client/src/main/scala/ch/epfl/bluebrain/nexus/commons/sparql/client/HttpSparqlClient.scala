@@ -10,7 +10,7 @@ import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, RdfMediaTypes, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlFailure.SparqlUnexpectedError
 import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
-import journal.Logger
+import com.typesafe.scalalogging.Logger
 import org.apache.jena.query.ParameterizedSparqlString
 import retry.CatsEffect._
 import retry._

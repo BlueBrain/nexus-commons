@@ -14,7 +14,7 @@ object JsonKeys {
     */
   def sortKeys(json: Json)(implicit keys: OrderedKeys): Json = {
 
-    implicit val _: Ordering[String] = new Ordering[String] {
+    implicit val customStringOrdering: Ordering[String] = new Ordering[String] {
       private val middlePos = keys.withPosition("")
 
       private def position(key: String): Int = keys.withPosition.getOrElse(key, middlePos)

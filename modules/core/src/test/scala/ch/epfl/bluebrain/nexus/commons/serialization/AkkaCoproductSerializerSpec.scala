@@ -6,10 +6,12 @@ import ch.epfl.bluebrain.nexus.commons.serialization.AkkaCoproductSerializerSpec
 import ch.epfl.bluebrain.nexus.commons.serialization.AkkaCoproductSerializerSpec._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import org.scalatest.{Inspectors, Matchers, WordSpecLike}
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.Inspectors
+import org.scalatest.matchers.should.Matchers
 import shapeless._
 
-class AkkaCoproductSerializerSpec extends WordSpecLike with Matchers with Inspectors {
+class AkkaCoproductSerializerSpec extends AnyWordSpecLike with Matchers with Inspectors {
 
   "An AkkaCoproductSerializer" when {
     val ser  = new EventSerializer
@@ -98,7 +100,7 @@ object AkkaCoproductSerializerSpec {
     final case class TheCommand(arg: Int) extends Command
   }
 
-  private implicit val config: Configuration = Configuration.default.withDiscriminator("type")
+  private[serialization] implicit val config: Configuration = Configuration.default.withDiscriminator("type")
 
   class EventSerializer extends AkkaCoproductSerializer[Command :+: Event :+: CNil](9210)
 }

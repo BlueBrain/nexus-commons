@@ -36,7 +36,7 @@ class StaticResourceRoutes(resourcePaths: Map[String, String], prefix: String, b
   private val baseReplacement: Map[String, String] = Map(quote("{{base}}") -> baseUri.toString)
 
   private lazy val resources: Map[String, Json] =
-    resourcePaths
+    resourcePaths.view
       .mapValues { resource =>
         parse(contentOf(resource, baseReplacement)).toOption
       }
@@ -47,6 +47,7 @@ class StaticResourceRoutes(resourcePaths: Map[String, String], prefix: String, b
             case None    => None
           }
       }
+      .toMap
 
   def routes: Route =
     uriPrefix(baseUri) {

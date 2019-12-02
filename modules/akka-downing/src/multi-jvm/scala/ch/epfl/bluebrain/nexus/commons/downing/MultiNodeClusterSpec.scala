@@ -9,7 +9,7 @@ import akka.remote.DefaultFailureDetectorRegistry
 import akka.remote.testconductor.RoleName
 import akka.remote.testkit.{MultiNodeSpec, MultiNodeSpecCallbacks}
 import akka.remote.transport.ThrottlerTransportAdapter.Direction
-import akka.stream.{StreamTcpException}
+import akka.stream.StreamTcpException
 import akka.testkit.TestEvent.Mute
 import akka.testkit.{EventFilter, ImplicitSender}
 import cats.implicits._
@@ -19,7 +19,9 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.syntax._
 import io.circe.generic.auto._
 import io.circe.{Decoder, Encoder}
-import org.scalatest.{BeforeAndAfterAll, Matchers, OptionValues, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.{BeforeAndAfterAll, OptionValues}
 
 import scala.collection.immutable
 import scala.concurrent.Future
@@ -34,7 +36,7 @@ import scala.util.Try
 abstract class MultiNodeClusterSpec(config: DowningConfig)
     extends MultiNodeSpec(config)
     with MultiNodeSpecCallbacks
-    with WordSpecLike
+    with AnyWordSpecLike
     with Matchers
     with BeforeAndAfterAll
     with ImplicitSender
@@ -63,7 +65,7 @@ abstract class MultiNodeClusterSpec(config: DowningConfig)
     addressOrdering.compare(address(x), address(y))
 
   def assertLeader(nodesInCluster: RoleName*): Unit =
-    if (nodesInCluster.contains(myself)) assertLeaderIn(nodesInCluster.to[immutable.Seq])
+    if (nodesInCluster.contains(myself)) assertLeaderIn(nodesInCluster.to(immutable.Seq))
 
   def assertLeaderIn(nodesInCluster: immutable.Seq[RoleName]): Unit =
     if (nodesInCluster.contains(myself)) {
@@ -111,12 +113,12 @@ abstract class MultiNodeClusterSpec(config: DowningConfig)
                      timeout: FiniteDuration = 25.seconds): Unit = {
     within(timeout) {
       if (canNotBePartOfMemberRing.nonEmpty) // don't run this on an empty set
-        awaitAssert(canNotBePartOfMemberRing foreach (a ⇒ cluster.state.members.map(_.address) should not contain a))
+        awaitAssert(canNotBePartOfMemberRing foreach (a => cluster.state.members.map(_.address) should not contain a))
       awaitAssert(cluster.state.members.size should ===(numberOfMembers))
-      awaitAssert(cluster.state.members.map(_.status) should ===(Set(MemberStatus.Up)))
+      awaitAssert(cluster.state.members.unsorted.map(_.status) should ===(Set(MemberStatus.Up)))
       // clusterView.leader is updated by LeaderChanged, await that to be updated also
       val expectedLeader = cluster.state.members.collectFirst {
-        case m if m.dataCenter == cluster.settings.SelfDataCenter ⇒ m.address
+        case m if m.dataCenter == cluster.settings.SelfDataCenter => m.address
       }
       awaitAssert(cluster.state.leader should ===(expectedLeader))
       ()
@@ -126,7 +128,7 @@ abstract class MultiNodeClusterSpec(config: DowningConfig)
   def startClusterNode(): Unit = {
     val _ = if (cluster.state.members.isEmpty) {
       cluster join myself
-      awaitAssert(cluster.state.members.map(_.address) should contain(address(myself)))
+      awaitAssert(cluster.state.members.unsorted.map(_.address) should contain(address(myself)))
     } else {
       cluster.selfMember
     }
@@ -184,7 +186,7 @@ abstract class MultiNodeClusterSpec(config: DowningConfig)
           case Some(p: FailureDetectorPuppet) => Some(p)
           case _                              => None
         }
-      //          reg.failureDetector(address) collect { case p: FailureDetectorPuppet ⇒ p }
+      //          reg.failureDetector(address) collect { case p: FailureDetectorPuppet => p }
       case _ => None
     }
   }
@@ -202,7 +204,7 @@ abstract class MultiNodeClusterSpec(config: DowningConfig)
         ".*Cluster node successfully shut down.*",
         ".*Ignoring received gossip .*",
         ".*Using a dedicated scheduler for cluster.*"
-      ) foreach { s ⇒
+      ) foreach { s =>
         sys.eventStream.publish(Mute(EventFilter.info(pattern = s)))
       }
 
@@ -261,8 +263,8 @@ class FailureDetectorPuppet extends FailureDetector {
 
   override def isAvailable: Boolean =
     status.get match {
-      case Unknown | Up ⇒ true
-      case Down         ⇒ false
+      case Unknown | Up => true
+      case Down         => false
     }
 
   override def isMonitoring: Boolean =

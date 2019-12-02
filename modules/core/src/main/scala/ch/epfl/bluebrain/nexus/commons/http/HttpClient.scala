@@ -11,9 +11,9 @@ import akka.util.ByteString
 import cats.MonadError
 import cats.effect.{ContextShift, IO, LiftIO}
 import cats.syntax.flatMap._
-import journal.Logger
+import com.typesafe.scalalogging.Logger
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.reflect.ClassTag
 
 /**
@@ -90,7 +90,7 @@ object HttpClient {
     */
   final def untyped[F[_]](implicit L: LiftIO[F], as: ActorSystem, mt: Materializer): UntypedHttpClient[F] =
     new HttpClient[F, HttpResponse] {
-      private implicit val ec                             = as.dispatcher
+      private implicit val ec: ExecutionContextExecutor   = as.dispatcher
       private implicit val contextShift: ContextShift[IO] = IO.contextShift(ec)
 
       override def apply(req: HttpRequest): F[HttpResponse] =

@@ -4,13 +4,14 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.Uri
-import cats.effect.IO
+import cats.effect.{IO, Timer}
+import ch.epfl.bluebrain.nexus.commons.http.HttpClient
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient._
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.BlazegraphClientFixture._
 import ch.epfl.bluebrain.nexus.commons.sparql.client.SparqlWriteQuery._
 import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
-import ch.epfl.bluebrain.nexus.commons.test.{Randomness, Resources}
+import ch.epfl.bluebrain.nexus.commons.test.{EitherValues, Randomness, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
 import ch.epfl.bluebrain.nexus.rdf.syntax._
@@ -19,8 +20,8 @@ import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import org.apache.commons.io.FileUtils
 import org.eclipse.jetty.server.Server
 import org.openjdk.jmh.annotations._
-import org.scalatest.EitherValues
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration._
 import scala.util.Try
 
@@ -42,7 +43,7 @@ import scala.util.Try
 @State(Scope.Thread)
 class BulkInsertBenchmark extends IOValues with Resources with Randomness with EitherValues {
 
-  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10 seconds, 2 milliseconds)
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(10.seconds, 2.milliseconds)
 
   var dataList: Seq[Graph]         = Seq.empty
   var client: BlazegraphClient[IO] = _
@@ -56,12 +57,12 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
 
     val port = freePort()
     system = ActorSystem(s"BulkInsertBenchmark")
-    implicit val ec          = system.dispatcher
-    implicit val uc          = untyped[IO]
-    implicit val jc          = withUnmarshaller[IO, SparqlResults]
-    implicit val timer       = IO.timer(ec)
-    implicit val retryConfig = RetryStrategyConfig("never", 0 millis, 0 millis, 0, 0 millis)
-    val _                    = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
+    implicit val ec: ExecutionContextExecutor      = system.dispatcher
+    implicit val uc: UntypedHttpClient[IO]         = untyped[IO]
+    implicit val jc: HttpClient[IO, SparqlResults] = withUnmarshaller[IO, SparqlResults]
+    implicit val timer: Timer[IO]                  = IO.timer(ec)
+    implicit val retryConfig: RetryStrategyConfig  = RetryStrategyConfig("never", 0.millis, 0.millis, 0, 0.millis)
+    val _                                          = Try(FileUtils.forceDelete(new File("bigdata.jnl")))
 
     server = {
       System.setProperty("jetty.home", getClass.getResource("/war").toExternalForm)
@@ -73,7 +74,7 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
     val json = jsonContentOf("/resource.json")
     client.createNamespace(properties()).ioValue
 
-    dataList = List.fill(100)(json.asGraph(blank).right.value)
+    dataList = List.fill(100)(json.asGraph(blank).rightValue)
   }
 
   @TearDown(Level.Trial) def doTearDown(): Unit = {

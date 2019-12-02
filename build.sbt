@@ -24,8 +24,8 @@ scalafmt: {
 }
  */
 
-val rdfVersion      = "0.4.2"
-val sourcingVersion = "0.18.0"
+val rdfVersion      = "0.5.0"
+val sourcingVersion = "0.19.0"
 
 lazy val rdf          = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
 lazy val sourcingCore = "ch.epfl.bluebrain.nexus" %% "sourcing-core" % sourcingVersion
@@ -44,12 +44,12 @@ val circeGenericVersion   = "0.12.2"
 val elasticSearchVersion  = "7.4.2"
 val jacksonVersion        = "2.10.1"
 val jacksonBindVersion    = "2.10.1"
-val journalVersion        = "3.0.19"
 val kryoVersion           = "1.1.0"
 val log4jVersion          = "2.12.1"
 val commonsIOVersion      = "1.3.2"
 val pureconfigVersion     = "0.12.1"
-val scalaTestVersion      = "3.0.8"
+val scalaLoggingVersion   = "3.9.2"
+val scalaTestVersion      = "3.1.0"
 val shapelessVersion      = "2.3.3"
 val topQuadrantVersion    = "1.3.1"
 
@@ -84,11 +84,11 @@ lazy val jacksonAnnotations        = "com.fasterxml.jackson.core"        % "jack
 lazy val jacksonCore               = "com.fasterxml.jackson.core"        % "jackson-core"                  % jacksonVersion
 lazy val jacksonDatabind           = "com.fasterxml.jackson.core"        % "jackson-databind"              % jacksonBindVersion
 lazy val jenaArq                   = "org.apache.jena"                   % "jena-arq"                      % jenaVersion
-lazy val journal                   = "io.verizon.journal"                %% "core"                         % journalVersion
 lazy val kryo                      = "io.altoo"                          %% "akka-kryo-serialization"      % kryoVersion
 lazy val log4jCore                 = "org.apache.logging.log4j"          % "log4j-core"                    % log4jVersion
 lazy val log4jApi                  = "org.apache.logging.log4j"          % "log4j-api"                     % log4jVersion
 lazy val pureconfig                = "com.github.pureconfig"             %% "pureconfig"                   % pureconfigVersion
+lazy val scalaLogging              = "com.typesafe.scala-logging"        %% "scala-logging"                % scalaLoggingVersion
 lazy val scalaTest                 = "org.scalatest"                     %% "scalatest"                    % scalaTestVersion
 lazy val shapeless                 = "com.chuusai"                       %% "shapeless"                    % shapelessVersion
 lazy val topQuadrantShacl          = "org.topbraid"                      % "shacl"                         % topQuadrantVersion
@@ -126,7 +126,7 @@ lazy val core = project
       catsEffect,
       circeCore,
       circeGenericExtras,
-      journal,
+      scalaLogging,
       pureconfig,
       rdf,
       shapeless,

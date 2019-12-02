@@ -6,7 +6,8 @@ import akka.testkit._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.concurrent.ScalaFutures._
-import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.Promise
 import scala.concurrent.duration._
@@ -20,7 +21,7 @@ class ActorSystemFixture(name: String, startCluster: Boolean = false, configs: V
           .resolve()
       )
     )
-    with WordSpecLike
+    with AnyWordSpecLike
     with PatienceConfiguration
     with BeforeAndAfterAll {
 

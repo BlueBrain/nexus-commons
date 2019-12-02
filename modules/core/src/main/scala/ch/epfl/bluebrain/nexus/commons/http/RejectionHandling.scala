@@ -88,7 +88,7 @@ object RejectionHandling {
         rejectRequestEntityAndComplete(BadRequest -> e)
       }
       .handleAll[MethodRejection] { rejections =>
-        val (methods, names) = rejections.map(r => r.supported → r.supported.name).unzip
+        val (methods, names) = rejections.map(r => r.supported -> r.supported.name).unzip
         val namesString      = names.mkString("'", "', '", "'")
         val e                = Error("HttpMethodNotAllowed", s"HTTP method not allowed, supported methods: $namesString.")
         rejectRequestEntityAndComplete((MethodNotAllowed, List(Allow(methods)), e))

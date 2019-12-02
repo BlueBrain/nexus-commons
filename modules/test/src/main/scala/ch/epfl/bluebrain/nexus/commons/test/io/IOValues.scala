@@ -2,7 +2,7 @@ package ch.epfl.bluebrain.nexus.commons.test.io
 
 import cats.effect.IO
 import org.scalactic.source
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import org.scalatest.concurrent.ScalaFutures
 
 import scala.reflect.ClassTag

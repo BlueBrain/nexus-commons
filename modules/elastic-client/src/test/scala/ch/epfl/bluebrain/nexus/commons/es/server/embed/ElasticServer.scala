@@ -15,15 +15,16 @@ import org.elasticsearch.node.Node
 import org.elasticsearch.painless.PainlessPlugin
 import org.elasticsearch.plugins.Plugin
 import org.elasticsearch.transport.Netty4Plugin
-import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.BeforeAndAfterAll
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 // $COVERAGE-OFF$
 abstract class ElasticServer
     extends TestKit(ActorSystem("ElasticServer"))
-    with WordSpecLike
+    with AnyWordSpecLike
     with BeforeAndAfterAll
     with Randomness {
 

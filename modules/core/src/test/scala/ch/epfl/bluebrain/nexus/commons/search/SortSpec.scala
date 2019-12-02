@@ -1,9 +1,10 @@
 package ch.epfl.bluebrain.nexus.commons.search
 
 import ch.epfl.bluebrain.nexus.commons.search.Sort.OrderType._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class SortSpec extends WordSpecLike with Matchers {
+class SortSpec extends AnyWordSpecLike with Matchers {
 
   "A Sort" should {
     "created correctly " in {

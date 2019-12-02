@@ -9,29 +9,32 @@ import ch.epfl.bluebrain.nexus.commons.test.Resources
 import io.circe.Json
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
-import org.scalatest.{Inspectors, Matchers, WordSpecLike}
+import org.scalatest.Inspectors
 import ch.epfl.bluebrain.nexus.rdf.syntax._
 import ch.epfl.bluebrain.nexus.commons.circe.syntax._
 import ch.epfl.bluebrain.nexus.commons.http.syntax._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable
 
-class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
+class JsonSyntaxSpec extends AnyWordSpecLike with Matchers with Resources with Inspectors with ScalatestRouteTest {
+
+  implicit val config: Configuration = Configuration.default.withDiscriminator("@type")
 
   "An enriched Json" when {
-    implicit val config: Configuration = Configuration.default.withDiscriminator("@type")
     implicit val context: ContextUri =
       ContextUri(url"https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0".value)
 
     "dealing with KG data" should {
       val list = List(
-        (jsonContentOf("/kg_json/activity_schema.json")   -> jsonContentOf("/kg_json/activity_schema_ordered.json")),
-        (jsonContentOf("/kg_json/activity_instance.json") -> jsonContentOf("/kg_json/activity_instance_ordered.json")),
-        (jsonContentOf("/kg_json/activity_instance_att.json") -> jsonContentOf(
+        jsonContentOf("/kg_json/activity_schema.json")   -> jsonContentOf("/kg_json/activity_schema_ordered.json"),
+        jsonContentOf("/kg_json/activity_instance.json") -> jsonContentOf("/kg_json/activity_instance_ordered.json"),
+        jsonContentOf("/kg_json/activity_instance_att.json") -> jsonContentOf(
           "/kg_json/activity_instance_att_ordered.json"
-        ))
+        )
       )
-      implicit val _ = OrderedKeys(
+      implicit val orderedKeys: OrderedKeys = OrderedKeys(
         List(
           "@context",
           "@id",
@@ -59,7 +62,7 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
         }
       }
 
-      "generated jsonLD HTTP" in {
+      "generate jsonLD HTTP" in {
         val route = get {
           complete(
             KgResponse(
@@ -83,11 +86,11 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
 
     "dealing with IAM data" should {
       val list = List(
-        (jsonContentOf("/iam_json/acls.json") -> jsonContentOf("/iam_json/acls_ordered.json")),
-        (jsonContentOf("/iam_json/user.json") -> jsonContentOf("/iam_json/user_ordered.json"))
+        jsonContentOf("/iam_json/acls.json") -> jsonContentOf("/iam_json/acls_ordered.json"),
+        jsonContentOf("/iam_json/user.json") -> jsonContentOf("/iam_json/user_ordered.json")
       )
 
-      implicit val _ = OrderedKeys(
+      implicit val orderedKeys: OrderedKeys = OrderedKeys(
         List(
           "@context",
           "@id",
@@ -106,11 +109,11 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
         }
       }
 
-      "generated jsonLD HTTP" in {
+      "generate jsonLD HTTP" in {
         val route = get {
           complete(
             AuthenticatedUser(
-              LinkedHashSet(
+              mutable.LinkedHashSet(
                 GroupRef("bbp-user-one", "BBP", "https://nexus.example.com/v0/realms/BBP/groups/bbp-user-one"),
                 GroupRef("bbp-svc-two", "BBP", "https://nexus.example.com/v0/realms/BBP/groups/bbp-svc-two"),
                 Anonymous("https://nexus.example.com/v0/anonymous"),
@@ -127,7 +130,6 @@ class JsonSyntaxSpec extends WordSpecLike with Matchers with Resources with Insp
         Get("/") ~> route ~> check {
           contentType shouldEqual RdfMediaTypes.`application/ld+json`.toContentType
           entityAs[Json].spaces2 shouldEqual jsonContentOf("/iam_json/user_ordered.json").spaces2
-
         }
       }
     }
@@ -216,9 +218,9 @@ object JsonSyntaxSpec {
   )
 
   sealed trait User extends Product with Serializable {
-    def identities: LinkedHashSet[Identity]
+    def identities: mutable.LinkedHashSet[Identity]
   }
-  final case class AuthenticatedUser(identities: LinkedHashSet[Identity]) extends User
+  final case class AuthenticatedUser(identities: mutable.LinkedHashSet[Identity]) extends User
   sealed trait Identity extends Product with Serializable {
     def `@id`: String
   }
