@@ -21,7 +21,7 @@ import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
 import ch.epfl.bluebrain.nexus.rdf.instances._
 import ch.epfl.bluebrain.nexus.rdf.syntax._
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import io.circe.Printer
 import io.circe.parser._

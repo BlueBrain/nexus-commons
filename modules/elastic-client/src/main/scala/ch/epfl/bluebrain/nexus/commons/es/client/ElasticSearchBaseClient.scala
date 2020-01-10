@@ -7,7 +7,7 @@ import cats.implicits._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchBaseClient._
 import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchFailure.{ElasticServerError, ElasticUnexpectedError}
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.typesafe.scalalogging.Logger
 import retry.CatsEffect._
 import retry.syntax.all._

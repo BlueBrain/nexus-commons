@@ -15,7 +15,7 @@ import ch.epfl.bluebrain.nexus.commons.search.QueryResults._
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, Sort, SortList}
 import ch.epfl.bluebrain.nexus.commons.test.Resources
 import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.parser.parse
 import io.circe.{Decoder, Json}

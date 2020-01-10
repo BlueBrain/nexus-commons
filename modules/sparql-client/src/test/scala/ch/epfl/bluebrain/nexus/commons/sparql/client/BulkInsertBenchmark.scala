@@ -15,7 +15,7 @@ import ch.epfl.bluebrain.nexus.commons.test.{EitherValues, Randomness, Resources
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
 import ch.epfl.bluebrain.nexus.rdf.syntax._
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import org.apache.commons.io.FileUtils
 import org.eclipse.jetty.server.Server
