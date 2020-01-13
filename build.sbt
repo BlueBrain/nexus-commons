@@ -169,29 +169,6 @@ lazy val elasticSearchClient = project
     run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
-lazy val akkaDowning = project
-  .in(file("modules/akka-downing"))
-  .dependsOn(core % Test, test % Test)
-  .enablePlugins(MultiJvmPlugin)
-  .configs(MultiJvm)
-  .settings(
-    name                      := "akka-downing",
-    moduleName                := "akka-downing",
-    coverageMinimum           := 75,
-    parallelExecution in Test := false,
-    libraryDependencies ++= Seq(
-      akkaCluster,
-      pureconfig,
-      akkaMultiNodeTestKit      % Test,
-      akkaClusterManagement     % Test,
-      akkaClusterManagementHttp % Test,
-      akkaHttp                  % Test,
-      akkaTestKit               % Test,
-      scalaTest                 % Test,
-      "com.github.ghik"         % "silencer-lib" % scalacSilencerVersion.value % Test cross CrossVersion.full // should have been brought in by copying the Test config... but it wasn't
-    )
-  )
-
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(core, test % Test)
@@ -247,7 +224,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon, akkaDowning)
+  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 
@@ -269,4 +246,4 @@ inThisBuild(
   )
 )
 
-addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;multi-jvm:test;coverageReport;coverageAggregate")
+addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")
