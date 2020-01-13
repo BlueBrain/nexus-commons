@@ -1,6 +1,6 @@
 package ch.epfl.bluebrain.nexus.commons.cache
 
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 
 import scala.concurrent.duration.FiniteDuration
 

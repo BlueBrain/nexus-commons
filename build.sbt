@@ -24,20 +24,20 @@ scalafmt: {
 }
  */
 
-val rdfVersion      = "0.5.0"
-val sourcingVersion = "0.19.0"
+val rdfVersion      = "0.5.2"
+val sourcingVersion = "0.20.0"
 
 lazy val rdf          = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
 lazy val sourcingCore = "ch.epfl.bluebrain.nexus" %% "sourcing-core" % sourcingVersion
 
-val akkaVersion           = "2.6.0"
+val akkaVersion           = "2.6.1"
 val akkaManagementVersion = "1.0.5"
-val akkaHttpVersion       = "10.1.10"
-val akkaHttpCirceVersion  = "1.29.1"
+val akkaHttpVersion       = "10.1.11"
+val akkaHttpCirceVersion  = "1.30.0"
 val asmVersion            = "7.2"
 val jenaVersion           = "3.13.1"
 val blazegraphVersion     = "2.1.5"
-val catsVersion           = "2.0.0"
+val catsVersion           = "2.1.0"
 val catsEffectVersion     = "2.0.0"
 val circeVersion          = "0.12.3"
 val circeGenericVersion   = "0.12.2"
@@ -45,9 +45,9 @@ val elasticSearchVersion  = "7.4.2"
 val jacksonVersion        = "2.10.1"
 val jacksonBindVersion    = "2.10.1"
 val kryoVersion           = "1.1.0"
-val log4jVersion          = "2.12.1"
+val log4jVersion          = "2.13.0"
 val commonsIOVersion      = "1.3.2"
-val pureconfigVersion     = "0.12.1"
+val pureconfigVersion     = "0.12.2"
 val scalaLoggingVersion   = "3.9.2"
 val scalaTestVersion      = "3.1.0"
 val shapelessVersion      = "2.3.3"
@@ -169,29 +169,6 @@ lazy val elasticSearchClient = project
     run in Jmh                 := (run in Jmh).dependsOn(Keys.compile in Jmh).evaluated
   )
 
-lazy val akkaDowning = project
-  .in(file("modules/akka-downing"))
-  .dependsOn(core % Test, test % Test)
-  .enablePlugins(MultiJvmPlugin)
-  .configs(MultiJvm)
-  .settings(
-    name                      := "akka-downing",
-    moduleName                := "akka-downing",
-    coverageMinimum           := 75,
-    parallelExecution in Test := false,
-    libraryDependencies ++= Seq(
-      akkaCluster,
-      pureconfig,
-      akkaMultiNodeTestKit      % Test,
-      akkaClusterManagement     % Test,
-      akkaClusterManagementHttp % Test,
-      akkaHttp                  % Test,
-      akkaTestKit               % Test,
-      scalaTest                 % Test,
-      "com.github.ghik"         % "silencer-lib" % scalacSilencerVersion.value % Test cross CrossVersion.full // should have been brought in by copying the Test config... but it wasn't
-    )
-  )
-
 lazy val sparqlClient = project
   .in(file("modules/sparql-client"))
   .dependsOn(core, test % Test)
@@ -247,7 +224,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "commons", moduleName := "commons")
   .settings(noPublish)
-  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon, akkaDowning)
+  .aggregate(core, test, elasticSearchClient, sparqlClient, kamon)
 
 lazy val noPublish = Seq(publishLocal := {}, publish := {}, publishArtifact := false)
 
@@ -269,4 +246,4 @@ inThisBuild(
   )
 )
 
-addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;multi-jvm:test;coverageReport;coverageAggregate")
+addCommandAlias("review", ";clean;scalafmtSbtCheck;coverage;scapegoat;test;coverageReport;coverageAggregate")

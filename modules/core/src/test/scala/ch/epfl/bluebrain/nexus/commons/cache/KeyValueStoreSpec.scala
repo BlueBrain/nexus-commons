@@ -9,7 +9,7 @@ import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreSpec._
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreSubscriber.KeyValueStoreChange._
 import ch.epfl.bluebrain.nexus.commons.cache.KeyValueStoreSubscriber.KeyValueStoreChanges
 import ch.epfl.bluebrain.nexus.commons.test.ActorSystemFixture
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers

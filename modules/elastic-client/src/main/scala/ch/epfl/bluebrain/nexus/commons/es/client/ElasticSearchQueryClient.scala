@@ -12,7 +12,7 @@ import ch.epfl.bluebrain.nexus.commons.es.client.ElasticSearchQueryClient._
 import ch.epfl.bluebrain.nexus.commons.http.HttpClient.UntypedHttpClient
 import ch.epfl.bluebrain.nexus.commons.http.{HttpClient, UnexpectedUnsuccessfulHttpResponse}
 import ch.epfl.bluebrain.nexus.commons.search.{Pagination, QueryResults, Sort, SortList, _}
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.syntax._
 import io.circe.{Encoder, Json}

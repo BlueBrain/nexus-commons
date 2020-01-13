@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import ch.epfl.bluebrain.nexus.sourcing.akka.SourcingConfig.RetryStrategyConfig
+import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.typesafe.config.ConfigFactory
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatest.OptionValues
