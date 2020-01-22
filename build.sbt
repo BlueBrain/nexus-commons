@@ -24,7 +24,7 @@ scalafmt: {
 }
  */
 
-val rdfVersion      = "0.5.2"
+val rdfVersion      = "0.6.0"
 val sourcingVersion = "0.20.0"
 
 lazy val rdf          = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
@@ -34,16 +34,16 @@ val akkaVersion           = "2.6.1"
 val akkaManagementVersion = "1.0.5"
 val akkaHttpVersion       = "10.1.11"
 val akkaHttpCirceVersion  = "1.30.0"
-val asmVersion            = "7.2"
-val jenaVersion           = "3.13.1"
+val asmVersion            = "7.3.1"
+val jenaVersion           = "3.14.0"
 val blazegraphVersion     = "2.1.5"
 val catsVersion           = "2.1.0"
 val catsEffectVersion     = "2.0.0"
 val circeVersion          = "0.12.3"
 val circeGenericVersion   = "0.12.2"
-val elasticSearchVersion  = "7.4.2"
-val jacksonVersion        = "2.10.1"
-val jacksonBindVersion    = "2.10.1"
+val elasticSearchVersion  = "7.5.1"
+val jacksonVersion        = "2.10.2"
+val jacksonBindVersion    = "2.10.2"
 val kryoVersion           = "1.1.0"
 val log4jVersion          = "2.13.0"
 val commonsIOVersion      = "1.3.2"
@@ -204,18 +204,18 @@ lazy val kamon = project
     moduleName      := "commons-kamon",
     coverageEnabled := false,
     libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.3",
-      "io.kamon"      % "kanela-agent"                  % "1.0.3",
-      "io.kamon"      %% "kamon-status-page"            % "2.0.2",
-      "io.kamon"      %% "kamon-instrumentation-common" % "2.0.0",
+      "net.bytebuddy" % "byte-buddy-agent"              % "1.10.7",
+      "io.kamon"      % "kanela-agent"                  % "1.0.4",
+      "io.kamon"      %% "kamon-status-page"            % "2.0.4",
+      "io.kamon"      %% "kamon-instrumentation-common" % "2.0.1",
       "io.kamon"      %% "kamon-executors"              % "2.0.2",
       "io.kamon"      %% "kamon-scala-future"           % "2.0.1",
-      "io.kamon"      %% "kamon-akka"                   % "2.0.1",
+      "io.kamon"      %% "kamon-akka"                   % "2.0.2",
       "io.kamon"      %% "kamon-logback"                % "2.0.2",
       "io.kamon"      %% "kamon-system-metrics"         % "2.0.1",
-      "io.kamon"      %% "kamon-core"                   % "2.0.2",
-      "io.kamon"      %% "kamon-akka-http"              % "2.0.2",
-      "io.kamon"      %% "kamon-prometheus"             % "2.0.0",
+      "io.kamon"      %% "kamon-core"                   % "2.0.4",
+      "io.kamon"      %% "kamon-akka-http"              % "2.0.3",
+      "io.kamon"      %% "kamon-prometheus"             % "2.0.1",
       "io.kamon"      %% "kamon-jaeger"                 % "2.0.0"
     )
   )

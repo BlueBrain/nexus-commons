@@ -1,8 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.sparql.client
 
 import akka.http.scaladsl.model.Uri
-import ch.epfl.bluebrain.nexus.rdf.syntax._
-import ch.epfl.bluebrain.nexus.rdf.{Graph, NTriples, RootedGraph}
+import ch.epfl.bluebrain.nexus.rdf.Graph
 
 /**
   * Enumeration type for all supported sparql write queries
@@ -81,7 +80,7 @@ object SparqlWriteQuery {
        |
        |INSERT DATA {
        |  GRAPH <$graph> {
-       |    ${toNTriples(data)}
+       |    ${data.ntriples}
        |  }
        |};""".stripMargin,
       graph
@@ -101,12 +100,9 @@ object SparqlWriteQuery {
        |
        |INSERT DATA {
        |  GRAPH <$graph> {
-       |    ${toNTriples(data)}
+       |    ${data.ntriples}
        |  }
        |};""".stripMargin,
       graph
     )
-
-  private def toNTriples(graph: Graph): String =
-    RootedGraph.anon(graph).as[NTriples]().value
 }

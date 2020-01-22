@@ -14,7 +14,7 @@ import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
 import ch.epfl.bluebrain.nexus.commons.test.{EitherValues, Randomness, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Node.blank
-import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.implicits._
 import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
 import org.apache.commons.io.FileUtils
@@ -74,7 +74,7 @@ class BulkInsertBenchmark extends IOValues with Resources with Randomness with E
     val json = jsonContentOf("/resource.json")
     client.createNamespace(properties()).ioValue
 
-    dataList = List.fill(100)(json.asGraph(blank).rightValue)
+    dataList = List.fill(100)(json.toGraph(blank).rightValue)
   }
 
   @TearDown(Level.Trial) def doTearDown(): Unit = {

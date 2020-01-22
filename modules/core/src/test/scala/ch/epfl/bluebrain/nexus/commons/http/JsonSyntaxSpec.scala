@@ -10,7 +10,7 @@ import io.circe.Json
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import org.scalatest.Inspectors
-import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.implicits._
 import ch.epfl.bluebrain.nexus.commons.circe.syntax._
 import ch.epfl.bluebrain.nexus.commons.http.syntax._
 import org.scalatest.matchers.should.Matchers
@@ -24,7 +24,7 @@ class JsonSyntaxSpec extends AnyWordSpecLike with Matchers with Resources with I
 
   "An enriched Json" when {
     implicit val context: ContextUri =
-      ContextUri(url"https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0".value)
+      ContextUri(url"https://bbp-nexus.epfl.ch/dev/v0/contexts/bbp/core/context/v0.1.0")
 
     "dealing with KG data" should {
       val list = List(
