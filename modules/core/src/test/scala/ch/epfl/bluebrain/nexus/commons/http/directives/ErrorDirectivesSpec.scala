@@ -9,7 +9,7 @@ import ch.epfl.bluebrain.nexus.commons.circe.ContextUri
 import ch.epfl.bluebrain.nexus.commons.http.RdfMediaTypes
 import ch.epfl.bluebrain.nexus.commons.http.directives.ErrorDirectives._
 import ch.epfl.bluebrain.nexus.commons.http.directives.ErrorDirectivesSpec.CustomError
-import ch.epfl.bluebrain.nexus.rdf.syntax.node.unsafe._
+import ch.epfl.bluebrain.nexus.rdf.implicits._
 import io.circe.generic.auto._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -28,7 +28,7 @@ class ErrorDirectivesSpec
   "A ErrorDirectives" should {
     import system.dispatcher
     implicit val statusFromJson: StatusFrom[CustomError] = StatusFrom((_: CustomError) => StatusCodes.NotFound)
-    implicit val contextUri: ContextUri                  = ContextUri(url"http://localhost.com/error/".value)
+    implicit val contextUri: ContextUri                  = ContextUri(url"http://localhost.com/error/")
 
     "marshall error JSON-LD" in {
       val error      = CustomError("some error")

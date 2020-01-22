@@ -6,7 +6,7 @@ import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, EitherValues, Resources}
 import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
 import ch.epfl.bluebrain.nexus.rdf.Node
 import ch.epfl.bluebrain.nexus.rdf.Node.IriNode
-import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.implicits._
 import io.circe.syntax._
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
@@ -93,7 +93,7 @@ class SparqlResultsSpec
           (id, nxv + "bnode", Node.blank("t96").rightValue),
           (id, nxv + "deprecated", Node.literal(false)),
           (id, nxv + "deprecated", Node.literal(false)),
-          (id, nxv + "createdAt", Node.literal("2019-08-16T12:57:00.532Z", xsd.dateTime.value)),
+          (id, nxv + "createdAt", Node.literal("2019-08-16T12:57:00.532Z", xsd.dateTime)),
           (id, nxv + "project", Node.literal("myproject"))
         )
     }
@@ -104,7 +104,7 @@ object SparqlResultsSpec {
   object nxv {
     private val base = url"https://bluebrain.github.io/nexus/vocabulary/"
 
-    def +(value: String): IriNode = IriNode(base.value + value)
+    def +(value: String): IriNode = IriNode(base + value)
   }
   object xsd {
     private val base = url"http://www.w3.org/2001/XMLSchema#"

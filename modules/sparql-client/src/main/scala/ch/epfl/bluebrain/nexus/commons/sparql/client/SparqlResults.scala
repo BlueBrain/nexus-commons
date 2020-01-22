@@ -45,9 +45,8 @@ final case class SparqlResults(head: Head, results: Bindings, boolean: Option[Bo
         case (triples, _) =>
           triples
       }
-      Some(Graph(totalTriples))
-    } else
-      None
+      Some(Graph(BNode(), totalTriples))
+    } else None
 }
 
 object SparqlResults {

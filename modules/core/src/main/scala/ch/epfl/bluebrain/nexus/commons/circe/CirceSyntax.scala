@@ -1,7 +1,7 @@
 package ch.epfl.bluebrain.nexus.commons.circe
 
 import ch.epfl.bluebrain.nexus.commons.http.JsonLdCirceSupport.OrderedKeys
-import ch.epfl.bluebrain.nexus.rdf.circe.JsonLd
+import ch.epfl.bluebrain.nexus.rdf.jsonld.JsonLd
 import io.circe.Json
 
 trait CirceSyntax {

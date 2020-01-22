@@ -18,12 +18,13 @@ import ch.epfl.bluebrain.nexus.commons.test.io.IOValues
 import ch.epfl.bluebrain.nexus.commons.test.{CirceEq, EitherValues, Randomness}
 import ch.epfl.bluebrain.nexus.rdf.Graph
 import ch.epfl.bluebrain.nexus.rdf.Graph.Triple
+import ch.epfl.bluebrain.nexus.rdf.Node.IriOrBNode
 import ch.epfl.bluebrain.nexus.rdf.Vocabulary._
-import ch.epfl.bluebrain.nexus.rdf.instances._
-import ch.epfl.bluebrain.nexus.rdf.syntax._
+import ch.epfl.bluebrain.nexus.rdf.implicits._
+import ch.epfl.bluebrain.nexus.rdf.jena.Jena
 import ch.epfl.bluebrain.nexus.sourcing.RetryStrategyConfig
 import com.bigdata.rdf.sail.webapp.NanoSparqlServer
-import io.circe.Printer
+import io.circe.{Json, Printer}
 import io.circe.parser._
 import io.circe.syntax._
 import org.apache.commons.io.FileUtils
@@ -201,7 +202,7 @@ class BlazegraphClientSpec
           "http://www.w3.org/2000/01/rdf-schema#label"
         )
       )
-      cl.patch(graph, json.asGraph(url"http://localhost/$id").rightValue, strategy).ioValue
+      cl.patch(graph, json.asRdfGraph(url"http://localhost/$id").rightValue, strategy).ioValue
       cl.triples() should have size 4
       val results = cl.triples(graph)
       results should have size 4
@@ -236,7 +237,7 @@ class BlazegraphClientSpec
       ).rightValue
       cl.replace(graph, load(id, label, value)).ioValue
       val strategy = PatchStrategy.removeButPredicates(Set("http://schema.org/value"))
-      cl.patch(graph, json.asGraph(url"http://localhost/$id").rightValue, strategy).ioValue
+      cl.patch(graph, json.asRdfGraph(url"http://localhost/$id").rightValue, strategy).ioValue
       val results = cl.triples(graph)
       results should have size 5
       results.map(_._3).toSet should contain allOf (label + "-updated", value, "name", "title")
@@ -261,6 +262,11 @@ class BlazegraphClientSpec
 
   private def load(id: String, label: String, value: String): Graph =
     jsonContentOf("/ld.json", Map(quote("{{ID}}") -> id, quote("{{LABEL}}") -> label, quote("{{VALUE}}") -> value))
-      .asGraph(url"http://localhost/$id")
+      .asRdfGraph(url"http://localhost/$id")
       .rightValue
+
+  private implicit class AsGraph(json: Json) {
+    def asRdfGraph(root: IriOrBNode): Either[String, Graph] =
+      Jena.parse(json.noSpaces).flatMap(_.asRdfGraph(root))
+  }
 }
