@@ -24,7 +24,7 @@ scalafmt: {
 }
  */
 
-val rdfVersion      = "0.6.2"
+val rdfVersion      = "0.7.0"
 val sourcingVersion = "0.20.0"
 
 lazy val rdf          = "ch.epfl.bluebrain.nexus" %% "rdf"           % rdfVersion
